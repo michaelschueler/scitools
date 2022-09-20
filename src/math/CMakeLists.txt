@@ -5,6 +5,7 @@ include_directories(
 set(OBJECT_FILES
 	bsplines.f90
 	fornberg.f90
+	filon.F90
 	gausslegendre.F90
 	gregory.f90
 	lebedev_quad.F90

@@ -9,6 +9,7 @@ set(OBJECT_FILES
 	basic/utils.F90
 	math/bsplines.f90
 	math/fornberg.f90
+	math/filon.F90
 	math/gausslegendre.F90
 	math/gregory.f90
 	math/lebedev_weights.F90
@@ -56,6 +57,7 @@ set (MODS
 	utils
 	bsplines
 	fornberg
+	filon
 	gausslegendre
 	gregory
 	lebedev_quad

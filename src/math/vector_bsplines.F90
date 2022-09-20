@@ -1,5 +1,5 @@
 module scitools_vector_bsplines
-!! Vector and matrix-valued B-splines, based on [[Mbsplines]]
+!! Vector and matrix-valued B-splines, based on [[scitools_bsplines]]
 !======================================================================================
    use,intrinsic::iso_fortran_env,only: output_unit, error_unit
    use scitools_debug
