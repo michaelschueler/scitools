@@ -1,4 +1,5 @@
 module scitools_quadrature
+!! Provides a high-level interface for 1D quadrature. 
 !======================================================================================
    use,intrinsic::iso_fortran_env,only: output_unit, error_unit
    use scitools_debug
@@ -14,12 +15,17 @@ module scitools_quadrature
 contains
 !--------------------------------------------------------------------------------------
    subroutine integral_1d(f,a,b,tol,res,meth,neval,abserr)
-      real(dp),intent(in)           :: a,b
-      real(dp),intent(in)           :: tol
-      real(dp),intent(out)          :: res
-      integer,intent(in),optional   :: meth
-      integer,intent(out),optional  :: neval
-      real(dp),intent(out),optional :: abserr
+   !! Computes the definite integral \(I = \int^b_a dx\, f(x)\) using adaptative 
+   !! Gauss-Legendre quadrature. Which is low-level routine is controlled by the
+   !! precompiler flag `MODERNQUAD`. Of `MODERNQUAD` is set, the modern implementation
+   !! from [[scitools_gausslegendre]] will be used, otherwise QUADPACK's [[dqags]] from 
+   !! [[scitools_quadpack]]
+      real(dp),intent(in)           :: a,b !! integration bounds
+      real(dp),intent(in)           :: tol !! absolute error threshold
+      real(dp),intent(out)          :: res !! value of the integral
+      integer,intent(in),optional   :: meth !! order of Gauss-Legendre quadrature
+      integer,intent(out),optional  :: neval !! number o function evaluations
+      real(dp),intent(out),optional :: abserr !! estimated absolute error
       integer :: meth_
       integer :: ier,neval_
       real(dp) :: abserr_
@@ -63,6 +69,7 @@ contains
    end subroutine integral_1d
 !--------------------------------------------------------------------------------------
    subroutine integral_inf_1d(f,bound,inf,tol,res,neval,abserr)
+   !! Simple interface to QUADPACK's [[dqagi]] function with some error checks
       real(dp),intent(in)           :: bound
       integer,intent(in)            :: inf
       real(dp),intent(in)           :: tol

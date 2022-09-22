@@ -1,4 +1,6 @@
 module scitools_def
+!! Provides the basic definition of double precision, some constants and 
+!! some useful functions.
 !======================================================================================
    use,intrinsic::iso_fortran_env,dp=>real64
    implicit none

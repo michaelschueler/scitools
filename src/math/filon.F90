@@ -66,69 +66,67 @@ contains
    end subroutine Filon_quad
 !--------------------------------------------------------------------------------------  
   subroutine filon_cos ( ntab, ftab, a, b, t, result )
-!*****************************************************************************80
-   !
-   !! FILON_COS uses Filon's method on integrals with a cosine factor.
-   !
-   !  Discussion:
-   !
-   !    The integral to be approximated has the form:
-   !
-   !      Integral ( A <= X <= B ) F(X) * COS(T*X) dX
-   !
-   !    where T is user specified.
-   !
-   !    The function is interpolated over each subinterval by
-   !    a parabolic arc.
-   !
-   !  Modified:
-   !
-   !    10 February 2006
-   !
-   !  Author:
-   !
-   !    John Burkardt
-   !
-   !  Reference:
-   !
-   !    Milton Abramowitz, Irene Stegun,
-   !    Handbook of Mathematical Functions,
-   !    National Bureau of Standards, 1964,
-   !    ISBN: 0-486-61272-4,
-   !    LC: QA47.A34.
-   !
-   !    Stephen Chase, Lloyd Fosdick,
-   !    An Algorithm for Filon Quadrature,
-   !    Communications of the Association for Computing Machinery,
-   !    Volume 12, Number 8, August 1969, pages 453-457.
-   !
-   !    Stephen Chase, Lloyd Fosdick,
-   !    Algorithm 353:
-   !    Filon Quadrature,
-   !    Communications of the Association for Computing Machinery,
-   !    Volume 12, Number 8, August 1969, pages 457-458.
-   !
-   !    Philip Davis, Philip Rabinowitz,
-   !    Methods of Numerical Integration,
-   !    Second Edition,
-   !    Dover, 2007,
-   !    ISBN: 0486453391,
-   !    LC: QA299.3.D28.
-   !
-   !  Parameters:
-   !
-   !    Input, integer ( kind = 4 ) NTAB, the number of data points.
-   !    NTAB must be odd, and greater than 1.
-   !
-   !    Input, real ( kind = 8 ) FTAB(NTAB), contains the value of the function
-   !    at A, A+H, A+2*H, ... , B-H, B, where H = (B-A)/(NTAB-1).
-   !
-   !    Input, real ( kind = 8 ) A, B, the limits of integration.
-   !
-   !    Input, real ( kind = 8 ) T, the multiplier of the X argument of the cosine.
-   !
-   !    Output, real ( kind = 8 ) RESULT, the approximate value of the integral.
-   !
+   !!  FILON_COS uses the Filon method on integrals with a cosine factor.
+   !!
+   !!  Discussion
+   !!  ----------
+   !!   The integral to be approximated has the form:
+   !!
+   !!    Integral ( A <= X <= B ) F(X) * COS(T*X) dX
+   !!
+   !!   where T is user specified.
+   !!
+   !!  The function is interpolated over each subinterval by
+   !!  a parabolic arc.
+   !!
+   !!  Modified:
+   !!
+   !!    10 February 2006
+   !!
+   !!  Author:
+   !!
+   !!    John Burkardt
+   !!
+   !!  Reference
+   !!  ---------
+   !!
+   !!  Milton Abramowitz, Irene Stegun,
+   !!  Handbook of Mathematical Functions,
+   !!  National Bureau of Standards, 1964,
+   !!  ISBN: 0-486-61272-4,
+   !!  LC: QA47.A34.
+   !!
+   !!  Stephen Chase, Lloyd Fosdick,
+   !!  An Algorithm for Filon Quadrature,
+   !!  Communications of the Association for Computing Machinery,
+   !!  Volume 12, Number 8, August 1969, pages 453-457.
+   !!
+   !!  Stephen Chase, Lloyd Fosdick,
+   !!  Algorithm 353:
+   !!  Filon Quadrature,
+   !!  Communications of the Association for Computing Machinery,
+   !!  Volume 12, Number 8, August 1969, pages 457-458.
+   !!
+   !!  Philip Davis, Philip Rabinowitz,
+   !!  Methods of Numerical Integration,
+   !!  Second Edition,
+   !!  Dover, 2007,
+   !!  ISBN: 0486453391,
+   !!  LC: QA299.3.D28.
+   !!
+   !!  Parameters
+   !!  ----------
+   !!    Input, integer ( kind = 4 ) NTAB, the number of data points.
+   !!    NTAB must be odd, and greater than 1.
+   !!
+   !!    Input, real ( kind = 8 ) FTAB(NTAB), contains the value of the function
+   !!    at A, A+H, A+2*H, ... , B-H, B, where H = (B-A)/(NTAB-1).
+   !!
+   !!    Input, real ( kind = 8 ) A, B, the limits of integration.
+   !!
+   !!    Input, real ( kind = 8 ) T, the multiplier of the X argument of the cosine.
+   !!
+   !!    Output, real ( kind = 8 ) RESULT, the approximate value of the integral.
      implicit none
 
      integer ( kind = 4 ) ntab
@@ -226,70 +224,67 @@ contains
 
 
    subroutine filon_sin ( ntab, ftab, a, b, t, result )
-
-!*****************************************************************************80
-   !
-   !! FILON_SIN uses Filon's method on integrals with a sine factor.
-   !
-   !  Discussion:
-   !
-   !    The integral to be approximated has the form
-   !
-   !      Integral ( A <= X <= B ) F(X) * SIN(T*X) dX
-   !
-   !    where T is user specified.
-   !
-   !    The function is interpolated over each subinterval by
-   !    a parabolic arc.
-   !
-   !  Modified:
-   !
-   !    10 February 2006
-   !
-   !  Author:
-   !
-   !    John Burkardt
-   !
-   !  Reference:
-   !
-   !    Milton Abramowitz, Irene Stegun,
-   !    Handbook of Mathematical Functions,
-   !    National Bureau of Standards, 1964,
-   !    ISBN: 0-486-61272-4,
-   !    LC: QA47.A34.
-   !
-   !    Stephen Chase, Lloyd Fosdick,
-   !    An Algorithm for Filon Quadrature,
-   !    Communications of the Association for Computing Machinery,
-   !    Volume 12, Number 8, August 1969, pages 453-457.
-   !
-   !    Stephen Chase, Lloyd Fosdick,
-   !    Algorithm 353:
-   !    Filon Quadrature,
-   !    Communications of the Association for Computing Machinery,
-   !    Volume 12, Number 8, August 1969, pages 457-458.
-   !
-   !    Philip Davis, Philip Rabinowitz,
-   !    Methods of Numerical Integration,
-   !    Second Edition,
-   !    Dover, 2007,
-   !    ISBN: 0486453391,
-   !    LC: QA299.3.D28.
-   !
-   !  Parameters:
-   !
-   !    Input, integer ( kind = 4 ) NTAB, the number of data points, 
-   !    including the endpoints.  NTAB must be odd, and greater than 1.
-   !
-   !    Input, real ( kind = 8 ) FTAB(NTAB), contains the value of the function
-   !    at A, A+H, A+2*H, ... , B-H, B, where H = (B-A)/(NTAB-1).
-   !
-   !    Input, real ( kind = 8 ) A, B, the limits of integration.
-   !
-   !    Input, real ( kind = 8 ) T, multiplier of the X argument of the sine.
-   !
-   !    Output, real ( kind = 8 ) RESULT, the approximate value of the integral.
-   !
+   !!  FILON_SIN uses the Filon method on integrals with a sine factor.
+   !!
+   !!  Discussion
+   !!  ----------
+   !!   The integral to be approximated has the form:
+   !!
+   !!    Integral ( A <= X <= B ) F(X) * SIN(T*X) dX
+   !!
+   !!   where T is user specified.
+   !!
+   !!  The function is interpolated over each subinterval by
+   !!  a parabolic arc.
+   !!
+   !!  Modified:
+   !!
+   !!    10 February 2006
+   !!
+   !!  Author:
+   !!
+   !!    John Burkardt
+   !!
+   !!  Reference
+   !!  ---------
+   !!
+   !!  Milton Abramowitz, Irene Stegun,
+   !!  Handbook of Mathematical Functions,
+   !!  National Bureau of Standards, 1964,
+   !!  ISBN: 0-486-61272-4,
+   !!  LC: QA47.A34.
+   !!
+   !!  Stephen Chase, Lloyd Fosdick,
+   !!  An Algorithm for Filon Quadrature,
+   !!  Communications of the Association for Computing Machinery,
+   !!  Volume 12, Number 8, August 1969, pages 453-457.
+   !!
+   !!  Stephen Chase, Lloyd Fosdick,
+   !!  Algorithm 353:
+   !!  Filon Quadrature,
+   !!  Communications of the Association for Computing Machinery,
+   !!  Volume 12, Number 8, August 1969, pages 457-458.
+   !!
+   !!  Philip Davis, Philip Rabinowitz,
+   !!  Methods of Numerical Integration,
+   !!  Second Edition,
+   !!  Dover, 2007,
+   !!  ISBN: 0486453391,
+   !!  LC: QA299.3.D28.
+   !!
+   !!  Parameters
+   !!  ----------
+   !!    Input, integer ( kind = 4 ) NTAB, the number of data points.
+   !!    NTAB must be odd, and greater than 1.
+   !!
+   !!    Input, real ( kind = 8 ) FTAB(NTAB), contains the value of the function
+   !!    at A, A+H, A+2*H, ... , B-H, B, where H = (B-A)/(NTAB-1).
+   !!
+   !!    Input, real ( kind = 8 ) A, B, the limits of integration.
+   !!
+   !!    Input, real ( kind = 8 ) T, the multiplier of the X argument of the cosine.
+   !!
+   !!    Output, real ( kind = 8 ) RESULT, the approximate value of the integral.
      implicit none
 
      integer ( kind = 4 ) ntab
@@ -386,36 +381,14 @@ contains
 
 
    subroutine r8vec_even ( n, alo, ahi, a )
-
-   !*****************************************************************************80
-   !
-   !! R8VEC_EVEN returns N values, evenly spaced between ALO and AHI.
-   !
-   !  Modified:
-   !
-   !    17 February 2004
-   !
-   !  Author:
-   !
-   !    John Burkardt
-   !
-   !  Parameters:
-   !
-   !    Input, integer ( kind = 4 ) N, the number of values.
-   !
-   !    Input, real ( kind = 8 ) ALO, AHI, the low and high values.
-   !
-   !    Output, real ( kind = 8 ) A(N), N evenly spaced values.
-   !    Normally, A(1) = ALO and A(N) = AHI.
-   !    However, if N = 1, then A(1) = 0.5*(ALO+AHI).
-   !
+   !! Returns N values, evenly spaced between ALO and AHI.
      implicit none
 
-     integer ( kind = 4 ) n
-
-     real ( kind = 8 ) a(n)
-     real ( kind = 8 ) ahi
-     real ( kind = 8 ) alo
+     integer ( kind = 4 ) n !! The number of values. Normally, `A(1) = ALO` and `A(N) = AHI`.
+                            !! However, if N = 1, then `A(1) = 0.5*(ALO+AHI)`.
+     real ( kind = 8 ) a(n) !! N evenly spaced values. 
+     real ( kind = 8 ) ahi !! Input, high value
+     real ( kind = 8 ) alo !! Input, low value
      integer ( kind = 4 ) i
 
      if ( n == 1 ) then

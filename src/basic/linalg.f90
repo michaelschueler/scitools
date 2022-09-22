@@ -363,9 +363,10 @@ contains
   end subroutine deig
 
   subroutine zeig(A, lam, c)
-    complex(dp), intent(in) :: A(:, :)  ! matrix to solve eigenproblem for
-    complex(dp), intent(out) :: lam(:)  ! eigenvalues: A c = lam c
-    complex(dp), intent(out) :: c(:,:)  ! eigenvectors: A c = lam c; c(i,j) = ith component of jth vec.
+   !! solves complex nonsymmetric eigenvalue problem
+    complex(dp), intent(in) :: A(:, :)  !! matrix to solve eigenproblem for
+    complex(dp), intent(out) :: lam(:)  !! eigenvalues: A c = lam c
+    complex(dp), intent(out) :: c(:,:)  !! eigenvectors: A c = lam c; c(i,j) = ith component of jth vec.
     ! LAPACK variables:
     integer :: info, lda, ldvl, ldvr, lwork, n, lrwork
     real(dp), allocatable :: rwork(:)
@@ -399,8 +400,9 @@ contains
   end subroutine zeig
 
   subroutine EigValsHE(A,lam)
-    complex(dp), intent(in) :: A(:, :)  ! matrix to solve eigenproblem for
-    real(dp), intent(out) :: lam(:)  ! eigenvalues: A c = lam c
+   !! Computes eigenvalues of a complex hermitian matrix
+    complex(dp), intent(in) :: A(:, :)  !! matrix to solve eigenproblem for
+    real(dp), intent(out) :: lam(:)  !! eigenvalues: A c = lam c
     ! LAPACK variables:
     integer :: info, lda, lwork, n, lrwork
     real(dp), allocatable :: rwork(:)
@@ -432,8 +434,9 @@ contains
   end subroutine EigValsHE
 
   function deigvals(A) result(lam)
-    real(dp), intent(in) :: A(:, :)  ! matrix for eigenvalue compuation
-    complex(dp), allocatable :: lam(:)  ! eigenvalues: A c = lam c
+   !! computes eigenvalues of a real nonsymmetric matrix
+    real(dp), intent(in) :: A(:, :)  !! matrix for eigenvalue compuation
+    complex(dp), allocatable :: lam(:)  !! eigenvalues: A c = lam c
     ! LAPACK variables for DGEEV:
     real(dp), allocatable ::  At(:,:), vl(:,: ), vr(:,:), wi(:), work(:), wr(:)
     integer :: info, lda, ldvl, ldvr, lwork, n
@@ -466,8 +469,9 @@ contains
   end function deigvals
 
   function zeigvals(A) result(lam)
-    complex(dp), intent(in) :: A(:, :)  ! matrix to solve eigenproblem for
-    complex(dp), allocatable :: lam(:)  ! eigenvalues: A c = lam c
+   !! computes eigenvalues of a complex nonsymmetric matrix
+    complex(dp), intent(in) :: A(:, :)  !! matrix to solve eigenproblem for
+    complex(dp), allocatable :: lam(:)  !! eigenvalues: A c = lam c
     ! LAPACK variables:
     integer :: info, lda, ldvl, ldvr, lwork, n, lrwork
     real(dp), allocatable :: rwork(:)
@@ -499,13 +503,13 @@ contains
   end function zeigvals
 
   subroutine deigh_generalized(Am, Bm, lam, c)
-    ! solves generalized eigen value problem for all eigenvalues and eigenvectors
-    ! Am must by symmetric, Bm symmetric positive definite.
-    ! Only the lower triangular part of Am and Bm is used.
-    real(dp), intent(in) :: Am(:,:)   ! LHS matrix: Am c = lam Bm c
-    real(dp), intent(in) :: Bm(:,:)   ! RHS matrix: Am c = lam Bm c
-    real(dp), intent(inout) :: lam(:)   ! eigenvalues: Am c = lam Bm c
-    real(dp), intent(inout) :: c(:,:)   ! eigenvectors: Am c = lam Bm c; c(i,j) = ith component of jth vec.
+    !! solves generalized eigenvalue problem for all eigenvalues and eigenvectors
+    !! `Am` must by symmetric, `Bm` symmetric positive definite.
+    !! Only the lower triangular part of `Am` and `Bm` is used.
+    real(dp), intent(in) :: Am(:,:)   !! LHS matrix: Am c = lam Bm c
+    real(dp), intent(in) :: Bm(:,:)   !! RHS matrix: Am c = lam Bm c
+    real(dp), intent(inout) :: lam(:)   !! eigenvalues: Am c = lam Bm c
+    real(dp), intent(inout) :: c(:,:)   !! eigenvectors: Am c = lam Bm c; c(i,j) = ith component of jth vec.
     integer :: n
     ! lapack variables
     integer :: lwork, liwork, info
@@ -540,12 +544,12 @@ contains
   end subroutine deigh_generalized
 
   subroutine deigh_simple(Am, lam, c)
-    ! solves eigen value problem for all eigenvalues and eigenvectors
-    ! Am must by symmetric
-    ! Only the lower triangular part of Am is used.
-    real(dp), intent(in) :: Am(:,:)   ! LHS matrix: Am c = lam c
-    real(dp), intent(inout) :: lam(:)   ! eigenvalues: Am c = lam c
-    real(dp), intent(inout) :: c(:,:)   ! eigenvectors: Am c = lam c; c(i,j) = ith component of jth vec.
+    !! solves eigen value problem for all eigenvalues and eigenvectors
+    !! `Am` must by symmetric
+    !! Only the lower triangular part of Am is used.
+    real(dp), intent(in) :: Am(:,:)   !! LHS matrix: Am c = lam c
+    real(dp), intent(inout) :: lam(:)   !! eigenvalues: Am c = lam c
+    real(dp), intent(inout) :: c(:,:)   !! eigenvectors: Am c = lam c; c(i,j) = ith component of jth vec.
     integer :: n
     ! lapack variables
     integer :: lwork, liwork, info
@@ -575,13 +579,13 @@ contains
   end subroutine deigh_simple
 
   subroutine zeigh_generalized(Am, Bm, lam, c)
-    ! solves generalized eigen value problem for all eigenvalues and eigenvectors
-    ! Am must by hermitian, Bm hermitian positive definite.
-    ! Only the lower triangular part of Am and Bm is used.
-    complex(dp), intent(in) :: Am(:,:)   ! LHS matrix: Am c = lam Bm c
-    complex(dp), intent(in) :: Bm(:,:)   ! RHS matrix: Am c = lam Bm c
-    real(dp), intent(inout) :: lam(:)      ! eigenvalues: Am c = lam Bm c
-    complex(dp), intent(inout) :: c(:,:)   ! eigenvectors: Am c = lam Bm c; c(i,j) = ith component of jth vec.
+    !! solves generalized eigen value problem for all eigenvalues and eigenvectors
+    !! `Am` must by hermitian, `Bm` hermitian positive definite.
+    !! Only the lower triangular part of `Am` and `Bm` is used.
+    complex(dp), intent(in) :: Am(:,:)   !! LHS matrix: Am c = lam Bm c
+    complex(dp), intent(in) :: Bm(:,:)   !! RHS matrix: Am c = lam Bm c
+    real(dp), intent(inout) :: lam(:)      !! eigenvalues: Am c = lam Bm c
+    complex(dp), intent(inout) :: c(:,:)   !! eigenvectors: Am c = lam Bm c; c(i,j) = ith component of jth vec.
     ! lapack variables
     integer :: info, liwork, lrwork, lwork, n
     integer, allocatable :: iwork(:)
@@ -617,12 +621,12 @@ contains
   end subroutine zeigh_generalized
 
   subroutine zeigh_simple(Am, lam, c)
-    ! solves eigen value problem for all eigenvalues and eigenvectors
-    ! Am must by symmetric
-    ! Only the lower triangular part of Am is used.
-    complex(dp), intent(in) :: Am(:,:)   ! LHS matrix: Am c = lam c
-    real(dp), intent(out) :: lam(:)   ! eigenvalues: Am c = lam c
-    complex(dp), intent(inout) :: c(:,:)   ! eigenvectors: Am c = lam c; c(i,j) = ith component of jth vec.
+    !! solves eigen value problem for all eigenvalues and eigenvectors
+    !! `Am` must by symmetric
+    !! Only the lower triangular part of `Am` is used.
+    complex(dp), intent(in) :: Am(:,:)   !! LHS matrix: Am c = lam c
+    real(dp), intent(out) :: lam(:)   !! eigenvalues: Am c = lam c
+    complex(dp), intent(inout) :: c(:,:)   !! eigenvectors: Am c = lam c; c(i,j) = ith component of jth vec.
     ! LAPACK variables:
     integer :: info, lda, liwork, lrwork, lwork, n
     integer, allocatable :: iwork(:)
@@ -655,9 +659,10 @@ contains
   end subroutine zeigh_simple
 
   function dinv(Am) result(Bm)
-    real(dp), intent(in) :: Am(:,:)  ! matrix to be inverted
-    real(dp) :: Bm(size(Am, 1), size(Am, 2))   ! Bm = inv(Am)
-    real(dp), allocatable :: Amt(:,:), work(:)  ! temporary work arrays
+  !! Inverts the general real matrix `Am`
+    real(dp), intent(in) :: Am(:,:)  !! matrix to be inverted
+    real(dp) :: Bm(size(Am, 1), size(Am, 2))   !! Bm = inv(Am)
+    real(dp), allocatable :: Amt(:,:), work(:)  !! temporary work arrays
 
     ! LAPACK variables:
     integer ::  info, lda, n, lwork, nb
@@ -703,9 +708,9 @@ contains
   end function dinv
 
   function zinv(Am) result(Bm)
-    ! Inverts the general complex matrix Am
-    complex(dp), intent(in) :: Am(:,:)   ! Matrix to be inverted
-    complex(dp) :: Bm(size(Am, 1), size(Am, 2))   ! Bm = inv(Am)
+    !! Inverts the general complex matrix `Am`
+    complex(dp), intent(in) :: Am(:,:)   !! Matrix to be inverted
+    complex(dp) :: Bm(size(Am, 1), size(Am, 2))   !! Bm = inv(Am)
     integer :: n, nb
     ! lapack variables
     integer :: lwork, info
@@ -748,9 +753,9 @@ contains
   end function zinv
 
   function dsolve(A, b) result(x)
-    ! solves a system of equations A x = b with one right hand side
-    real(dp), intent(in) :: A(:,:)  ! coefficient matrix A
-    real(dp), intent(in) :: b(:)  ! right-hand-side A x = b
+    !! solves a real system of equations A x = b with one right hand side
+    real(dp), intent(in) :: A(:,:)  !! coefficient matrix A
+    real(dp), intent(in) :: b(:)  !! right-hand-side A x = b
     real(dp), allocatable :: x(:)
     ! LAPACK variables:
     real(dp), allocatable :: At(:,:), bt(:,:)
@@ -779,9 +784,9 @@ contains
   end function dsolve
 
   function zsolve(A, b) result(x)
-    ! solves a system of equations A x = b with one right hand side
-    complex(dp), intent(in) :: A(:,:)  ! coefficient matrix A
-    complex(dp), intent(in) :: b(:)  ! right-hand-side A x = b
+    !! solves a complex system of equations A x = b with one right hand side
+    complex(dp), intent(in) :: A(:,:)  !! coefficient matrix A
+    complex(dp), intent(in) :: b(:)  !! right-hand-side A x = b
     complex(dp), allocatable :: x(:)
     ! LAPACK variables:
     complex(dp), allocatable :: At(:,:), bt(:,:)
@@ -810,8 +815,8 @@ contains
   end function zsolve
 
   pure function eye(n) result(A)
-    ! Returns the identity matrix of size n x n and type real.
-    integer, intent(in) :: n
+    !! Returns the identity matrix of size n x n and type real.
+    integer, intent(in) :: n !! matrix rank
     real(dp) :: A(n, n)
     integer :: i
 
@@ -822,8 +827,8 @@ contains
   end function eye
 
   function ddet(A) result(x)
-    ! compute the determinant of a real matrix using an LU factorization
-    real(dp), intent(in) :: A(:, :)
+    !! compute the determinant of a real matrix `A` using an LU factorization
+    real(dp), intent(in) :: A(:, :) !! matrix whose determinant is returned
     real(dp) :: x
     integer :: i
     ! LAPACK variables:
@@ -864,8 +869,8 @@ contains
   end function ddet
 
   function zdet(A) result(x)
-    ! compute the determinant of a real matrix using an LU factorization
-    complex(dp), intent(in) :: A(:, :)
+    !! compute the determinant of a complex matrix `A` using an LU factorization
+    complex(dp), intent(in) :: A(:, :) !! matrix whose determinant is returned
     complex(dp) :: x
     integer :: i
     ! LAPACK variables:
@@ -903,7 +908,7 @@ contains
   end function zdet
 
   function dlstsq(A, b) result(x)
-    ! compute least square solution to A x = b for real A, b
+    !! compute least square solution to A x = b for real A, b
     real(dp), intent(in) :: A(:,:), b(:)
     real(dp), allocatable :: x(:)
     ! LAPACK variables:
@@ -936,7 +941,7 @@ contains
   end function dlstsq
 
   function zlstsq(A, b) result(x)
-    ! compute least square solution to A x = b for complex A, b
+    !! compute least square solution to A x = b for complex A, b
     complex(dp), intent(in) :: A(:,:), b(:)
     complex(dp), allocatable :: x(:)
     ! LAPACK variables:
@@ -972,7 +977,7 @@ contains
   ! TODO: can assumed types help in Xdiag() and Xtrace()?
   ! TODO: add optional axis parameter in both xdiag() functions
   function ddiag(x) result(A)
-    ! construct real matrix from diagonal elements
+    !! construct real matrix from diagonal elements
     real(dp), intent(in) :: x(:)
     real(dp), allocatable :: A(:,:)
     integer :: i, n
@@ -984,7 +989,7 @@ contains
   end function ddiag
 
   function zdiag(x) result(A)
-    ! construct complex matrix from diagonal elements
+    !! construct complex matrix from diagonal elements
     complex(dp), intent(in) :: x(:)
     complex(dp), allocatable :: A(:,:)
     integer :: i, n
@@ -997,7 +1002,7 @@ contains
 
   ! TODO: add optional axis parameter in both xtrace() functions
   pure function dtrace(A) result(t)
-    ! return trace along the main diagonal
+    !! return trace along the main diagonal
     real(dp), intent(in) :: A(:,:)
     real(dp) :: t
     integer :: i
@@ -1009,7 +1014,7 @@ contains
   end function dtrace
 
   pure function ztrace(A) result(t)
-    ! return trace along the main diagonal
+    !! return trace along the main diagonal
     complex(dp), intent(in) :: A(:,:)
     complex(dp) :: t
     integer :: i
@@ -1021,7 +1026,7 @@ contains
   end function ztrace
 
   function dsvdvals(A) result(s)
-    ! compute singular values s_i of a real m x n matrix A
+    !! compute singular values s_i of a real m x n matrix A
     real(dp), intent(in) :: A(:,:)
     real(dp), allocatable :: s(:)
     ! LAPACK related:
@@ -1057,7 +1062,7 @@ contains
   end function dsvdvals
 
   function zsvdvals(A) result(s)
-    ! compute singular values s_i of a real m x n matrix A
+    !! compute singular values s_i of a real m x n matrix A
     complex(dp), intent(in) :: A(:,:)
     real(dp), allocatable :: s(:)
     ! LAPACK related:
@@ -1095,11 +1100,11 @@ contains
   end function zsvdvals
 
   subroutine dsvd(A, s, U, Vtransp)
-    ! compute the singular value decomposition A = U sigma Vtransp of a
-    ! real m x n matrix A
-    ! U is m x m
-    ! Vtransp is n x n
-    ! s has size min(m, n) --> sigma matrix is (n x m) with sigma_ii = s_i
+    !! compute the singular value decomposition A = U sigma Vtransp of a
+    !! real m x n matrix A
+    !! U is m x m
+    !! Vtransp is n x n
+    !! s has size min(m, n) --> sigma matrix is (n x m) with sigma_ii = s_i
     real(dp), intent(in) :: A(:,:)
     real(dp), intent(out) :: s(:), U(:,:), Vtransp(:,:)
     ! LAPACK related:
@@ -1140,12 +1145,12 @@ contains
   end subroutine dsvd
 
   subroutine zsvd(A, s, U, Vtransp)
-    ! compute the singular value decomposition A = U sigma V^H of a
-    ! complex m x m matrix A
-    ! U is m x min(m, n)
-    ! Vtransp is n x n
-    ! sigma is m x n with with sigma_ii = s_i
-    ! note that this routine returns V^H, not V!
+    !! compute the singular value decomposition A = U sigma V^H of a
+    !! complex m x m matrix A
+    !! U is m x min(m, n)
+    !! Vtransp is n x n
+    !! sigma is m x n with with sigma_ii = s_i
+    !! note that this routine returns V^H, not V!
     complex(dp), intent(in) :: A(:,:)
     real(dp), intent(out) :: s(:)
     complex(dp), intent(out) :: U(:,:), Vtransp(:,:)

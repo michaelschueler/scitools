@@ -14,7 +14,7 @@ module scitools_laserpulse
   integer,parameter :: kx=4
 !--------------------------------------------------------------------------------------
   type scalarfunc_spline_t
-  !! scalar time-depndent function
+  !! scalar time-depndent function \(y(t)\)
      !.............................................. 
      integer,private                           :: Npts !! number of sample points
      real(dp),public                           :: Tmin,Tmax !! time interval
@@ -30,6 +30,7 @@ module scitools_laserpulse
   end type scalarfunc_spline_t 
 
   type LaserPulse_spline_t
+  !! Laser pulse class describing electric field \(E(t)\) and vector potential \(A(t)\)
      !..............................................
      logical,private                           :: E_set=.false.,A_set=.false.
      integer,private                           :: Npts
@@ -53,6 +54,7 @@ module scitools_laserpulse
 contains
 !--------------------------------------------------------------------------------------
   subroutine scalarfunc_Init(self,Npts,Tmin,Tmax)
+  !! Initializes the scalar function
     class(scalarfunc_spline_t),intent(inout)::self
     integer,intent(in)::Npts
     real(dp),intent(in)::Tmin,Tmax
@@ -69,9 +71,11 @@ contains
   end subroutine scalarfunc_Init
 !--------------------------------------------------------------------------------------
   subroutine Load_function(self,filename,usecol)
+  !! Reads the sampled function \( (t_i, y(t_i)) \) from file and 
+  !! constructs the b-spline cofficients for interpolation.
     class(scalarfunc_spline_t),intent(inout) :: self
-    character(len=*),intent(in)              :: filename
-    integer,intent(in),optional              :: usecol
+    character(len=*),intent(in)              :: filename !! file name of text file
+    integer,intent(in),optional              :: usecol !! which column in the text file to read \(y(t_i)\)
     integer :: it,col,iflag,inbvx
     real(dp),allocatable,dimension(:,:) :: Adata
 
@@ -87,6 +91,8 @@ contains
   end subroutine Load_function
 !--------------------------------------------------------------------------------------
   real(dp) function scalarfunc_fval(self,t)
+  !! Evaluates \(y(t)\) from the b-spline cofficients. If \(t\) is out of bounds, 
+  !! a constant value corresponding to the left or right boundary, respectively, is returned.
     real(dp),parameter :: eps=1.0e-12_dp
     class(scalarfunc_spline_t),intent(in)::self
     real(dp),intent(in)::t
@@ -110,6 +116,7 @@ contains
   end function scalarfunc_fval
 !--------------------------------------------------------------------------------------
   subroutine Laserpulse_Init(self,Npts,Tmin,Tmax)
+  !! Initializes the laser pulse class and allocates internal storage.
     class(LaserPulse_spline_t),intent(inout)::self
     integer,intent(in)::Npts
     real(dp),intent(in)::Tmin,Tmax
@@ -125,9 +132,12 @@ contains
     
   end subroutine Laserpulse_Init
 !--------------------------------------------------------------------------------------   
-  real(dp) function Laserpulse_Afield(self,t) 
+  real(dp) function Laserpulse_Afield(self,t)
+  !! Returns the vector potential \(A(t)\) from the b-spline cofficients.
+  !! If \(t < t_\mathrm{min} \) (left boundary), 0 is returned;
+  !! If \(t > t_\mathrm{max} \) (right boundary), \(A(t_\mathrm{max})\) is returned.
     class(LaserPulse_spline_t),intent(in)::self
-    real(dp),intent(in)::t
+    real(dp),intent(in)::t !! time at which the vector potential is evaluated
     integer::iflag,inbvx
     real(dp)::AF
 
@@ -145,8 +155,10 @@ contains
   end function Laserpulse_Afield
 !--------------------------------------------------------------------------------------
   real(dp) function Laserpulse_Efield(self,t)
+  !! Returns the electric field \(E(t)\) from the b-spline cofficients. If \(t\) is 
+  !! out of bounds, 0 is returned. 
     class(LaserPulse_spline_t),intent(in)::self
-    real(dp),intent(in)::t
+    real(dp),intent(in)::t  !! time at which the field is evaluated
     integer::iflag,inbvx
     real(dp)::EF
     
@@ -161,6 +173,7 @@ contains
   end function Laserpulse_Efield
 !--------------------------------------------------------------------------------------
   real(dp) function Laserpulse_Energy(self)
+  !! Computes the energy \(\int dt\, E(t)^2  \).
     class(LaserPulse_spline_t),intent(inout)::self
     integer,parameter::np=400
     integer::k
@@ -177,10 +190,15 @@ contains
   end function Laserpulse_Energy
 !--------------------------------------------------------------------------------------
   subroutine Load_VectorPotential(self,filename,usecol,CalcEfield)
+  !! Reads the vector potential from a plain text file. We assume that 
+  !! the time sample points \(t_i\) are stored in the first column, while the
+  !! sampled values \(A(t_i)\) are stored in another column specified by `usecol`. 
+  !! After reading from file, the b-spline coefficients for interpolating are constructed.
+  !! The electric field is also computed by \(E(t) = - \dot{A}(t)\) by default.
     class(LaserPulse_spline_t),intent(inout) :: self
-    character(len=*),intent(in)              :: filename
-    integer,intent(in),optional              :: usecol
-    logical,intent(in),optional              :: CalcEfield
+    character(len=*),intent(in)              :: filename !! file name for text file (column structure)
+    integer,intent(in),optional              :: usecol !! which column to use to read \(A(t_i\); default: `usecol=2`
+    logical,intent(in),optional              :: CalcEfield !! Whether to compute the electric field. Default is `.true.`
     logical :: calcefield_
     integer :: it,col,iflag,inbvx
     real(dp),allocatable,dimension(:,:) :: Adata
@@ -220,10 +238,15 @@ contains
   end subroutine Load_VectorPotential
 !--------------------------------------------------------------------------------------
   subroutine Load_ElectricField(self,filename,usecol,CalcAfield)
+  !! Reads the electric field from a plain text file. We assume that 
+  !! the time sample points \(t_i\) are stored in the first column, while the
+  !! sampled values \(E(t_i)\) are stored in another column specified by `usecol`. 
+  !! After reading from file, the b-spline coefficients for interpolating are constructed.
+  !! The vector potential is also computed by \(A(t) = - \int^t dt\, E(t) \) by default.
     class(LaserPulse_spline_t),intent(inout) :: self
-    character(len=*),intent(in)              :: filename
-    integer,intent(in),optional              :: usecol
-    logical,intent(in),optional              :: CalcAfield
+    character(len=*),intent(in)              :: filename !! file name for text file (column structure)
+    integer,intent(in),optional              :: usecol !! which column to use to read \(A(t_i\); default: `usecol=2`
+    logical,intent(in),optional              :: CalcAfield !! Whether to compute the vector potential. Default is `.true.`
     logical :: calcafield_
     integer :: it,col,iflag,inbvx
     real(dp) :: dt

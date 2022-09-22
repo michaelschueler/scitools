@@ -1,280 +1,266 @@
 module scitools_quadpack
-
+!! Wrapper for the classic QUADPACK quadrature library.
+!!
+!! Introduction
+!! ------------
+!!
+!!   quadpack is a fortran subroutine package for the numerical
+!!   computation of definite one-dimensional integrals. it originated
+!!   from a joint project of r. piessens and e. de doncker (appl.
+!!   math. and progr. div.- k.u.leuven, belgium), c. ueberhuber (inst.
+!!   fuer math.- techn.u.wien, austria), and d. kahaner (nation. bur.
+!!   of standards- washington d.c., u.s.a.).
+!!
+!! Survey
+!! ------
+!!   * qags : is an integrator based on globally adaptive interval
+!!            subdivision in connection with extrapolation (de doncker,
+!!            1978) by the epsilon algorithm (wynn, 1956).
+!!
+!!   * qagp : serves the same purposes as qags, but also allows
+!!            for eventual user-supplied information, i.e. the
+!!            abscissae of internal singularities, discontinuities
+!!            and other difficulties of the integrand function.
+!!            the algorithm is a modification of that in qags.
+!!
+!!   * qagi : handles integration over infinite intervals. the
+!!            infinite range is mapped onto a finite interval and
+!!            then the same strategy as in qags is applied.
+!!
+!!   * qawo : is a routine for the integration of cos(omega*x)*f(x)
+!!            or sin(omega*x)*f(x) over a finite interval (a,b).
+!!            omega is is specified by the user
+!!            the rule evaluation component is based on the
+!!            modified clenshaw-curtis technique.
+!!            an adaptive subdivision scheme is used connected with
+!!            an extrapolation procedure, which is a modification
+!!            of that in dqags and provides the possibility to deal
+!!            even with singularities in f.
+!!
+!!   * dqawf : calculates the fourier cosine or fourier sine
+!!            transform of f(x), for user-supplied interval (a,
+!!            infinity), omega, and f. the procedure of dqawo is
+!!            used on successive finite intervals, and convergence
+!!            acceleration by means of the epsilon algorithm (wynn,
+!!            1956) is applied to the series of the integral
+!!            contributions.
+!!
+!!   * dqaws : integrates w(x)*f(x) over (a,b) with a < b finite,
+!!            and   w(x) = ((x-a)**alfa)*((b-x)**beta)*v(x)
+!!            where v(x) = 1 or log(x-a) or log(b-x)
+!!                           or log(x-a)*log(b-x)
+!!            and   -1 < alfa, -1 < beta.
+!!            the user specifies a, b, alfa, beta and the type of
+!!            the function v.
+!!            a globally adaptive subdivision strategy is applied,
+!!            with modified clenshaw-curtis integration on the
+!!            subintervals which contain a or b.
+!!
+!!   * dqawc : computes the cauchy principal value of f(x)/(x-c)
+!!            over a finite interval (a,b) and for
+!!            user-determined c.
+!!            the strategy is globally adaptive, and modified
+!!            clenshaw-curtis integration is used on the subranges
+!!            which contain the point x = c.
+!!
+!!  Each of the routines above also has a "more detailed" version
+!!   with a name ending in e, as dqage.  these provide more
+!!   information and control than the easier versions.
+!!
+!!
+!!  The preceeding routines are all automatic.  that is, the user
+!!  inputs his problem and an error tolerance.  the routine
+!!  attempts to perform the integration to within the requested
+!!  absolute or relative error.
+!!
+!!  There are, in addition, a number of non-automatic integrators.
+!!  these are most useful when the problem is such that the
+!!  user knows that a fixed rule will provide the accuracy
+!!  required.  typically they return an error estimate but make
+!!  no attempt to satisfy any particular input error request.
+!!
+!!  * qk15, qk21, qk31, qk41, qk51, qk61
+!!  estimate the integral on [a,b] using 15, 21,..., 61 point rule and return an error estimate.
+!!
+!!  * qk15i 15 point rule for (semi)infinite interval.
+!!  * qk15w 15 point rule for special singular weight functions.
+!!  * qc25c 25 point rule for cauchy principal values
+!!  * qc25o 25 point rule for sin/cos integrand.
+!!  * qmomo integrates k-th degree chebychev polynomial times function with various explicit singularities.
+!!
+!! Guidelines for the use of quadpack
+!! ----------------------------------
+!!
+!!   here it is not our purpose to investigate the question when
+!!   automatic quadrature should be used. we shall rather attempt
+!!   to help the user who already made the decision to use quadpack,
+!!   with selecting an appropriate routine or a combination of
+!!   several routines for handling his problem.
+!!
+!!   for both quadrature over finite and over infinite intervals,
+!!   one of the first questions to be answered by the user is
+!!   related to the amount of computer time he wants to spend,
+!!   versus his -own- time which would be needed, for example, for
+!!   manual subdivision of the interval or other analytic
+!!   manipulations.
+!!
+!!   - the user may not care about computer time, or not be
+!!     willing to do any analysis of the problem. especially when
+!!     only one or a few integrals must be calculated, this attitude
+!!     can be perfectly reasonable. in this case it is clear that
+!!     either the most sophisticated of the routines for finite
+!!     intervals, dqags, must be used, or its analogue for infinite
+!!     intervals, dqagi. these routines are able to cope with
+!!     rather difficult, even with improper integrals.
+!!     this way of proceeding may be expensive. but the integrator
+!!     is supposed to give you an answer in return, with additional
+!!     information in the case of a failure, through its error
+!!     estimate and flag. yet it must be stressed that the programs
+!!     cannot be totally reliable.
+!!
+!!   - the user may want to examine the integrand function.
+!!     if bad local difficulties occur, such as a discontinuity, a
+!!     singularity, derivative singularity or high peak at one or
+!!     more points within the interval, the first advice is to
+!!     split up the interval at these points. the integrand must
+!!     then be examinated over each of the subintervals separately,
+!!     so that a suitable integrator can be selected for each of
+!!     them. if this yields problems involving relative accuracies
+!!     to be imposed on -finite- subintervals, one can make use of
+!!     dqagp, which must be provided with the positions of the local
+!!     difficulties. however, if strong singularities are present
+!!     and a high accuracy is requested, application of dqags on the
+!!     subintervals may yield a better result.
+!!
+!! For quadrature over finite intervals we thus dispose of dqags and
+!!
+!!   * qng for well-behaved integrands,
+!!   * dqag for functions with an oscillating behavior of a non
+!!   * specific type,
+!!   * dqawo for functions, eventually singular, containing a
+!!   * factor cos(omega*x) or sin(omega*x) where omega is known,
+!!   * dqaws for integrands with algebraico-logarithmic end point
+!!   * singularities of known type,
+!!   * dqawc for cauchy principal values.
+!!
+!!  Remark: on return, the work arrays in the argument lists of the
+!!  adaptive integrators contain information about the interval
+!!  subdivision process and hence about the integrand behavior:
+!!  the end points of the subintervals, the local integral
+!!  contributions and error estimates, and eventually other
+!!  characteristics. for this reason, and because of its simple
+!!  globally adaptive nature, the routine dqag in particular is
+!!  well-suited for integrand examination. difficult spots can
+!!  be located by investigating the error estimates on the
+!!  subintervals.
+!!
+!!  for infinite intervals we provide only one general-purpose
+!!  routine, dqagi. it is based on the dqags algorithm applied
+!!  after a transformation of the original interval into (0,1).
+!!  yet it may eventuate that another type of transformation is
+!!  more appropriate, or one might prefer to break up the
+!!  original interval and use dqagi only on the infinite part
+!!  and so on. these kinds of actions suggest a combined use of
+!!  different quadpack integrators. note that, when the only
+!!  difficulty is an integrand singularity at the finite
+!!  integration limit, it will in general not be necessary to
+!!  break up the interval, as dqagi deals with several types of
+!!  singularity at the boundary point of the integration range.
+!!  it also handles slowly convergent improper integrals, on
+!!  the condition that the integrand does not oscillate over
+!!  the entire infinite interval. if it does we would advise
+!!  to sum succeeding positive and negative contributions to
+!!  the integral -e.g. integrate between the zeros- with one
+!!  or more of the finite-range integrators, and apply
+!!  convergence acceleration eventually by means of quadpack
+!!  subroutine qelg which implements the epsilon algorithm.
+!!  such quadrature problems include the fourier transform as
+!!  a special case. yet for the latter we have an automatic
+!!  integrator available, dqawf.
   implicit none
 
 contains
 
-  subroutine aaaa
 
-    !*****************************************************************************80
-    !
-    !! AAAA is a dummy subroutine with QUADPACK documentation in its comments.
-    !
-    ! 1. introduction
-    !
-    !    quadpack is a fortran subroutine package for the numerical
-    !    computation of definite one-dimensional integrals. it originated
-    !    from a joint project of r. piessens and e. de doncker (appl.
-    !    math. and progr. div.- k.u.leuven, belgium), c. ueberhuber (inst.
-    !    fuer math.- techn.u.wien, austria), and d. kahaner (nation. bur.
-    !    of standards- washington d.c., u.s.a.).
-    !
-    ! 2. survey
-    !
-    !    - qags : is an integrator based on globally adaptive interval
-    !             subdivision in connection with extrapolation (de doncker,
-    !             1978) by the epsilon algorithm (wynn, 1956).
-    !
-    !    - qagp : serves the same purposes as qags, but also allows
-    !             for eventual user-supplied information, i.e. the
-    !             abscissae of internal singularities, discontinuities
-    !             and other difficulties of the integrand function.
-    !             the algorithm is a modification of that in qags.
-    !
-    !    - qagi : handles integration over infinite intervals. the
-    !             infinite range is mapped onto a finite interval and
-    !             then the same strategy as in qags is applied.
-    !
-    !    - qawo : is a routine for the integration of cos(omega*x)*f(x)
-    !             or sin(omega*x)*f(x) over a finite interval (a,b).
-    !             omega is is specified by the user
-    !             the rule evaluation component is based on the
-    !             modified clenshaw-curtis technique.
-    !             an adaptive subdivision scheme is used connected with
-    !             an extrapolation procedure, which is a modification
-    !             of that in dqags and provides the possibility to deal
-    !             even with singularities in f.
-    !
-    !    - dqawf : calculates the fourier cosine or fourier sine
-    !             transform of f(x), for user-supplied interval (a,
-    !             infinity), omega, and f. the procedure of dqawo is
-    !             used on successive finite intervals, and convergence
-    !             acceleration by means of the epsilon algorithm (wynn,
-    !             1956) is applied to the series of the integral
-    !             contributions.
-    !
-    !    - dqaws : integrates w(x)*f(x) over (a,b) with a < b finite,
-    !             and   w(x) = ((x-a)**alfa)*((b-x)**beta)*v(x)
-    !             where v(x) = 1 or log(x-a) or log(b-x)
-    !                            or log(x-a)*log(b-x)
-    !             and   -1 < alfa, -1 < beta.
-    !             the user specifies a, b, alfa, beta and the type of
-    !             the function v.
-    !             a globally adaptive subdivision strategy is applied,
-    !             with modified clenshaw-curtis integration on the
-    !             subintervals which contain a or b.
-    !
-    !    - dqawc : computes the cauchy principal value of f(x)/(x-c)
-    !             over a finite interval (a,b) and for
-    !             user-determined c.
-    !             the strategy is globally adaptive, and modified
-    !             clenshaw-curtis integration is used on the subranges
-    !             which contain the point x = c.
-    !
-    !  each of the routines above also has a "more detailed" version
-    !    with a name ending in e, as dqage.  these provide more
-    !    information and control than the easier versions.
-    !
-    !
-    !   the preceeding routines are all automatic.  that is, the user
-    !      inputs his problem and an error tolerance.  the routine
-    !      attempts to perform the integration to within the requested
-    !      absolute or relative error.
-    !   there are, in addition, a number of non-automatic integrators.
-    !      these are most useful when the problem is such that the
-    !      user knows that a fixed rule will provide the accuracy
-    !      required.  typically they return an error estimate but make
-    !      no attempt to satisfy any particular input error request.
-    !
-    !      qk15
-    !      qk21
-    !      qk31
-    !      qk41
-    !      qk51
-    !      qk61
-    !           estimate the integral on [a,b] using 15, 21,..., 61
-    !           point rule and return an error estimate.
-    !      qk15i 15 point rule for (semi)infinite interval.
-    !      qk15w 15 point rule for special singular weight functions.
-    !      qc25c 25 point rule for cauchy principal values
-    !      qc25o 25 point rule for sin/cos integrand.
-    !      qmomo integrates k-th degree chebychev polynomial times
-    !            function with various explicit singularities.
-    !
-    ! 3. guidelines for the use of quadpack
-    !
-    !    here it is not our purpose to investigate the question when
-    !    automatic quadrature should be used. we shall rather attempt
-    !    to help the user who already made the decision to use quadpack,
-    !    with selecting an appropriate routine or a combination of
-    !    several routines for handling his problem.
-    !
-    !    for both quadrature over finite and over infinite intervals,
-    !    one of the first questions to be answered by the user is
-    !    related to the amount of computer time he wants to spend,
-    !    versus his -own- time which would be needed, for example, for
-    !    manual subdivision of the interval or other analytic
-    !    manipulations.
-    !
-    !    (1) the user may not care about computer time, or not be
-    !        willing to do any analysis of the problem. especially when
-    !        only one or a few integrals must be calculated, this attitude
-    !        can be perfectly reasonable. in this case it is clear that
-    !        either the most sophisticated of the routines for finite
-    !        intervals, dqags, must be used, or its analogue for infinite
-    !        intervals, dqagi. these routines are able to cope with
-    !        rather difficult, even with improper integrals.
-    !        this way of proceeding may be expensive. but the integrator
-    !        is supposed to give you an answer in return, with additional
-    !        information in the case of a failure, through its error
-    !        estimate and flag. yet it must be stressed that the programs
-    !        cannot be totally reliable.
-    !
-    !    (2) the user may want to examine the integrand function.
-    !        if bad local difficulties occur, such as a discontinuity, a
-    !        singularity, derivative singularity or high peak at one or
-    !        more points within the interval, the first advice is to
-    !        split up the interval at these points. the integrand must
-    !        then be examinated over each of the subintervals separately,
-    !        so that a suitable integrator can be selected for each of
-    !        them. if this yields problems involving relative accuracies
-    !        to be imposed on -finite- subintervals, one can make use of
-    !        dqagp, which must be provided with the positions of the local
-    !        difficulties. however, if strong singularities are present
-    !        and a high accuracy is requested, application of dqags on the
-    !        subintervals may yield a better result.
-    !
-    !        for quadrature over finite intervals we thus dispose of dqags
-    !        and
-    !        - qng for well-behaved integrands,
-    !        - dqag for functions with an oscillating behavior of a non
-    !          specific type,
-    !        - dqawo for functions, eventually singular, containing a
-    !          factor cos(omega*x) or sin(omega*x) where omega is known,
-    !        - dqaws for integrands with algebraico-logarithmic end point
-    !          singularities of known type,
-    !        - dqawc for cauchy principal values.
-    !
-    !        remark
-    !
-    !        on return, the work arrays in the argument lists of the
-    !        adaptive integrators contain information about the interval
-    !        subdivision process and hence about the integrand behavior:
-    !        the end points of the subintervals, the local integral
-    !        contributions and error estimates, and eventually other
-    !        characteristics. for this reason, and because of its simple
-    !        globally adaptive nature, the routine dqag in particular is
-    !        well-suited for integrand examination. difficult spots can
-    !        be located by investigating the error estimates on the
-    !        subintervals.
-    !
-    !        for infinite intervals we provide only one general-purpose
-    !        routine, dqagi. it is based on the dqags algorithm applied
-    !        after a transformation of the original interval into (0,1).
-    !        yet it may eventuate that another type of transformation is
-    !        more appropriate, or one might prefer to break up the
-    !        original interval and use dqagi only on the infinite part
-    !        and so on. these kinds of actions suggest a combined use of
-    !        different quadpack integrators. note that, when the only
-    !        difficulty is an integrand singularity at the finite
-    !        integration limit, it will in general not be necessary to
-    !        break up the interval, as dqagi deals with several types of
-    !        singularity at the boundary point of the integration range.
-    !        it also handles slowly convergent improper integrals, on
-    !        the condition that the integrand does not oscillate over
-    !        the entire infinite interval. if it does we would advise
-    !        to sum succeeding positive and negative contributions to
-    !        the integral -e.g. integrate between the zeros- with one
-    !        or more of the finite-range integrators, and apply
-    !        convergence acceleration eventually by means of quadpack
-    !        subroutine qelg which implements the epsilon algorithm.
-    !        such quadrature problems include the fourier transform as
-    !        a special case. yet for the latter we have an automatic
-    !        integrator available, dqawf.
-    !
-    return
-  end subroutine aaaa
   subroutine dqag ( f, a, b, epsabs, epsrel, key, result, abserr, neval, ier )
 
-    !*****************************************************************************80
-    !
-    !! DQAG approximates an integral over a finite interval.
-    !
-    !  Discussion:
-    !
-    !    The routine calculates an approximation RESULT to a definite integral   
-    !      I = integral of F over (A,B),
-    !    hopefully satisfying
-    !      || I - RESULT || <= max ( EPSABS, EPSREL * ||I|| ).
-    !
-    !    DQAG is a simple globally adaptive integrator using the strategy of 
-    !    Aind (Piessens, 1973).  It is possible to choose between 6 pairs of
-    !    Gauss-Kronrod quadrature formulae for the rule evaluation component. 
-    !    The pairs of high degree of precision are suitable for handling
-    !    integration difficulties due to a strongly oscillating integrand.
-    !
-    !  Author:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner
-    !
-    !  Reference:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner,
-    !    QUADPACK, a Subroutine Package for Automatic Integration,
-    !    Springer Verlag, 1983
-    !
-    !  Parameters:
-    !
-    !    Input, external real ( kind = 8 ) F, the name of the function routine, of the form
-    !      function f ( x )
-    !      real ( kind = 8 ) f
-    !      real ( kind = 8 ) x
-    !    which evaluates the integrand function.
-    !
-    !    Input, real ( kind = 8 ) A, B, the limits of integration.
-    !
-    !    Input, real ( kind = 8 ) EPSABS, EPSREL, the absolute and relative accuracy requested.
-    !
-    !    Input, integer ( kind = 8 ) KEY, chooses the order of the local integration rule:
-    !    1,  7 Gauss points, 15 Gauss-Kronrod points,
-    !    2, 10 Gauss points, 21 Gauss-Kronrod points,
-    !    3, 15 Gauss points, 31 Gauss-Kronrod points,
-    !    4, 20 Gauss points, 41 Gauss-Kronrod points,
-    !    5, 25 Gauss points, 51 Gauss-Kronrod points,
-    !    6, 30 Gauss points, 61 Gauss-Kronrod points.
-    !
-    !    Output, real ( kind = 8 ) RESULT, the estimated value of the integral.
-    !
-    !    Output, real ( kind = 8 ) ABSERR, an estimate of || I - RESULT ||.
-    !
-    !    Output, integer ( kind = 8 ) NEVAL, the number of times the integral was evaluated.
-    !
-    !    Output, integer ( kind = 8 ) IER, return code.
-    !    0, normal and reliable termination of the routine.  It is assumed that the 
-    !      requested accuracy has been achieved.
-    !    1, maximum number of subdivisions allowed has been achieved.  One can 
-    !      allow more subdivisions by increasing the value of LIMIT in DQAG. 
-    !      However, if this yields no improvement it is advised to analyze the
-    !      integrand to determine the integration difficulties.  If the position
-    !      of a local difficulty can be determined, such as a singularity or
-    !      discontinuity within the interval) one will probably gain from 
-    !      splitting up the interval at this point and calling the integrator 
-    !      on the subranges.  If possible, an appropriate special-purpose 
-    !      integrator should be used which is designed for handling the type 
-    !      of difficulty involved.
-    !    2, the occurrence of roundoff error is detected, which prevents the
-    !      requested tolerance from being achieved.
-    !    3, extremely bad integrand behavior occurs at some points of the
-    !      integration interval.
-    !    6, the input is invalid, because EPSABS < 0 and EPSREL < 0.
-    !
-    !  Local parameters:
-    !
-    !    LIMIT is the maximum number of subintervals allowed in
-    !    the subdivision process of DQAGE.
-    !
+    !!  DQAG approximates an integral over a finite interval.
+    !!
+    !!  Discussion
+    !!  ----------
+    !!    The routine calculates an approximation RESULT to a definite integral   
+    !!      I = integral of F over (A,B),
+    !!    hopefully satisfying
+    !!      || I - RESULT || <= max ( EPSABS, EPSREL * ||I|| ).
+    !!
+    !!    DQAG is a simple globally adaptive integrator using the strategy of 
+    !!    Aind (Piessens, 1973).  It is possible to choose between 6 pairs of
+    !!    Gauss-Kronrod quadrature formulae for the rule evaluation component. 
+    !!    The pairs of high degree of precision are suitable for handling
+    !!    integration difficulties due to a strongly oscillating integrand.
+    !!
+    !!  Author
+    !!  ------
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner
+    !!
+    !!  Reference
+    !!  ---------
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner,
+    !!    QUADPACK, a Subroutine Package for Automatic Integration,
+    !!    Springer Verlag, 1983
+    !!
+    !!  Parameters
+    !!  ----------
+    !!    Input, external real ( kind = 8 ) F, the name of the function routine, of the form
+    !!      `function f ( x )`
+    !!      `real ( kind = 8 ) f`
+    !!      `real ( kind = 8 ) x`
+    !!    which evaluates the integrand function.
+    !!
+    !!    Input, `real ( kind = 8 ) A, B`, the limits of integration.
+    !!
+    !!    Input, `real ( kind = 8 ) EPSABS, EPSREL`, the absolute and relative accuracy requested.
+    !!
+    !!    Input, `integer ( kind = 8 ) KEY`, chooses the order of the local integration rule:
+    !!    1,  7 Gauss points, 15 Gauss-Kronrod points,
+    !!    2, 10 Gauss points, 21 Gauss-Kronrod points,
+    !!    3, 15 Gauss points, 31 Gauss-Kronrod points,
+    !!    4, 20 Gauss points, 41 Gauss-Kronrod points,
+    !!    5, 25 Gauss points, 51 Gauss-Kronrod points,
+    !!    6, 30 Gauss points, 61 Gauss-Kronrod points.
+    !!
+    !!    Output, real ( kind = 8 ) RESULT, the estimated value of the integral.
+    !!
+    !!    Output, real ( kind = 8 ) ABSERR, an estimate of || I - RESULT ||.
+    !!
+    !!    Output, integer ( kind = 8 ) NEVAL, the number of times the integral was evaluated.
+    !!
+    !!    Output, integer ( kind = 8 ) IER, return code.
+    !!    0, normal and reliable termination of the routine.  It is assumed that the 
+    !!      requested accuracy has been achieved.
+    !!    1, maximum number of subdivisions allowed has been achieved.  One can 
+    !!      allow more subdivisions by increasing the value of LIMIT in DQAG. 
+    !!      However, if this yields no improvement it is advised to analyze the
+    !!      integrand to determine the integration difficulties.  If the position
+    !!      of a local difficulty can be determined, such as a singularity or
+    !!      discontinuity within the interval) one will probably gain from 
+    !!      splitting up the interval at this point and calling the integrator 
+    !!      on the subranges.  If possible, an appropriate special-purpose 
+    !!      integrator should be used which is designed for handling the type 
+    !!      of difficulty involved.
+    !!    2, the occurrence of roundoff error is detected, which prevents the
+    !!      requested tolerance from being achieved.
+    !!    3, extremely bad integrand behavior occurs at some points of the
+    !!      integration interval.
+    !!    6, the input is invalid, because EPSABS < 0 and EPSREL < 0.
+    !!
+    !!  Local parameters
+    !!  ----------------
+    !!  LIMIT is the maximum number of subintervals allowed in
+    !!  the subdivision process of DQAGE.
+    
     implicit none
 
     integer, parameter :: limit = 500
@@ -303,111 +289,108 @@ contains
   end subroutine dqag
   subroutine dqage ( f, a, b, epsabs, epsrel, key, limit, result, abserr, neval, &
        ier, alist, blist, rlist, elist, iord, last )
-
-    !*****************************************************************************80
-    !
     !! DQAGE estimates a definite integral.
-    !
-    !  Discussion:
-    !
-    !    The routine calculates an approximation RESULT to a definite integral   
-    !      I = integral of F over (A,B),
-    !    hopefully satisfying
-    !      || I - RESULT || <= max ( EPSABS, EPSREL * ||I|| ).
-    !
-    !  Author:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner
-    !
-    !  Reference:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner,
-    !    QUADPACK, a Subroutine Package for Automatic Integration,
-    !    Springer Verlag, 1983
-    !
-    !  Parameters:
-    !
-    !    Input, external real ( kind = 8 ) F, the name of the function routine, of the form
-    !      function f ( x )
-    !      real ( kind = 8 ) f
-    !      real ( kind = 8 ) x
-    !    which evaluates the integrand function.
-    !
-    !    Input, real ( kind = 8 ) A, B, the limits of integration.
-    !
-    !    Input, real ( kind = 8 ) EPSABS, EPSREL, the absolute and relative accuracy requested.
-    !
-    !    Input, integer KEY, chooses the order of the local integration rule:
-    !    1,  7 Gauss points, 15 Gauss-Kronrod points,
-    !    2, 10 Gauss points, 21 Gauss-Kronrod points,
-    !    3, 15 Gauss points, 31 Gauss-Kronrod points,
-    !    4, 20 Gauss points, 41 Gauss-Kronrod points,
-    !    5, 25 Gauss points, 51 Gauss-Kronrod points,
-    !    6, 30 Gauss points, 61 Gauss-Kronrod points.
-    !
-    !    Input, integer LIMIT, the maximum number of subintervals that
-    !    can be used.
-    !
-    !    Output, real ( kind = 8 ) RESULT, the estimated value of the integral.
-    !
-    !    Output, real ( kind = 8 ) ABSERR, an estimate of || I - RESULT ||.
-    !
-    !    Output, integer NEVAL, the number of times the integral was evaluated.
-    !
-    !    Output, integer IER, return code.
-    !    0, normal and reliable termination of the routine.  It is assumed that the 
-    !      requested accuracy has been achieved.
-    !    1, maximum number of subdivisions allowed has been achieved.  One can 
-    !      allow more subdivisions by increasing the value of LIMIT in DQAG. 
-    !      However, if this yields no improvement it is advised to analyze the
-    !      integrand to determine the integration difficulties.  If the position
-    !      of a local difficulty can be determined, such as a singularity or
-    !      discontinuity within the interval) one will probably gain from 
-    !      splitting up the interval at this point and calling the integrator 
-    !      on the subranges.  If possible, an appropriate special-purpose 
-    !      integrator should be used which is designed for handling the type 
-    !      of difficulty involved.
-    !    2, the occurrence of roundoff error is detected, which prevents the
-    !      requested tolerance from being achieved.
-    !    3, extremely bad integrand behavior occurs at some points of the
-    !      integration interval.
-    !    6, the input is invalid, because EPSABS < 0 and EPSREL < 0.
-    !
-    !    Workspace, real ( kind = 8 ) ALIST(LIMIT), BLIST(LIMIT), contains in entries 1 
-    !    through LAST the left and right ends of the partition subintervals.
-    !
-    !    Workspace, real ( kind = 8 ) RLIST(LIMIT), contains in entries 1 through LAST
-    !    the integral approximations on the subintervals.
-    !
-    !    Workspace, real ( kind = 8 ) ELIST(LIMIT), contains in entries 1 through LAST
-    !    the absolute error estimates on the subintervals.
-    !
-    !    Output, integer IORD(LIMIT), the first K elements of which are pointers 
-    !    to the error estimates over the subintervals, such that
-    !    elist(iord(1)), ..., elist(iord(k)) form a decreasing sequence, with
-    !    k = last if last <= (limit/2+2), and k = limit+1-last otherwise.
-    !
-    !    Output, integer LAST, the number of subintervals actually produced 
-    !    in the subdivision process.
-    !
-    !  Local parameters:
-    !
-    !    alist     - list of left end points of all subintervals
-    !                       considered up to now
-    !    blist     - list of right end points of all subintervals
-    !                       considered up to now
-    !    elist(i)  - error estimate applying to rlist(i)
-    !    maxerr    - pointer to the interval with largest error estimate
-    !    errmax    - elist(maxerr)
-    !    area      - sum of the integrals over the subintervals
-    !    errsum    - sum of the errors over the subintervals
-    !    errbnd    - requested accuracy max(epsabs,epsrel*abs(result))
-    !    *****1    - variable for the left subinterval
-    !    *****2    - variable for the right subinterval
-    !    last      - index for subdivision
-    !
+    !!
+    !!  Discussion:
+    !!
+    !!    The routine calculates an approximation RESULT to a definite integral   
+    !!      I = integral of F over (A,B),
+    !!    hopefully satisfying
+    !!      || I - RESULT || <= max ( EPSABS, EPSREL * ||I|| ).
+    !!
+    !!  Author:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner
+    !!
+    !!  Reference:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner,
+    !!    QUADPACK, a Subroutine Package for Automatic Integration,
+    !!    Springer Verlag, 1983
+    !!
+    !!  Parameters:
+    !!
+    !!    Input, external real ( kind = 8 ) F, the name of the function routine, of the form
+    !!      function f ( x )
+    !!      real ( kind = 8 ) f
+    !!      real ( kind = 8 ) x
+    !!    which evaluates the integrand function.
+    !!
+    !!    Input, real ( kind = 8 ) A, B, the limits of integration.
+    !!
+    !!    Input, real ( kind = 8 ) EPSABS, EPSREL, the absolute and relative accuracy requested.
+    !!
+    !!    Input, integer KEY, chooses the order of the local integration rule:
+    !!    1,  7 Gauss points, 15 Gauss-Kronrod points,
+    !!    2, 10 Gauss points, 21 Gauss-Kronrod points,
+    !!    3, 15 Gauss points, 31 Gauss-Kronrod points,
+    !!    4, 20 Gauss points, 41 Gauss-Kronrod points,
+    !!    5, 25 Gauss points, 51 Gauss-Kronrod points,
+    !!    6, 30 Gauss points, 61 Gauss-Kronrod points.
+    !!
+    !!    Input, integer LIMIT, the maximum number of subintervals that
+    !!    can be used.
+    !!
+    !!    Output, real ( kind = 8 ) RESULT, the estimated value of the integral.
+    !!
+    !!    Output, real ( kind = 8 ) ABSERR, an estimate of || I - RESULT ||.
+    !!
+    !!    Output, integer NEVAL, the number of times the integral was evaluated.
+    !!
+    !!    Output, integer IER, return code.
+    !!    0, normal and reliable termination of the routine.  It is assumed that the 
+    !!      requested accuracy has been achieved.
+    !!    1, maximum number of subdivisions allowed has been achieved.  One can 
+    !!      allow more subdivisions by increasing the value of LIMIT in DQAG. 
+    !!      However, if this yields no improvement it is advised to analyze the
+    !!      integrand to determine the integration difficulties.  If the position
+    !!      of a local difficulty can be determined, such as a singularity or
+    !!      discontinuity within the interval) one will probably gain from 
+    !!      splitting up the interval at this point and calling the integrator 
+    !!      on the subranges.  If possible, an appropriate special-purpose 
+    !!      integrator should be used which is designed for handling the type 
+    !!      of difficulty involved.
+    !!    2, the occurrence of roundoff error is detected, which prevents the
+    !!      requested tolerance from being achieved.
+    !!    3, extremely bad integrand behavior occurs at some points of the
+    !!      integration interval.
+    !!    6, the input is invalid, because EPSABS < 0 and EPSREL < 0.
+    !!
+    !!    Workspace, real ( kind = 8 ) ALIST(LIMIT), BLIST(LIMIT), contains in entries 1 
+    !!    through LAST the left and right ends of the partition subintervals.
+    !!
+    !!    Workspace, real ( kind = 8 ) RLIST(LIMIT), contains in entries 1 through LAST
+    !!    the integral approximations on the subintervals.
+    !!
+    !!    Workspace, real ( kind = 8 ) ELIST(LIMIT), contains in entries 1 through LAST
+    !!    the absolute error estimates on the subintervals.
+    !!
+    !!    Output, integer IORD(LIMIT), the first K elements of which are pointers 
+    !!    to the error estimates over the subintervals, such that
+    !!    elist(iord(1)), ..., elist(iord(k)) form a decreasing sequence, with
+    !!    k = last if last <= (limit/2+2), and k = limit+1-last otherwise.
+    !!
+    !!    Output, integer LAST, the number of subintervals actually produced 
+    !!    in the subdivision process.
+    !!
+    !!  Local parameters:
+    !!
+    !!    alist     - list of left end points of all subintervals
+    !!                       considered up to now
+    !!    blist     - list of right end points of all subintervals
+    !!                       considered up to now
+    !!    elist(i)  - error estimate applying to rlist(i)
+    !!    maxerr    - pointer to the interval with largest error estimate
+    !!    errmax    - elist(maxerr)
+    !!    area      - sum of the integrals over the subintervals
+    !!    errsum    - sum of the errors over the subintervals
+    !!    errbnd    - requested accuracy max(epsabs,epsrel*abs(result))
+    !!    *****1    - variable for the left subinterval
+    !!    *****2    - variable for the right subinterval
+    !!    last      - index for subdivision
+    !!
     implicit none
 
     integer limit
@@ -452,9 +435,9 @@ contains
     real ( kind = 8 ) resabs
     real ( kind = 8 ) result
     real ( kind = 8 ) rlist(limit)
-    !
-    !  Test on validity of parameters.
-    !
+    !!
+    !!  Test on validity of parameters.
+    !!
     ier = 0
     neval = 0
     last = 0
@@ -470,9 +453,9 @@ contains
        ier = 6
        return
     end if
-    !
-    !  First approximation to the integral.
-    !
+    !!
+    !!  First approximation to the integral.
+    !!
     keyf = key
     keyf = max ( keyf, 1 )
     keyf = min ( keyf, 6 )
@@ -498,9 +481,9 @@ contains
     rlist(1) = result
     elist(1) = abserr
     iord(1) = 1
-    !
-    !  Test on accuracy.
-    !
+    !!
+    !!  Test on accuracy.
+    !!
     errbnd = max ( epsabs, epsrel * abs ( result ) )
 
     if ( abserr <= 5.0D+01 * epsilon ( defabs ) * defabs .and. &
@@ -525,9 +508,9 @@ contains
        return
 
     end if
-    !
-    !  Initialization.
-    !
+    !!
+    !!  Initialization.
+    !!
     errmax = abserr
     maxerr = 1
     area = result
@@ -537,9 +520,9 @@ contains
     iroff2 = 0
 
     do last = 2, limit
-       !
-       !  Bisect the subinterval with the largest error estimate.
-       !
+       !!
+       !!  Bisect the subinterval with the largest error estimate.
+       !!
        a1 = alist(maxerr)
        b1 = 0.5D+00 * ( alist(maxerr) + blist(maxerr) )
        a2 = b1
@@ -572,10 +555,10 @@ contains
        else if ( keyf == 6 ) then
           call qk61 ( f, a2, b2, area2, error2, resabs, defab2 )
        end if
-       !
-       !  Improve previous approximations to integral and error and
-       !  test for accuracy.
-       !
+       !!
+       !!  Improve previous approximations to integral and error and
+       !!  test for accuracy.
+       !!
        neval = neval + 1
        area12 = area1 + area2
        erro12 = error1 + error2
@@ -598,34 +581,34 @@ contains
        rlist(maxerr) = area1
        rlist(last) = area2
        errbnd = max ( epsabs, epsrel * abs ( area ) )
-       !
-       !  Test for roundoff error and eventually set error flag.
-       !
+       !!
+       !!  Test for roundoff error and eventually set error flag.
+       !!
        if ( errbnd < errsum ) then
 
           if ( 6 <= iroff1 .or. 20 <= iroff2 ) then
              ier = 2
           end if
-          !
-          !  Set error flag in the case that the number of subintervals
-          !  equals limit.
-          !
+          !!
+          !!  Set error flag in the case that the number of subintervals
+          !!  equals limit.
+          !!
           if ( last == limit ) then
              ier = 1
           end if
-          !
-          !  Set error flag in the case of bad integrand behavior
-          !  at a point of the integration range.
-          !
+          !!
+          !!  Set error flag in the case of bad integrand behavior
+          !!  at a point of the integration range.
+          !!
           if ( max ( abs ( a1 ), abs ( b2 ) ) <= ( 1.0D+00 + c * 1.0D+03 * &
                epsilon ( a1 ) ) * ( abs ( a2 ) + 1.0D+04 * tiny ( a2 ) ) ) then
              ier = 3
           end if
 
        end if
-       !
-       !  Append the newly-created intervals to the list.
-       !
+       !!
+       !!  Append the newly-created intervals to the list.
+       !!
        if ( error2 <= error1 ) then
           alist(last) = a2
           blist(maxerr) = b1
@@ -641,11 +624,11 @@ contains
           elist(maxerr) = error2
           elist(last) = error1
        end if
-       !
-       !  Call QSORT to maintain the descending ordering
-       !  in the list of error estimates and select the subinterval
-       !  with the largest error estimate (to be bisected next).
-       !
+       !!
+       !!  Call QSORT to maintain the descending ordering
+       !!  in the list of error estimates and select the subinterval
+       !!  with the largest error estimate (to be bisected next).
+       !!
        call qsort ( limit, last, maxerr, errmax, elist, iord, nrmax )
 
        if ( ier /= 0 .or. errsum <= errbnd ) then
@@ -653,9 +636,9 @@ contains
        end if
 
     end do
-    !
-    !  Compute final result.
-    !
+    !!
+    !!  Compute final result.
+    !!
     result = sum ( rlist(1:last) )
 
     abserr = errsum
@@ -668,134 +651,132 @@ contains
 
     return
   end subroutine dqage
-  subroutine dqagi ( f, bound, inf, epsabs, epsrel, result, abserr, neval, ier )
 
-    !*****************************************************************************80
-    !
+  subroutine dqagi ( f, bound, inf, epsabs, epsrel, result, abserr, neval, ier )
     !! DQAGI estimates an integral over a semi-infinite or infinite interval.
-    !
-    !  Discussion:
-    !
-    !    The routine calculates an approximation RESULT to a definite integral   
-    !      I = integral of F over (A, +Infinity), 
-    !    or 
-    !      I = integral of F over (-Infinity,A)
-    !    or 
-    !      I = integral of F over (-Infinity,+Infinity),
-    !    hopefully satisfying
-    !      || I - RESULT || <= max ( EPSABS, EPSREL * ||I|| ).
-    !
-    !  Author:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner
-    !
-    !  Reference:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner,
-    !    QUADPACK, a Subroutine Package for Automatic Integration,
-    !    Springer Verlag, 1983
-    !
-    !  Parameters:
-    !
-    !    Input, external real ( kind = 8 ) F, the name of the function routine, of the form
-    !      function f ( x )
-    !      real ( kind = 8 ) f
-    !      real ( kind = 8 ) x
-    !    which evaluates the integrand function.
-    !
-    !    Input, real ( kind = 8 ) BOUND, the value of the finite endpoint of the integration
-    !    range, if any, that is, if INF is 1 or -1.
-    !
-    !    Input, integer INF, indicates the type of integration range.
-    !    1:  (  BOUND,    +Infinity),
-    !    -1: ( -Infinity,  BOUND),
-    !    2:  ( -Infinity, +Infinity).
-    !
-    !    Input, real ( kind = 8 ) EPSABS, EPSREL, the absolute and relative accuracy requested.
-    !
-    !    Output, real ( kind = 8 ) RESULT, the estimated value of the integral.
-    !
-    !    Output, real ( kind = 8 ) ABSERR, an estimate of || I - RESULT ||.
-    !
-    !    Output, integer NEVAL, the number of times the integral was evaluated.
-    !
-    !    Output, integer IER, error indicator.
-    !    0, normal and reliable termination of the routine.  It is assumed that 
-    !      the requested accuracy has been achieved.
-    !    > 0,  abnormal termination of the routine.  The estimates for result
-    !      and error are less reliable.  It is assumed that the requested
-    !      accuracy has not been achieved.
-    !    1, maximum number of subdivisions allowed has been achieved.  One can 
-    !      allow more subdivisions by increasing the data value of LIMIT in DQAGI
-    !      (and taking the according dimension adjustments into account).
-    !      However, if this yields no improvement it is advised to analyze the
-    !      integrand in order to determine the integration difficulties.  If the
-    !      position of a local difficulty can be determined (e.g. singularity,
-    !      discontinuity within the interval) one will probably gain from
-    !      splitting up the interval at this point and calling the integrator 
-    !      on the subranges.  If possible, an appropriate special-purpose 
-    !      integrator should be used, which is designed for handling the type
-    !      of difficulty involved.
-    !    2, the occurrence of roundoff error is detected, which prevents the
-    !      requested tolerance from being achieved.  The error may be
-    !      under-estimated.
-    !    3, extremely bad integrand behavior occurs at some points of the
-    !      integration interval.
-    !    4, the algorithm does not converge.  Roundoff error is detected in the
-    !      extrapolation table.  It is assumed that the requested tolerance
-    !      cannot be achieved, and that the returned result is the best which 
-    !      can be obtained.
-    !    5, the integral is probably divergent, or slowly convergent.  It must 
-    !      be noted that divergence can occur with any other value of IER.
-    !    6, the input is invalid, because INF /= 1 and INF /= -1 and INF /= 2, or
-    !      epsabs < 0 and epsrel < 0.  result, abserr, neval are set to zero.
-    !
-    !  Local parameters:
-    !
-    !            the dimension of rlist2 is determined by the value of
-    !            limexp in QEXTR.
-    !
-    !           alist     - list of left end points of all subintervals
-    !                       considered up to now
-    !           blist     - list of right end points of all subintervals
-    !                       considered up to now
-    !           rlist(i)  - approximation to the integral over
-    !                       (alist(i),blist(i))
-    !           rlist2    - array of dimension at least (limexp+2),
-    !                       containing the part of the epsilon table
-    !                       which is still needed for further computations
-    !           elist(i)  - error estimate applying to rlist(i)
-    !           maxerr    - pointer to the interval with largest error
-    !                       estimate
-    !           errmax    - elist(maxerr)
-    !           erlast    - error on the interval currently subdivided
-    !                       (before that subdivision has taken place)
-    !           area      - sum of the integrals over the subintervals
-    !           errsum    - sum of the errors over the subintervals
-    !           errbnd    - requested accuracy max(epsabs,epsrel*
-    !                       abs(result))
-    !           *****1    - variable for the left subinterval
-    !           *****2    - variable for the right subinterval
-    !           last      - index for subdivision
-    !           nres      - number of calls to the extrapolation routine
-    !           numrl2    - number of elements currently in rlist2. if an
-    !                       appropriate approximation to the compounded
-    !                       integral has been obtained, it is put in
-    !                       rlist2(numrl2) after numrl2 has been increased
-    !                       by one.
-    !           small     - length of the smallest interval considered up
-    !                       to now, multiplied by 1.5
-    !           erlarg    - sum of the errors over the intervals larger
-    !                       than the smallest interval considered up to now
-    !           extrap    - logical variable denoting that the routine
-    !                       is attempting to perform extrapolation. i.e.
-    !                       before subdividing the smallest interval we
-    !                       try to decrease the value of erlarg.
-    !           noext     - logical variable denoting that extrapolation
-    !                       is no longer allowed (true-value)
-    !
+    !!
+    !!  Discussion:
+    !!
+    !!    The routine calculates an approximation RESULT to a definite integral   
+    !!      I = integral of F over (A, +Infinity), 
+    !!    or 
+    !!      I = integral of F over (-Infinity,A)
+    !!    or 
+    !!      I = integral of F over (-Infinity,+Infinity),
+    !!    hopefully satisfying
+    !!      || I - RESULT || <= max ( EPSABS, EPSREL * ||I|| ).
+    !!
+    !!  Author:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner
+    !!
+    !!  Reference:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner,
+    !!    QUADPACK, a Subroutine Package for Automatic Integration,
+    !!    Springer Verlag, 1983
+    !!
+    !!  Parameters:
+    !!
+    !!    Input, external real ( kind = 8 ) F, the name of the function routine, of the form
+    !!      function f ( x )
+    !!      real ( kind = 8 ) f
+    !!      real ( kind = 8 ) x
+    !!    which evaluates the integrand function.
+    !!
+    !!    Input, real ( kind = 8 ) BOUND, the value of the finite endpoint of the integration
+    !!    range, if any, that is, if INF is 1 or -1.
+    !!
+    !!    Input, integer INF, indicates the type of integration range.
+    !!    1:  (  BOUND,    +Infinity),
+    !!    -1: ( -Infinity,  BOUND),
+    !!    2:  ( -Infinity, +Infinity).
+    !!
+    !!    Input, real ( kind = 8 ) EPSABS, EPSREL, the absolute and relative accuracy requested.
+    !!
+    !!    Output, real ( kind = 8 ) RESULT, the estimated value of the integral.
+    !!
+    !!    Output, real ( kind = 8 ) ABSERR, an estimate of || I - RESULT ||.
+    !!
+    !!    Output, integer NEVAL, the number of times the integral was evaluated.
+    !!
+    !!    Output, integer IER, error indicator.
+    !!    0, normal and reliable termination of the routine.  It is assumed that 
+    !!      the requested accuracy has been achieved.
+    !!    > 0,  abnormal termination of the routine.  The estimates for result
+    !!      and error are less reliable.  It is assumed that the requested
+    !!      accuracy has not been achieved.
+    !!    1, maximum number of subdivisions allowed has been achieved.  One can 
+    !!      allow more subdivisions by increasing the data value of LIMIT in DQAGI
+    !!      (and taking the according dimension adjustments into account).
+    !!      However, if this yields no improvement it is advised to analyze the
+    !!      integrand in order to determine the integration difficulties.  If the
+    !!      position of a local difficulty can be determined (e.g. singularity,
+    !!      discontinuity within the interval) one will probably gain from
+    !!      splitting up the interval at this point and calling the integrator 
+    !!      on the subranges.  If possible, an appropriate special-purpose 
+    !!      integrator should be used, which is designed for handling the type
+    !!      of difficulty involved.
+    !!    2, the occurrence of roundoff error is detected, which prevents the
+    !!      requested tolerance from being achieved.  The error may be
+    !!      under-estimated.
+    !!    3, extremely bad integrand behavior occurs at some points of the
+    !!      integration interval.
+    !!    4, the algorithm does not converge.  Roundoff error is detected in the
+    !!      extrapolation table.  It is assumed that the requested tolerance
+    !!      cannot be achieved, and that the returned result is the best which 
+    !!      can be obtained.
+    !!    5, the integral is probably divergent, or slowly convergent.  It must 
+    !!      be noted that divergence can occur with any other value of IER.
+    !!    6, the input is invalid, because INF /= 1 and INF /= -1 and INF /= 2, or
+    !!      epsabs < 0 and epsrel < 0.  result, abserr, neval are set to zero.
+    !!
+    !!  Local parameters:
+    !!
+    !!            the dimension of rlist2 is determined by the value of
+    !!            limexp in QEXTR.
+    !!
+    !!           alist     - list of left end points of all subintervals
+    !!                       considered up to now
+    !!           blist     - list of right end points of all subintervals
+    !!                       considered up to now
+    !!           rlist(i)  - approximation to the integral over
+    !!                       (alist(i),blist(i))
+    !!           rlist2    - array of dimension at least (limexp+2),
+    !!                       containing the part of the epsilon table
+    !!                       which is still needed for further computations
+    !!           elist(i)  - error estimate applying to rlist(i)
+    !!           maxerr    - pointer to the interval with largest error
+    !!                       estimate
+    !!           errmax    - elist(maxerr)
+    !!           erlast    - error on the interval currently subdivided
+    !!                       (before that subdivision has taken place)
+    !!           area      - sum of the integrals over the subintervals
+    !!           errsum    - sum of the errors over the subintervals
+    !!           errbnd    - requested accuracy max(epsabs,epsrel*
+    !!                       abs(result))
+    !!           *****1    - variable for the left subinterval
+    !!           *****2    - variable for the right subinterval
+    !!           last      - index for subdivision
+    !!           nres      - number of calls to the extrapolation routine
+    !!           numrl2    - number of elements currently in rlist2. if an
+    !!                       appropriate approximation to the compounded
+    !!                       integral has been obtained, it is put in
+    !!                       rlist2(numrl2) after numrl2 has been increased
+    !!                       by one.
+    !!           small     - length of the smallest interval considered up
+    !!                       to now, multiplied by 1.5
+    !!           erlarg    - sum of the errors over the intervals larger
+    !!                       than the smallest interval considered up to now
+    !!           extrap    - logical variable denoting that the routine
+    !!                       is attempting to perform extrapolation. i.e.
+    !!                       before subdividing the smallest interval we
+    !!                       try to decrease the value of erlarg.
+    !!           noext     - logical variable denoting that extrapolation
+    !!                       is no longer allowed (true-value)
+    !!
     implicit none
 
     integer, parameter :: limit = 500
@@ -859,9 +840,9 @@ contains
     real ( kind = 8 ) rlist(limit)
     real ( kind = 8 ) rlist2(52)
     real ( kind = 8 ) small
-    !
-    !  Test on validity of parameters.
-    !
+    !!
+    !!  Test on validity of parameters.
+    !!
     ier = 0
     neval = 0
     last = 0
@@ -877,14 +858,14 @@ contains
        ier = 6
        return
     end if
-    !
-    !  First approximation to the integral.
-    !
-    !  Determine the interval to be mapped onto (0,1).
-    !  If INF = 2 the integral is computed as i = i1+i2, where
-    !  i1 = integral of f over (-infinity,0),
-    !  i2 = integral of f over (0,+infinity).
-    !
+    !!
+    !!  First approximation to the integral.
+    !!
+    !!  Determine the interval to be mapped onto (0,1).
+    !!  If INF = 2 the integral is computed as i = i1+i2, where
+    !!  i1 = integral of f over (-infinity,0),
+    !!  i2 = integral of f over (0,+infinity).
+    !!
     if ( inf == 2 ) then
        boun = 0.0D+00
     else
@@ -892,9 +873,9 @@ contains
     end if
 
     call qk15i ( f, boun, inf, 0.0D+00, 1.0D+00, result, abserr, defabs, resabs )
-    !
-    !  Test on accuracy.
-    !
+    !!
+    !!  Test on accuracy.
+    !!
     last = 1
     rlist(1) = result
     elist(1) = abserr
@@ -913,9 +894,9 @@ contains
 
     if ( ier /= 0 .or. (abserr <= errbnd .and. abserr /= resabs ) .or. &
          abserr == 0.0D+00 ) go to 130
-    !
-    !  Initialization.
-    !
+    !!
+    !!  Initialization.
+    !!
     rlist2(1) = result
     errmax = abserr
     maxerr = 1
@@ -940,9 +921,9 @@ contains
     end if
 
     do last = 2, limit
-       !
-       !  Bisect the subinterval with nrmax-th largest error estimate.
-       !
+       !!
+       !!  Bisect the subinterval with nrmax-th largest error estimate.
+       !!
        a1 = alist(maxerr)
        b1 = 5.0D-01 * ( alist(maxerr) + blist(maxerr) )
        a2 = b1
@@ -950,10 +931,10 @@ contains
        erlast = errmax
        call qk15i ( f, boun, inf, a1, b1, area1, error1, resabs, defab1 )
        call qk15i ( f, boun, inf, a2, b2, area2, error2, resabs, defab2 )
-       !
-       !  Improve previous approximations to integral and error
-       !  and test for accuracy.
-       !
+       !!
+       !!  Improve previous approximations to integral and error
+       !!  and test for accuracy.
+       !!
        area12 = area1 + area2
        erro12 = error1 + error2
        errsum = errsum + erro12 - errmax
@@ -983,9 +964,9 @@ contains
        rlist(maxerr) = area1
        rlist(last) = area2
        errbnd = max ( epsabs, epsrel * abs ( area ) )
-       !
-       !  Test for roundoff error and eventually set error flag.
-       !
+       !!
+       !!  Test for roundoff error and eventually set error flag.
+       !!
        if ( 10 <= iroff1 + iroff2 .or. 20 <= iroff3 ) then
           ier = 2
        end if
@@ -993,23 +974,23 @@ contains
        if ( 5 <= iroff2 ) then
           ierro = 3
        end if
-       !
-       !  Set error flag in the case that the number of subintervals equals LIMIT.
-       !
+       !!
+       !!  Set error flag in the case that the number of subintervals equals LIMIT.
+       !!
        if ( last == limit ) then
           ier = 1
        end if
-       !
-       !  Set error flag in the case of bad integrand behavior
-       !  at some points of the integration range.
-       !
+       !!
+       !!  Set error flag in the case of bad integrand behavior
+       !!  at some points of the integration range.
+       !!
        if ( max ( abs(a1), abs(b2) ) <= (1.0D+00 + 1.0D+03 * epsilon ( a1 ) ) * &
             ( abs(a2) + 1.0D+03 * tiny ( a2 ) )) then
           ier = 4
        end if
-       !
-       !  Append the newly-created intervals to the list.
-       !
+       !!
+       !!  Append the newly-created intervals to the list.
+       !!
        if ( error2 <= error1 ) then
           alist(last) = a2
           blist(maxerr) = b1
@@ -1025,11 +1006,11 @@ contains
           elist(maxerr) = error2
           elist(last) = error1
        end if
-       !
-       !  Call QSORT to maintain the descending ordering
-       !  in the list of error estimates and select the subinterval
-       !  with NRMAX-th largest error estimate (to be bisected next).
-       !
+       !!
+       !!  Call QSORT to maintain the descending ordering
+       !!  in the list of error estimates and select the subinterval
+       !!  with NRMAX-th largest error estimate (to be bisected next).
+       !!
        call qsort ( limit, last, maxerr, errmax, elist, iord, nrmax )
 
        if ( errsum <= errbnd ) go to 115
@@ -1055,10 +1036,10 @@ contains
        if ( small < abs ( b1 - a1 ) ) then
           erlarg = erlarg + erro12
        end if
-       !
-       !  Test whether the interval to be bisected next is the
-       !  smallest interval.
-       !
+       !!
+       !!  Test whether the interval to be bisected next is the
+       !!  smallest interval.
+       !!
        if ( .not. extrap ) then
 
           if ( small < abs ( blist(maxerr) - alist(maxerr) ) ) then
@@ -1073,11 +1054,11 @@ contains
        if ( ierro == 3 .or. erlarg <= ertest ) then
           go to 60
        end if
-       !
-       !  The smallest interval has the largest error.
-       !  before bisecting decrease the sum of the errors over the
-       !  larger intervals (erlarg) and perform extrapolation.
-       !
+       !!
+       !!  The smallest interval has the largest error.
+       !!  before bisecting decrease the sum of the errors over the
+       !!  larger intervals (erlarg) and perform extrapolation.
+       !!
        id = nrmax
        jupbnd = last
 
@@ -1093,9 +1074,9 @@ contains
           end if
           nrmax = nrmax + 1
        end do
-       !
-       !  Extrapolate.
-       !
+       !!
+       !!  Extrapolate.
+       !!
 60     continue
 
        numrl2 = numrl2 + 1
@@ -1120,9 +1101,9 @@ contains
           end if
 
        end if
-       !
-       !  Prepare bisection of the smallest interval.
-       !
+       !!
+       !!  Prepare bisection of the smallest interval.
+       !!
        if ( numrl2 == 1 ) then
           noext = .true.
        end if
@@ -1141,9 +1122,9 @@ contains
 90     continue
 
     end do
-    !
-    !  Set final result and error estimate.
-    !
+    !!
+    !!  Set final result and error estimate.
+    !!
     if ( abserr == huge ( abserr ) ) then
        go to 115
     end if
@@ -1179,9 +1160,9 @@ contains
     if ( errsum / abs ( area ) < abserr / abs ( result )  ) then
        go to 115
     end if
-    !
-    !  Test on divergence
-    !
+    !!
+    !!  Test on divergence
+    !!
 110 continue
 
     if ( ksgn == (-1) .and. &
@@ -1194,9 +1175,9 @@ contains
     end if
 
     go to 130
-    !
-    !  Compute global integral sum.
-    !
+    !!
+    !!  Compute global integral sum.
+    !!
 115 continue
 
     result = sum ( rlist(1:last) )
@@ -1215,154 +1196,153 @@ contains
 
     return
   end subroutine dqagi
+
   subroutine dqagp ( f, a, b, npts2, points, epsabs, epsrel, result, abserr, &
        neval, ier )
 
-    !*****************************************************************************80
-    !
     !! DQAGP computes a definite integral.
-    !
-    !  Discussion:
-    !
-    !    The routine calculates an approximation RESULT to a definite integral   
-    !      I = integral of F over (A,B),
-    !    hopefully satisfying
-    !      || I - RESULT || <= max ( EPSABS, EPSREL * ||I|| ).
-    !
-    !    Interior break points of the integration interval,
-    !    where local difficulties of the integrand may occur, such as
-    !    singularities or discontinuities, are provided by the user.
-    !
-    !  Author:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner
-    !
-    !  Reference:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner,
-    !    QUADPACK, a Subroutine Package for Automatic Integration,
-    !    Springer Verlag, 1983
-    !
-    !  Parameters:
-    !
-    !    Input, external real ( kind = 8 ) F, the name of the function routine, 
-    !    of the form
-    !      function f ( x )
-    !      real ( kind = 8 ) f
-    !      real ( kind = 8 ) x
-    !    which evaluates the integrand function.
-    !
-    !    Input, real ( kind = 8 ) A, B, the limits of integration.
-    !
-    !    Input, integer NPTS2, the number of user-supplied break points within 
-    !    the integration range, plus 2.  NPTS2 must be at least 2.
-    !
-    !    Input/output, real ( kind = 8 ) POINTS(NPTS2), contains the user provided interior
-    !    breakpoints in entries 1 through NPTS2-2.  If these points are not
-    !    in ascending order on input, they will be sorted.
-    !
-    !    Input, real ( kind = 8 ) EPSABS, EPSREL, the absolute and relative accuracy requested.
-    !
-    !    Output, real ( kind = 8 ) RESULT, the estimated value of the integral.
-    !
-    !    Output, real ( kind = 8 ) ABSERR, an estimate of || I - RESULT ||.
-    !
-    !    Output, integer NEVAL, the number of times the integral was evaluated.
-    !
-    !    Output, integer IER, return flag.
-    !                     ier = 0 normal and reliable termination of the
-    !                             routine. it is assumed that the requested
-    !                             accuracy has been achieved.
-    !                     ier > 0 abnormal termination of the routine.
-    !                             the estimates for integral and error are
-    !                             less reliable. it is assumed that the
-    !                             requested accuracy has not been achieved.
-    !                     ier = 1 maximum number of subdivisions allowed
-    !                             has been achieved. one can allow more
-    !                             subdivisions by increasing the data value
-    !                             of limit in dqagp(and taking the according
-    !                             dimension adjustments into account).
-    !                             however, if this yields no improvement
-    !                             it is advised to analyze the integrand
-    !                             in order to determine the integration
-    !                             difficulties. if the position of a local
-    !                             difficulty can be determined (i.e.
-    !                             singularity, discontinuity within the
-    !                             interval), it should be supplied to the
-    !                             routine as an element of the vector
-    !                             points. if necessary, an appropriate
-    !                             special-purpose integrator must be used,
-    !                             which is designed for handling the type
-    !                             of difficulty involved.
-    !                         = 2 the occurrence of roundoff error is
-    !                             detected, which prevents the requested
-    !                             tolerance from being achieved.
-    !                             the error may be under-estimated.
-    !                         = 3 extremely bad integrand behavior occurs
-    !                             at some points of the integration
-    !                             interval.
-    !                         = 4 the algorithm does not converge. roundoff
-    !                             error is detected in the extrapolation
-    !                             table. it is presumed that the requested
-    !                             tolerance cannot be achieved, and that
-    !                             the returned result is the best which
-    !                             can be obtained.
-    !                         = 5 the integral is probably divergent, or
-    !                             slowly convergent. it must be noted that
-    !                             divergence can occur with any other value
-    !                             of ier > 0.
-    !                         = 6 the input is invalid because
-    !                             npts2 < 2 or
-    !                             break points are specified outside
-    !                             the integration range or
-    !                             epsabs < 0 and epsrel < 0,
-    !                             or limit < npts2.
-    !                             result, abserr, neval are set to zero.
-    !
-    !  Local parameters:
-    !
-    !            the dimension of rlist2 is determined by the value of
-    !            limexp in QEXTR (rlist2 should be of dimension
-    !            (limexp+2) at least).
-    !
-    !           alist     - list of left end points of all subintervals
-    !                       considered up to now
-    !           blist     - list of right end points of all subintervals
-    !                       considered up to now
-    !           rlist(i)  - approximation to the integral over
-    !                       (alist(i),blist(i))
-    !           rlist2    - array of dimension at least limexp+2
-    !                       containing the part of the epsilon table which
-    !                       is still needed for further computations
-    !           elist(i)  - error estimate applying to rlist(i)
-    !           maxerr    - pointer to the interval with largest error
-    !                       estimate
-    !           errmax    - elist(maxerr)
-    !           erlast    - error on the interval currently subdivided
-    !                       (before that subdivision has taken place)
-    !           area      - sum of the integrals over the subintervals
-    !           errsum    - sum of the errors over the subintervals
-    !           errbnd    - requested accuracy max(epsabs,epsrel*
-    !                       abs(result))
-    !           *****1    - variable for the left subinterval
-    !           *****2    - variable for the right subinterval
-    !           last      - index for subdivision
-    !           nres      - number of calls to the extrapolation routine
-    !           numrl2    - number of elements in rlist2. if an appropriate
-    !                       approximation to the compounded integral has
-    !                       obtained, it is put in rlist2(numrl2) after
-    !                       numrl2 has been increased by one.
-    !           erlarg    - sum of the errors over the intervals larger
-    !                       than the smallest interval considered up to now
-    !           extrap    - logical variable denoting that the routine
-    !                       is attempting to perform extrapolation. i.e.
-    !                       before subdividing the smallest interval we
-    !                       try to decrease the value of erlarg.
-    !           noext     - logical variable denoting that extrapolation is
-    !                       no longer allowed (true-value)
-    !
+    !!
+    !!  Discussion:
+    !!
+    !!    The routine calculates an approximation RESULT to a definite integral   
+    !!      I = integral of F over (A,B),
+    !!    hopefully satisfying
+    !!      || I - RESULT || <= max ( EPSABS, EPSREL * ||I|| ).
+    !!
+    !!    Interior break points of the integration interval,
+    !!    where local difficulties of the integrand may occur, such as
+    !!    singularities or discontinuities, are provided by the user.
+    !!
+    !!  Author:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner
+    !!
+    !!  Reference:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner,
+    !!    QUADPACK, a Subroutine Package for Automatic Integration,
+    !!    Springer Verlag, 1983
+    !!
+    !!  Parameters:
+    !!
+    !!    Input, external real ( kind = 8 ) F, the name of the function routine, 
+    !!    of the form
+    !!      function f ( x )
+    !!      real ( kind = 8 ) f
+    !!      real ( kind = 8 ) x
+    !!    which evaluates the integrand function.
+    !!
+    !!    Input, real ( kind = 8 ) A, B, the limits of integration.
+    !!
+    !!    Input, integer NPTS2, the number of user-supplied break points within 
+    !!    the integration range, plus 2.  NPTS2 must be at least 2.
+    !!
+    !!    Input/output, real ( kind = 8 ) POINTS(NPTS2), contains the user provided interior
+    !!    breakpoints in entries 1 through NPTS2-2.  If these points are not
+    !!    in ascending order on input, they will be sorted.
+    !!
+    !!    Input, real ( kind = 8 ) EPSABS, EPSREL, the absolute and relative accuracy requested.
+    !!
+    !!    Output, real ( kind = 8 ) RESULT, the estimated value of the integral.
+    !!
+    !!    Output, real ( kind = 8 ) ABSERR, an estimate of || I - RESULT ||.
+    !!
+    !!    Output, integer NEVAL, the number of times the integral was evaluated.
+    !!
+    !!    Output, integer IER, return flag.
+    !!                     ier = 0 normal and reliable termination of the
+    !!                             routine. it is assumed that the requested
+    !!                             accuracy has been achieved.
+    !!                     ier > 0 abnormal termination of the routine.
+    !!                             the estimates for integral and error are
+    !!                             less reliable. it is assumed that the
+    !!                             requested accuracy has not been achieved.
+    !!                     ier = 1 maximum number of subdivisions allowed
+    !!                             has been achieved. one can allow more
+    !!                             subdivisions by increasing the data value
+    !!                             of limit in dqagp(and taking the according
+    !!                             dimension adjustments into account).
+    !!                             however, if this yields no improvement
+    !!                             it is advised to analyze the integrand
+    !!                             in order to determine the integration
+    !!                             difficulties. if the position of a local
+    !!                             difficulty can be determined (i.e.
+    !!                             singularity, discontinuity within the
+    !!                             interval), it should be supplied to the
+    !!                             routine as an element of the vector
+    !!                             points. if necessary, an appropriate
+    !!                             special-purpose integrator must be used,
+    !!                             which is designed for handling the type
+    !!                             of difficulty involved.
+    !!                         = 2 the occurrence of roundoff error is
+    !!                             detected, which prevents the requested
+    !!                             tolerance from being achieved.
+    !!                             the error may be under-estimated.
+    !!                         = 3 extremely bad integrand behavior occurs
+    !!                             at some points of the integration
+    !!                             interval.
+    !!                         = 4 the algorithm does not converge. roundoff
+    !!                             error is detected in the extrapolation
+    !!                             table. it is presumed that the requested
+    !!                             tolerance cannot be achieved, and that
+    !!                             the returned result is the best which
+    !!                             can be obtained.
+    !!                         = 5 the integral is probably divergent, or
+    !!                             slowly convergent. it must be noted that
+    !!                             divergence can occur with any other value
+    !!                             of ier > 0.
+    !!                         = 6 the input is invalid because
+    !!                             npts2 < 2 or
+    !!                             break points are specified outside
+    !!                             the integration range or
+    !!                             epsabs < 0 and epsrel < 0,
+    !!                             or limit < npts2.
+    !!                             result, abserr, neval are set to zero.
+    !!
+    !!  Local parameters:
+    !!
+    !!            the dimension of rlist2 is determined by the value of
+    !!            limexp in QEXTR (rlist2 should be of dimension
+    !!            (limexp+2) at least).
+    !!
+    !!           alist     - list of left end points of all subintervals
+    !!                       considered up to now
+    !!           blist     - list of right end points of all subintervals
+    !!                       considered up to now
+    !!           rlist(i)  - approximation to the integral over
+    !!                       (alist(i),blist(i))
+    !!           rlist2    - array of dimension at least limexp+2
+    !!                       containing the part of the epsilon table which
+    !!                       is still needed for further computations
+    !!           elist(i)  - error estimate applying to rlist(i)
+    !!           maxerr    - pointer to the interval with largest error
+    !!                       estimate
+    !!           errmax    - elist(maxerr)
+    !!           erlast    - error on the interval currently subdivided
+    !!                       (before that subdivision has taken place)
+    !!           area      - sum of the integrals over the subintervals
+    !!           errsum    - sum of the errors over the subintervals
+    !!           errbnd    - requested accuracy max(epsabs,epsrel*
+    !!                       abs(result))
+    !!           *****1    - variable for the left subinterval
+    !!           *****2    - variable for the right subinterval
+    !!           last      - index for subdivision
+    !!           nres      - number of calls to the extrapolation routine
+    !!           numrl2    - number of elements in rlist2. if an appropriate
+    !!                       approximation to the compounded integral has
+    !!                       obtained, it is put in rlist2(numrl2) after
+    !!                       numrl2 has been increased by one.
+    !!           erlarg    - sum of the errors over the intervals larger
+    !!                       than the smallest interval considered up to now
+    !!           extrap    - logical variable denoting that the routine
+    !!                       is attempting to perform extrapolation. i.e.
+    !!                       before subdividing the smallest interval we
+    !!                       try to decrease the value of erlarg.
+    !!           noext     - logical variable denoting that extrapolation is
+    !!                       no longer allowed (true-value)
+    !!
     implicit none
 
     integer, parameter :: limit = 500
@@ -1441,9 +1421,9 @@ contains
     real ( kind = 8 ) rlist2(52)
     real ( kind = 8 ) sign
     real ( kind = 8 ) temp
-    !
-    !  Test on validity of parameters.
-    !
+    !!
+    !!  Test on validity of parameters.
+    !!
     ier = 0
     neval = 0
     last = 0
@@ -1465,10 +1445,10 @@ contains
        ier = 6
        return
     end if
-    !
-    !  If any break points are provided, sort them into an
-    !  ascending sequence.
-    !
+    !!
+    !!  If any break points are provided, sort them into an
+    !!  ascending sequence.
+    !!
     if ( b < a ) then
        sign = -1.0D+00
     else
@@ -1503,9 +1483,9 @@ contains
        end if
 
     end if
-    !
-    !  Compute first integral and error approximations.
-    !
+    !!
+    !!  Compute first integral and error approximations.
+    !!
     resabs = 0.0D+00
 
     do i = 1, nint
@@ -1539,9 +1519,9 @@ contains
        end if
        errsum = errsum + elist(i)
     end do
-    !
-    !  Test on accuracy.
-    !
+    !!
+    !!  Test on accuracy.
+    !!
     last = nint
     neval = 21 * nint
     dres = abs ( result )
@@ -1583,9 +1563,9 @@ contains
     if ( ier /= 0 .or. abserr <= errbnd ) then
        return
     end if
-    !
-    !  Initialization
-    !
+    !!
+    !!  Initialization
+    !!
     rlist2(1) = result
     maxerr = iord(1)
     errmax = elist(maxerr)
@@ -1612,9 +1592,9 @@ contains
     end if
 
     do last = npts2, limit
-       !
-       !  Bisect the subinterval with the NRMAX-th largest error estimate.
-       !
+       !!
+       !!  Bisect the subinterval with the NRMAX-th largest error estimate.
+       !!
        levcur = level(maxerr) + 1
        a1 = alist(maxerr)
        b1 = 0.5D+00 * ( alist(maxerr) + blist(maxerr) )
@@ -1623,10 +1603,10 @@ contains
        erlast = errmax
        call qk21 ( f, a1, b1, area1, error1, resa, defab1 )
        call qk21 ( f, a2, b2, area2, error2, resa, defab2 )
-       !
-       !  Improve previous approximations to integral and error
-       !  and test for accuracy.
-       !
+       !!
+       !!  Improve previous approximations to integral and error
+       !!  and test for accuracy.
+       !!
        neval = neval + 42
        area12 = area1 + area2
        erro12 = error1 + error2
@@ -1657,9 +1637,9 @@ contains
        rlist(maxerr) = area1
        rlist(last) = area2
        errbnd = max ( epsabs, epsrel * abs ( area ) )
-       !
-       !  Test for roundoff error and eventually set error flag.
-       !
+       !!
+       !!  Test for roundoff error and eventually set error flag.
+       !!
        if ( 10 <= iroff1 + iroff2 .or. 20 <= iroff3 ) then
           ier = 2
        end if
@@ -1667,24 +1647,24 @@ contains
        if ( 5 <= iroff2 ) then
           ierro = 3
        end if
-       !
-       !  Set error flag in the case that the number of subintervals
-       !  equals limit.
-       !
+       !!
+       !!  Set error flag in the case that the number of subintervals
+       !!  equals limit.
+       !!
        if ( last == limit ) then
           ier = 1
        end if
-       !
-       !  Set error flag in the case of bad integrand behavior
-       !  at a point of the integration range
-       !
+       !!
+       !!  Set error flag in the case of bad integrand behavior
+       !!  at a point of the integration range
+       !!
        if ( max ( abs(a1), abs(b2)) <= ( 1.0D+00 + 1.0D+03 * epsilon ( a1 ) )* &
             ( abs ( a2 ) + 1.0D+03 * tiny ( a2 ) ) ) then
           ier = 4
        end if
-       !
-       !  Append the newly-created intervals to the list.
-       !
+       !!
+       !!  Append the newly-created intervals to the list.
+       !!
        if ( error2 <= error1 ) then
           alist(last) = a2
           blist(maxerr) = b1
@@ -1700,11 +1680,11 @@ contains
           elist(maxerr) = error2
           elist(last) = error1
        end if
-       !
-       !  Call QSORT to maintain the descending ordering
-       !  in the list of error estimates and select the subinterval
-       !  with nrmax-th largest error estimate (to be bisected next).
-       !
+       !!
+       !!  Call QSORT to maintain the descending ordering
+       !!  in the list of error estimates and select the subinterval
+       !!  with nrmax-th largest error estimate (to be bisected next).
+       !!
        call qsort ( limit, last, maxerr, errmax, elist, iord, nrmax )
 
        if ( errsum <= errbnd ) then
@@ -1724,10 +1704,10 @@ contains
        if ( levcur+1 <= levmax ) then
           erlarg = erlarg + erro12
        end if
-       !
-       !  Test whether the interval to be bisected next is the
-       !  smallest interval.
-       !
+       !!
+       !!  Test whether the interval to be bisected next is the
+       !!  smallest interval.
+       !!
        if ( .not. extrap ) then
 
           if ( level(maxerr)+1 <= levmax ) then
@@ -1738,11 +1718,11 @@ contains
           nrmax = 2
 
        end if
-       !
-       !  The smallest interval has the largest error.
-       !  Before bisecting decrease the sum of the errors over the
-       !  larger intervals (erlarg) and perform extrapolation.
-       !
+       !!
+       !!  The smallest interval has the largest error.
+       !!  Before bisecting decrease the sum of the errors over the
+       !!  larger intervals (erlarg) and perform extrapolation.
+       !!
        if ( ierro /= 3 .and. erlarg > ertest ) then
 
           id = nrmax
@@ -1761,9 +1741,9 @@ contains
           end do
 
        end if
-       !
-       !  Perform extrapolation.
-       !
+       !!
+       !!  Perform extrapolation.
+       !!
        numrl2 = numrl2 + 1
        rlist2(numrl2) = area
 
@@ -1791,9 +1771,9 @@ contains
           end if
 
        end if
-       !
-       !  Prepare bisection of the smallest interval.
-       !
+       !!
+       !!  Prepare bisection of the smallest interval.
+       !!
        if ( numrl2 == 1 ) then
           noext = .true.
        end if
@@ -1814,9 +1794,9 @@ contains
 160    continue
 
     end do
-    !
-    !  Set the final result.
-    !
+    !!
+    !!  Set the final result.
+    !!
     if ( abserr == huge ( abserr ) ) then
        go to 190
     end if
@@ -1852,9 +1832,9 @@ contains
     if ( abserr / abs(result) > errsum / abs(area) ) then
        go to 190
     end if
-    !
-    !  Test on divergence.
-    !
+    !!
+    !!  Test on divergence.
+    !!
 180 continue
 
     if ( ksgn == (-1) .and. max ( abs(result),abs(area)) <=  &
@@ -1866,9 +1846,9 @@ contains
     end if
 
     go to 210
-    !
-    !  Compute global integral sum.
-    !
+    !!
+    !!  Compute global integral sum.
+    !!
 190 continue
 
     result = sum ( rlist(1:last) )
@@ -1885,137 +1865,135 @@ contains
 
     return
   end subroutine dqagp
-  subroutine dqags ( f, a, b, epsabs, epsrel, result, abserr, neval, ier )
 
-    !*****************************************************************************80
-    !
+  subroutine dqags ( f, a, b, epsabs, epsrel, result, abserr, neval, ier )
     !! DQAGS estimates the integral of a function.
-    !
-    !  Discussion:
-    !
-    !    The routine calculates an approximation RESULT to a definite integral   
-    !      I = integral of F over (A,B),
-    !    hopefully satisfying
-    !      || I - RESULT || <= max ( EPSABS, EPSREL * ||I|| ).
-    !
-    !  Author:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner
-    !
-    !  Reference:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner,
-    !    QUADPACK, a Subroutine Package for Automatic Integration,
-    !    Springer Verlag, 1983
-    !
-    !  Parameters:
-    !
-    !    Input, external real ( kind = 8 ) F, the name of the function routine, of the form
-    !      function f ( x )
-    !      real ( kind = 8 ) f
-    !      real ( kind = 8 ) x
-    !    which evaluates the integrand function.
-    !
-    !    Input, real ( kind = 8 ) A, B, the limits of integration.
-    !
-    !    Input, real ( kind = 8 ) EPSABS, EPSREL, the absolute and relative accuracy requested.
-    !
-    !    Output, real ( kind = 8 ) RESULT, the estimated value of the integral.
-    !
-    !    Output, real ( kind = 8 ) ABSERR, an estimate of || I - RESULT ||.
-    !
-    !    Output, integer NEVAL, the number of times the integral was evaluated.
-    !
-    !    Output, integer IER, error flag.
-    !                     ier = 0 normal and reliable termination of the
-    !                             routine. it is assumed that the requested
-    !                             accuracy has been achieved.
-    !                     ier > 0 abnormal termination of the routine
-    !                             the estimates for integral and error are
-    !                             less reliable. it is assumed that the
-    !                             requested accuracy has not been achieved.
-    !                         = 1 maximum number of subdivisions allowed
-    !                             has been achieved. one can allow more sub-
-    !                             divisions by increasing the data value of
-    !                             limit in dqags (and taking the according
-    !                             dimension adjustments into account).
-    !                             however, if this yields no improvement
-    !                             it is advised to analyze the integrand
-    !                             in order to determine the integration
-    !                             difficulties. if the position of a
-    !                             local difficulty can be determined (e.g.
-    !                             singularity, discontinuity within the
-    !                             interval) one will probably gain from
-    !                             splitting up the interval at this point
-    !                             and calling the integrator on the sub-
-    !                             ranges. if possible, an appropriate
-    !                             special-purpose integrator should be used,
-    !                             which is designed for handling the type
-    !                             of difficulty involved.
-    !                         = 2 the occurrence of roundoff error is detec-
-    !                             ted, which prevents the requested
-    !                             tolerance from being achieved.
-    !                             the error may be under-estimated.
-    !                         = 3 extremely bad integrand behavior occurs
-    !                             at some  points of the integration
-    !                             interval.
-    !                         = 4 the algorithm does not converge. roundoff
-    !                             error is detected in the extrapolation
-    !                             table. it is presumed that the requested
-    !                             tolerance cannot be achieved, and that the
-    !                             returned result is the best which can be
-    !                             obtained.
-    !                         = 5 the integral is probably divergent, or
-    !                             slowly convergent. it must be noted that
-    !                             divergence can occur with any other value
-    !                             of ier.
-    !                         = 6 the input is invalid, because
-    !                             epsabs < 0 and epsrel < 0,
-    !                             result, abserr and neval are set to zero.
-    !
-    !  Local Parameters:
-    !
-    !           alist     - list of left end points of all subintervals
-    !                       considered up to now
-    !           blist     - list of right end points of all subintervals
-    !                       considered up to now
-    !           rlist(i)  - approximation to the integral over
-    !                       (alist(i),blist(i))
-    !           rlist2    - array of dimension at least limexp+2 containing
-    !                       the part of the epsilon table which is still
-    !                       needed for further computations
-    !           elist(i)  - error estimate applying to rlist(i)
-    !           maxerr    - pointer to the interval with largest error
-    !                       estimate
-    !           errmax    - elist(maxerr)
-    !           erlast    - error on the interval currently subdivided
-    !                       (before that subdivision has taken place)
-    !           area      - sum of the integrals over the subintervals
-    !           errsum    - sum of the errors over the subintervals
-    !           errbnd    - requested accuracy max(epsabs,epsrel*
-    !                       abs(result))
-    !           *****1    - variable for the left interval
-    !           *****2    - variable for the right interval
-    !           last      - index for subdivision
-    !           nres      - number of calls to the extrapolation routine
-    !           numrl2    - number of elements currently in rlist2. if an
-    !                       appropriate approximation to the compounded
-    !                       integral has been obtained it is put in
-    !                       rlist2(numrl2) after numrl2 has been increased
-    !                       by one.
-    !           small     - length of the smallest interval considered
-    !                       up to now, multiplied by 1.5
-    !           erlarg    - sum of the errors over the intervals larger
-    !                       than the smallest interval considered up to now
-    !           extrap    - logical variable denoting that the routine is
-    !                       attempting to perform extrapolation i.e. before
-    !                       subdividing the smallest interval we try to
-    !                       decrease the value of erlarg.
-    !           noext     - logical variable denoting that extrapolation
-    !                       is no longer allowed (true value)
-    !
+    !!
+    !!  Discussion:
+    !!
+    !!    The routine calculates an approximation RESULT to a definite integral   
+    !!      I = integral of F over (A,B),
+    !!    hopefully satisfying
+    !!      || I - RESULT || <= max ( EPSABS, EPSREL * ||I|| ).
+    !!
+    !!  Author:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner
+    !!
+    !!  Reference:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner,
+    !!    QUADPACK, a Subroutine Package for Automatic Integration,
+    !!    Springer Verlag, 1983
+    !!
+    !!  Parameters:
+    !!
+    !!    Input, external real ( kind = 8 ) F, the name of the function routine, of the form
+    !!      function f ( x )
+    !!      real ( kind = 8 ) f
+    !!      real ( kind = 8 ) x
+    !!    which evaluates the integrand function.
+    !!
+    !!    Input, real ( kind = 8 ) A, B, the limits of integration.
+    !!
+    !!    Input, real ( kind = 8 ) EPSABS, EPSREL, the absolute and relative accuracy requested.
+    !!
+    !!    Output, real ( kind = 8 ) RESULT, the estimated value of the integral.
+    !!
+    !!    Output, real ( kind = 8 ) ABSERR, an estimate of || I - RESULT ||.
+    !!
+    !!    Output, integer NEVAL, the number of times the integral was evaluated.
+    !!
+    !!    Output, integer IER, error flag.
+    !!                     ier = 0 normal and reliable termination of the
+    !!                             routine. it is assumed that the requested
+    !!                             accuracy has been achieved.
+    !!                     ier > 0 abnormal termination of the routine
+    !!                             the estimates for integral and error are
+    !!                             less reliable. it is assumed that the
+    !!                             requested accuracy has not been achieved.
+    !!                         = 1 maximum number of subdivisions allowed
+    !!                             has been achieved. one can allow more sub-
+    !!                             divisions by increasing the data value of
+    !!                             limit in dqags (and taking the according
+    !!                             dimension adjustments into account).
+    !!                             however, if this yields no improvement
+    !!                             it is advised to analyze the integrand
+    !!                             in order to determine the integration
+    !!                             difficulties. if the position of a
+    !!                             local difficulty can be determined (e.g.
+    !!                             singularity, discontinuity within the
+    !!                             interval) one will probably gain from
+    !!                             splitting up the interval at this point
+    !!                             and calling the integrator on the sub-
+    !!                             ranges. if possible, an appropriate
+    !!                             special-purpose integrator should be used,
+    !!                             which is designed for handling the type
+    !!                             of difficulty involved.
+    !!                         = 2 the occurrence of roundoff error is detec-
+    !!                             ted, which prevents the requested
+    !!                             tolerance from being achieved.
+    !!                             the error may be under-estimated.
+    !!                         = 3 extremely bad integrand behavior occurs
+    !!                             at some  points of the integration
+    !!                             interval.
+    !!                         = 4 the algorithm does not converge. roundoff
+    !!                             error is detected in the extrapolation
+    !!                             table. it is presumed that the requested
+    !!                             tolerance cannot be achieved, and that the
+    !!                             returned result is the best which can be
+    !!                             obtained.
+    !!                         = 5 the integral is probably divergent, or
+    !!                             slowly convergent. it must be noted that
+    !!                             divergence can occur with any other value
+    !!                             of ier.
+    !!                         = 6 the input is invalid, because
+    !!                             epsabs < 0 and epsrel < 0,
+    !!                             result, abserr and neval are set to zero.
+    !!
+    !!  Local Parameters:
+    !!
+    !!           alist     - list of left end points of all subintervals
+    !!                       considered up to now
+    !!           blist     - list of right end points of all subintervals
+    !!                       considered up to now
+    !!           rlist(i)  - approximation to the integral over
+    !!                       (alist(i),blist(i))
+    !!           rlist2    - array of dimension at least limexp+2 containing
+    !!                       the part of the epsilon table which is still
+    !!                       needed for further computations
+    !!           elist(i)  - error estimate applying to rlist(i)
+    !!           maxerr    - pointer to the interval with largest error
+    !!                       estimate
+    !!           errmax    - elist(maxerr)
+    !!           erlast    - error on the interval currently subdivided
+    !!                       (before that subdivision has taken place)
+    !!           area      - sum of the integrals over the subintervals
+    !!           errsum    - sum of the errors over the subintervals
+    !!           errbnd    - requested accuracy max(epsabs,epsrel*
+    !!                       abs(result))
+    !!           *****1    - variable for the left interval
+    !!           *****2    - variable for the right interval
+    !!           last      - index for subdivision
+    !!           nres      - number of calls to the extrapolation routine
+    !!           numrl2    - number of elements currently in rlist2. if an
+    !!                       appropriate approximation to the compounded
+    !!                       integral has been obtained it is put in
+    !!                       rlist2(numrl2) after numrl2 has been increased
+    !!                       by one.
+    !!           small     - length of the smallest interval considered
+    !!                       up to now, multiplied by 1.5
+    !!           erlarg    - sum of the errors over the intervals larger
+    !!                       than the smallest interval considered up to now
+    !!           extrap    - logical variable denoting that the routine is
+    !!                       attempting to perform extrapolation i.e. before
+    !!                       subdividing the smallest interval we try to
+    !!                       decrease the value of erlarg.
+    !!           noext     - logical variable denoting that extrapolation
+    !!                       is no longer allowed (true value)
+    !!
     implicit none
 
     integer, parameter :: limit = 500
@@ -2078,13 +2056,13 @@ contains
     real ( kind = 8 ) rlist(limit)
     real ( kind = 8 ) rlist2(52)
     real ( kind = 8 ) small
-    !
-    !  The dimension of rlist2 is determined by the value of
-    !  limexp in QEXTR (rlist2 should be of dimension
-    !  (limexp+2) at least).
-    !
-    !  Test on validity of parameters.
-    !
+    !!
+    !!  The dimension of rlist2 is determined by the value of
+    !!  limexp in QEXTR (rlist2 should be of dimension
+    !!  (limexp+2) at least).
+    !!
+    !!  Test on validity of parameters.
+    !!
     ier = 0
     neval = 0
     last = 0
@@ -2099,14 +2077,14 @@ contains
        ier = 6
        return
     end if
-    !
-    !  First approximation to the integral.
-    !
+    !!
+    !!  First approximation to the integral.
+    !!
     ierro = 0
     call qk21 ( f, a, b, result, abserr, defabs, resabs )
-    !
-    !  Test on accuracy.
-    !
+    !!
+    !!  Test on accuracy.
+    !!
     dres = abs ( result )
     errbnd = max ( epsabs, epsrel * dres )
     last = 1
@@ -2125,9 +2103,9 @@ contains
 
     if ( ier /= 0 .or. (abserr <= errbnd .and. abserr /= resabs ) .or. &
          abserr == 0.0D+00 ) go to 140
-    !
-    !  Initialization.
-    !
+    !!
+    !!  Initialization.
+    !!
     rlist2(1) = result
     errmax = abserr
     maxerr = 1
@@ -2151,9 +2129,9 @@ contains
     end if
 
     do last = 2, limit
-       !
-       !  Bisect the subinterval with the nrmax-th largest error estimate.
-       !
+       !!
+       !!  Bisect the subinterval with the nrmax-th largest error estimate.
+       !!
        a1 = alist(maxerr)
        b1 = 5.0D-01 * ( alist(maxerr) + blist(maxerr) )
        a2 = b1
@@ -2161,10 +2139,10 @@ contains
        erlast = errmax
        call qk21 ( f, a1, b1, area1, error1, resabs, defab1 )
        call qk21 ( f, a2, b2, area2, error2, resabs, defab2 )
-       !
-       !  Improve previous approximations to integral and error
-       !  and test for accuracy.
-       !
+       !!
+       !!  Improve previous approximations to integral and error
+       !!  and test for accuracy.
+       !!
        area12 = area1+area2
        erro12 = error1+error2
        errsum = errsum+erro12-errmax
@@ -2192,9 +2170,9 @@ contains
        rlist(maxerr) = area1
        rlist(last) = area2
        errbnd = max ( epsabs, epsrel*abs(area) )
-       !
-       !  Test for roundoff error and eventually set error flag.
-       !
+       !!
+       !!  Test for roundoff error and eventually set error flag.
+       !!
        if ( iroff1+iroff2 >= 10 .or. iroff3 >= 20 ) then
           ier = 2
        end if
@@ -2202,24 +2180,24 @@ contains
        if ( iroff2 >= 5 ) then
           ierro = 3
        end if
-       !
-       !  Set error flag in the case that the number of subintervals
-       !  equals limit.
-       !
+       !!
+       !!  Set error flag in the case that the number of subintervals
+       !!  equals limit.
+       !!
        if ( last == limit ) then
           ier = 1
        end if
-       !
-       !  Set error flag in the case of bad integrand behavior
-       !  at a point of the integration range.
-       !
+       !!
+       !!  Set error flag in the case of bad integrand behavior
+       !!  at a point of the integration range.
+       !!
        if ( max ( abs(a1),abs(b2)) <= (1.0D+00+1.0D+03* epsilon ( a1 ) )* &
             (abs(a2)+1.0D+03* tiny ( a2 ) ) ) then
           ier = 4
        end if
-       !
-       !  Append the newly-created intervals to the list.
-       !
+       !!
+       !!  Append the newly-created intervals to the list.
+       !!
        if ( error2 <= error1 ) then
           alist(last) = a2
           blist(maxerr) = b1
@@ -2235,11 +2213,11 @@ contains
           elist(maxerr) = error2
           elist(last) = error1
        end if
-       !
-       !  Call QSORT to maintain the descending ordering
-       !  in the list of error estimates and select the subinterval
-       !  with nrmax-th largest error estimate (to be bisected next).
-       !
+       !!
+       !!  Call QSORT to maintain the descending ordering
+       !!  in the list of error estimates and select the subinterval
+       !!  with nrmax-th largest error estimate (to be bisected next).
+       !!
        call qsort ( limit, last, maxerr, errmax, elist, iord, nrmax )
 
        if ( errsum <= errbnd ) go to 115
@@ -2256,22 +2234,22 @@ contains
        if ( abs(b1-a1) > small ) then
           erlarg = erlarg+erro12
        end if
-       !
-       !  Test whether the interval to be bisected next is the
-       !  smallest interval.
-       !
+       !!
+       !!  Test whether the interval to be bisected next is the
+       !!  smallest interval.
+       !!
        if ( .not. extrap ) then
           if ( abs(blist(maxerr)-alist(maxerr)) > small ) go to 90
           extrap = .true.
           nrmax = 2
        end if
 
-       !40  continue
-       !
-       !  The smallest interval has the largest error.
-       !  Before bisecting decrease the sum of the errors over the
-       !  larger intervals (erlarg) and perform extrapolation.
-       !
+       !!40  continue
+       !!
+       !!  The smallest interval has the largest error.
+       !!  Before bisecting decrease the sum of the errors over the
+       !!  larger intervals (erlarg) and perform extrapolation.
+       !!
        if ( ierro /= 3 .and. erlarg > ertest ) then
 
           id = nrmax
@@ -2291,10 +2269,10 @@ contains
           end do
 
        end if
-       !
-       !  Perform extrapolation.
-       !
-       !60  continue
+       !!
+       !!  Perform extrapolation.
+       !!
+       !!60  continue
 
        numrl2 = numrl2+1
        rlist2(numrl2) = area
@@ -2318,9 +2296,9 @@ contains
           end if
 
        end if
-       !
-       !  Prepare bisection of the smallest interval.
-       !
+       !!
+       !!  Prepare bisection of the smallest interval.
+       !!
        if ( numrl2 == 1 ) then
           noext = .true.
        end if
@@ -2347,9 +2325,9 @@ contains
 90     continue
 
     end do
-    !
-    !  Set final result and error estimate.
-    !
+    !!
+    !!  Set final result and error estimate.
+    !!
     if ( abserr == huge ( abserr ) ) then
        go to 115
     end if
@@ -2377,9 +2355,9 @@ contains
 105 continue
 
     if ( abserr/abs(result) > errsum/abs(area) ) go to 115
-    !
-    !  Test on divergence.
-    !
+    !!
+    !!  Test on divergence.
+    !!
 110 continue
 
     if ( ksgn == (-1) .and. max ( abs(result),abs(area)) <=  &
@@ -2391,9 +2369,9 @@ contains
     end if
 
     go to 130
-    !
-    !  Compute global integral sum.
-    !
+    !!
+    !!  Compute global integral sum.
+    !!
 115 continue
 
     result = sum ( rlist(1:last) )
@@ -2412,94 +2390,92 @@ contains
 
     return
   end subroutine dqags
-  subroutine dqawc ( f, a, b, c, epsabs, epsrel, result, abserr, neval, ier )
 
-    !*****************************************************************************80
-    !
+  subroutine dqawc ( f, a, b, c, epsabs, epsrel, result, abserr, neval, ier )
     !! DQAWC computes a Cauchy principal value.
-    !
-    !  Discussion:
-    !
-    !    The routine calculates an approximation RESULT to a Cauchy principal
-    !    value 
-    !      I = integral of F*W over (A,B),
-    !    with
-    !      W(X) = 1 / (X-C),
-    !    with C distinct from A and B, hopefully satisfying
-    !      || I - RESULT || <= max ( EPSABS, EPSREL * ||I|| ).
-    !
-    !  Author:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner
-    !
-    !  Reference:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner,
-    !    QUADPACK, a Subroutine Package for Automatic Integration,
-    !    Springer Verlag, 1983
-    !
-    !  Parameters:
-    !
-    !    Input, external real ( kind = 8 ) F, the name of the function routine, of the form
-    !      function f ( x )
-    !      real ( kind = 8 ) f
-    !      real ( kind = 8 ) x
-    !    which evaluates the integrand function.
-    !
-    !    Input, real ( kind = 8 ) A, B, the limits of integration.
-    !
-    !    Input, real ( kind = 8 ) C, a parameter in the weight function, which must
-    !    not be equal to A or B.
-    !
-    !    Input, real ( kind = 8 ) EPSABS, EPSREL, the absolute and relative accuracy requested.
-    !
-    !    Output, real ( kind = 8 ) RESULT, the estimated value of the integral.
-    !
-    !    Output, real ( kind = 8 ) ABSERR, an estimate of || I - RESULT ||.
-    !
-    !    Output, integer NEVAL, the number of times the integral was evaluated.
-    !
-    !            ier    - integer
-    !                     ier = 0 normal and reliable termination of the
-    !                             routine. it is assumed that the requested
-    !                             accuracy has been achieved.
-    !                     ier > 0 abnormal termination of the routine
-    !                             the estimates for integral and error are
-    !                             less reliable. it is assumed that the
-    !                             requested accuracy has not been achieved.
-    !                     ier = 1 maximum number of subdivisions allowed
-    !                             has been achieved. one can allow more sub-
-    !                             divisions by increasing the data value of
-    !                             limit in dqawc (and taking the according
-    !                             dimension adjustments into account).
-    !                             however, if this yields no improvement it
-    !                             is advised to analyze the integrand in
-    !                             order to determine the integration
-    !                             difficulties. if the position of a local
-    !                             difficulty can be determined (e.g.
-    !                             singularity, discontinuity within the
-    !                             interval one will probably gain from
-    !                             splitting up the interval at this point
-    !                             and calling appropriate integrators on the
-    !                             subranges.
-    !                         = 2 the occurrence of roundoff error is detec-
-    !                             ted, which prevents the requested
-    !                             tolerance from being achieved.
-    !                         = 3 extremely bad integrand behavior occurs
-    !                             at some points of the integration
-    !                             interval.
-    !                         = 6 the input is invalid, because
-    !                             c = a or c = b or
-    !                             epsabs < 0 and epsrel < 0,
-    !                             result, abserr, neval are set to zero.
-    !
-    !  Local parameters:
-    !
-    !    LIMIT is the maximum number of subintervals allowed in the
-    !    subdivision process of dqawce. take care that limit >= 1.
-    !
+    !!
+    !!  Discussion:
+    !!
+    !!    The routine calculates an approximation RESULT to a Cauchy principal
+    !!    value 
+    !!      I = integral of F*W over (A,B),
+    !!    with
+    !!      W(X) = 1 / (X-C),
+    !!    with C distinct from A and B, hopefully satisfying
+    !!      || I - RESULT || <= max ( EPSABS, EPSREL * ||I|| ).
+    !!
+    !!  Author:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner
+    !!
+    !!  Reference:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner,
+    !!    QUADPACK, a Subroutine Package for Automatic Integration,
+    !!    Springer Verlag, 1983
+    !!
+    !!  Parameters:
+    !!
+    !!    Input, external real ( kind = 8 ) F, the name of the function routine, of the form
+    !!      function f ( x )
+    !!      real ( kind = 8 ) f
+    !!      real ( kind = 8 ) x
+    !!    which evaluates the integrand function.
+    !!
+    !!    Input, real ( kind = 8 ) A, B, the limits of integration.
+    !!
+    !!    Input, real ( kind = 8 ) C, a parameter in the weight function, which must
+    !!    not be equal to A or B.
+    !!
+    !!    Input, real ( kind = 8 ) EPSABS, EPSREL, the absolute and relative accuracy requested.
+    !!
+    !!    Output, real ( kind = 8 ) RESULT, the estimated value of the integral.
+    !!
+    !!    Output, real ( kind = 8 ) ABSERR, an estimate of || I - RESULT ||.
+    !!
+    !!    Output, integer NEVAL, the number of times the integral was evaluated.
+    !!
+    !!            ier    - integer
+    !!                     ier = 0 normal and reliable termination of the
+    !!                             routine. it is assumed that the requested
+    !!                             accuracy has been achieved.
+    !!                     ier > 0 abnormal termination of the routine
+    !!                             the estimates for integral and error are
+    !!                             less reliable. it is assumed that the
+    !!                             requested accuracy has not been achieved.
+    !!                     ier = 1 maximum number of subdivisions allowed
+    !!                             has been achieved. one can allow more sub-
+    !!                             divisions by increasing the data value of
+    !!                             limit in dqawc (and taking the according
+    !!                             dimension adjustments into account).
+    !!                             however, if this yields no improvement it
+    !!                             is advised to analyze the integrand in
+    !!                             order to determine the integration
+    !!                             difficulties. if the position of a local
+    !!                             difficulty can be determined (e.g.
+    !!                             singularity, discontinuity within the
+    !!                             interval one will probably gain from
+    !!                             splitting up the interval at this point
+    !!                             and calling appropriate integrators on the
+    !!                             subranges.
+    !!                         = 2 the occurrence of roundoff error is detec-
+    !!                             ted, which prevents the requested
+    !!                             tolerance from being achieved.
+    !!                         = 3 extremely bad integrand behavior occurs
+    !!                             at some points of the integration
+    !!                             interval.
+    !!                         = 6 the input is invalid, because
+    !!                             c = a or c = b or
+    !!                             epsabs < 0 and epsrel < 0,
+    !!                             result, abserr, neval are set to zero.
+    !!
+    !!  Local parameters:
+    !!
+    !!    LIMIT is the maximum number of subintervals allowed in the
+    !!    subdivision process of dqawce. take care that limit >= 1.
+    !!
     implicit none
 
     integer, parameter :: limit = 500
@@ -2526,137 +2502,135 @@ contains
 
     return
   end subroutine dqawc
+
   subroutine dqawce ( f, a, b, c, epsabs, epsrel, limit, result, abserr, neval, &
        ier, alist, blist, rlist, elist, iord, last )
-
-    !*****************************************************************************80
-    !
     !! DQAWCE computes a Cauchy principal value.
-    !
-    !  Discussion:
-    !
-    !    The routine calculates an approximation RESULT to a Cauchy principal
-    !    value   
-    !      I = integral of F*W over (A,B),
-    !    with
-    !      W(X) = 1 / ( X - C ),
-    !    with C distinct from A and B, hopefully satisfying
-    !      | I - RESULT | <= max ( EPSABS, EPSREL * |I| ).
-    !
-    !  Author:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner
-    !
-    !  Reference:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner,
-    !    QUADPACK, a Subroutine Package for Automatic Integration,
-    !    Springer Verlag, 1983
-    !
-    !  Parameters:
-    !
-    !    Input, external real ( kind = 8 ) F, the name of the function routine, of the form
-    !      function f ( x )
-    !      real ( kind = 8 ) f
-    !      real ( kind = 8 ) x
-    !    which evaluates the integrand function.
-    !
-    !    Input, real ( kind = 8 ) A, B, the limits of integration.
-    !
-    !    Input, real ( kind = 8 ) C, a parameter in the weight function, which cannot be
-    !    equal to A or B.
-    !
-    !    Input, real ( kind = 8 ) EPSABS, EPSREL, the absolute and relative accuracy requested.
-    !
-    !    Input, integer LIMIT, the upper bound on the number of subintervals that
-    !    will be used in the partition of [A,B].  LIMIT is typically 500.
-    !
-    !    Output, real ( kind = 8 ) RESULT, the estimated value of the integral.
-    !
-    !    Output, real ( kind = 8 ) ABSERR, an estimate of || I - RESULT ||.
-    !
-    !    Output, integer NEVAL, the number of times the integral was evaluated.
-    !
-    !            ier    - integer
-    !                     ier = 0 normal and reliable termination of the
-    !                             routine. it is assumed that the requested
-    !                             accuracy has been achieved.
-    !                     ier > 0 abnormal termination of the routine
-    !                             the estimates for integral and error are
-    !                             less reliable. it is assumed that the
-    !                             requested accuracy has not been achieved.
-    !                     ier = 1 maximum number of subdivisions allowed
-    !                             has been achieved. one can allow more sub-
-    !                             divisions by increasing the value of
-    !                             limit. however, if this yields no
-    !                             improvement it is advised to analyze the
-    !                             integrand, in order to determine the
-    !                             integration difficulties.  if the position
-    !                             of a local difficulty can be determined
-    !                             (e.g. singularity, discontinuity within
-    !                             the interval) one will probably gain
-    !                             from splitting up the interval at this
-    !                             point and calling appropriate integrators
-    !                             on the subranges.
-    !                         = 2 the occurrence of roundoff error is detec-
-    !                             ted, which prevents the requested
-    !                             tolerance from being achieved.
-    !                         = 3 extremely bad integrand behavior occurs
-    !                             at some interior points of the integration
-    !                             interval.
-    !                         = 6 the input is invalid, because
-    !                             c = a or c = b or
-    !                             epsabs < 0 and epsrel < 0,
-    !                             or limit < 1.
-    !                             result, abserr, neval, rlist(1), elist(1),
-    !                             iord(1) and last are set to zero.
-    !                             alist(1) and blist(1) are set to a and b
-    !                             respectively.
-    !
-    !    Workspace, real ( kind = 8 ) ALIST(LIMIT), BLIST(LIMIT), contains in entries 1 
-    !    through LAST the left and right ends of the partition subintervals.
-    !
-    !    Workspace, real ( kind = 8 ) RLIST(LIMIT), contains in entries 1 through LAST
-    !    the integral approximations on the subintervals.
-    !
-    !    Workspace, real ( kind = 8 ) ELIST(LIMIT), contains in entries 1 through LAST
-    !    the absolute error estimates on the subintervals.
-    !
-    !            iord    - integer
-    !                      vector of dimension at least limit, the first k
-    !                      elements of which are pointers to the error
-    !                      estimates over the subintervals, so that
-    !                      elist(iord(1)), ...,  elist(iord(k)) with
-    !                      k = last if last <= (limit/2+2), and
-    !                      k = limit+1-last otherwise, form a decreasing
-    !                      sequence.
-    !
-    !            last    - integer
-    !                      number of subintervals actually produced in
-    !                      the subdivision process
-    !
-    !  Local parameters:
-    !
-    !           alist     - list of left end points of all subintervals
-    !                       considered up to now
-    !           blist     - list of right end points of all subintervals
-    !                       considered up to now
-    !           rlist(i)  - approximation to the integral over
-    !                       (alist(i),blist(i))
-    !           elist(i)  - error estimate applying to rlist(i)
-    !           maxerr    - pointer to the interval with largest error
-    !                       estimate
-    !           errmax    - elist(maxerr)
-    !           area      - sum of the integrals over the subintervals
-    !           errsum    - sum of the errors over the subintervals
-    !           errbnd    - requested accuracy max(epsabs,epsrel*
-    !                       abs(result))
-    !           *****1    - variable for the left subinterval
-    !           *****2    - variable for the right subinterval
-    !           last      - index for subdivision
-    !
+    !!
+    !!  Discussion:
+    !!
+    !!    The routine calculates an approximation RESULT to a Cauchy principal
+    !!    value   
+    !!      I = integral of F*W over (A,B),
+    !!    with
+    !!      W(X) = 1 / ( X - C ),
+    !!    with C distinct from A and B, hopefully satisfying
+    !!      | I - RESULT | <= max ( EPSABS, EPSREL * |I| ).
+    !!
+    !!  Author:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner
+    !!
+    !!  Reference:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner,
+    !!    QUADPACK, a Subroutine Package for Automatic Integration,
+    !!    Springer Verlag, 1983
+    !!
+    !!  Parameters:
+    !!
+    !!    Input, external real ( kind = 8 ) F, the name of the function routine, of the form
+    !!      function f ( x )
+    !!      real ( kind = 8 ) f
+    !!      real ( kind = 8 ) x
+    !!    which evaluates the integrand function.
+    !!
+    !!    Input, real ( kind = 8 ) A, B, the limits of integration.
+    !!
+    !!    Input, real ( kind = 8 ) C, a parameter in the weight function, which cannot be
+    !!    equal to A or B.
+    !!
+    !!    Input, real ( kind = 8 ) EPSABS, EPSREL, the absolute and relative accuracy requested.
+    !!
+    !!    Input, integer LIMIT, the upper bound on the number of subintervals that
+    !!    will be used in the partition of [A,B].  LIMIT is typically 500.
+    !!
+    !!    Output, real ( kind = 8 ) RESULT, the estimated value of the integral.
+    !!
+    !!    Output, real ( kind = 8 ) ABSERR, an estimate of || I - RESULT ||.
+    !!
+    !!    Output, integer NEVAL, the number of times the integral was evaluated.
+    !!
+    !!            ier    - integer
+    !!                     ier = 0 normal and reliable termination of the
+    !!                             routine. it is assumed that the requested
+    !!                             accuracy has been achieved.
+    !!                     ier > 0 abnormal termination of the routine
+    !!                             the estimates for integral and error are
+    !!                             less reliable. it is assumed that the
+    !!                             requested accuracy has not been achieved.
+    !!                     ier = 1 maximum number of subdivisions allowed
+    !!                             has been achieved. one can allow more sub-
+    !!                             divisions by increasing the value of
+    !!                             limit. however, if this yields no
+    !!                             improvement it is advised to analyze the
+    !!                             integrand, in order to determine the
+    !!                             integration difficulties.  if the position
+    !!                             of a local difficulty can be determined
+    !!                             (e.g. singularity, discontinuity within
+    !!                             the interval) one will probably gain
+    !!                             from splitting up the interval at this
+    !!                             point and calling appropriate integrators
+    !!                             on the subranges.
+    !!                         = 2 the occurrence of roundoff error is detec-
+    !!                             ted, which prevents the requested
+    !!                             tolerance from being achieved.
+    !!                         = 3 extremely bad integrand behavior occurs
+    !!                             at some interior points of the integration
+    !!                             interval.
+    !!                         = 6 the input is invalid, because
+    !!                             c = a or c = b or
+    !!                             epsabs < 0 and epsrel < 0,
+    !!                             or limit < 1.
+    !!                             result, abserr, neval, rlist(1), elist(1),
+    !!                             iord(1) and last are set to zero.
+    !!                             alist(1) and blist(1) are set to a and b
+    !!                             respectively.
+    !!
+    !!    Workspace, real ( kind = 8 ) ALIST(LIMIT), BLIST(LIMIT), contains in entries 1 
+    !!    through LAST the left and right ends of the partition subintervals.
+    !!
+    !!    Workspace, real ( kind = 8 ) RLIST(LIMIT), contains in entries 1 through LAST
+    !!    the integral approximations on the subintervals.
+    !!
+    !!    Workspace, real ( kind = 8 ) ELIST(LIMIT), contains in entries 1 through LAST
+    !!    the absolute error estimates on the subintervals.
+    !!
+    !!            iord    - integer
+    !!                      vector of dimension at least limit, the first k
+    !!                      elements of which are pointers to the error
+    !!                      estimates over the subintervals, so that
+    !!                      elist(iord(1)), ...,  elist(iord(k)) with
+    !!                      k = last if last <= (limit/2+2), and
+    !!                      k = limit+1-last otherwise, form a decreasing
+    !!                      sequence.
+    !!
+    !!            last    - integer
+    !!                      number of subintervals actually produced in
+    !!                      the subdivision process
+    !!
+    !!  Local parameters:
+    !!
+    !!           alist     - list of left end points of all subintervals
+    !!                       considered up to now
+    !!           blist     - list of right end points of all subintervals
+    !!                       considered up to now
+    !!           rlist(i)  - approximation to the integral over
+    !!                       (alist(i),blist(i))
+    !!           elist(i)  - error estimate applying to rlist(i)
+    !!           maxerr    - pointer to the interval with largest error
+    !!                       estimate
+    !!           errmax    - elist(maxerr)
+    !!           area      - sum of the integrals over the subintervals
+    !!           errsum    - sum of the errors over the subintervals
+    !!           errbnd    - requested accuracy max(epsabs,epsrel*
+    !!                       abs(result))
+    !!           *****1    - variable for the left subinterval
+    !!           *****2    - variable for the right subinterval
+    !!           last      - index for subdivision
+    !!
     implicit none
 
     integer limit
@@ -2699,9 +2673,9 @@ contains
     integer nrmax
     real ( kind = 8 ) result
     real ( kind = 8 ) rlist(limit)
-    !
-    !  Test on validity of parameters.
-    !
+    !!
+    !!  Test on validity of parameters.
+    !!
     ier = 0
     neval = 0
     last = 0
@@ -2723,9 +2697,9 @@ contains
        ier = 6
        return
     end if
-    !
-    !  First approximation to the integral.
-    !
+    !!
+    !!  First approximation to the integral.
+    !!
     if ( a <= b ) then
        aa = a
        bb = b
@@ -2742,9 +2716,9 @@ contains
     iord(1) = 1
     alist(1) = a
     blist(1) = b
-    !
-    !  Test on accuracy.
-    !
+    !!
+    !!  Test on accuracy.
+    !!
     errbnd = max ( epsabs, epsrel * abs(result) )
 
     if ( limit == 1 ) then
@@ -2755,9 +2729,9 @@ contains
     if ( abserr < min ( 1.0D-02 * abs(result), errbnd)  ) then
        go to 70
     end if
-    !
-    !  Initialization
-    !
+    !!
+    !!  Initialization
+    !!
     alist(1) = aa
     blist(1) = bb
     rlist(1) = result
@@ -2770,9 +2744,9 @@ contains
     iroff2 = 0
 
     do last = 2, limit
-       !
-       !  Bisect the subinterval with nrmax-th largest error estimate.
-       !
+       !!
+       !!  Bisect the subinterval with nrmax-th largest error estimate.
+       !!
        a1 = alist(maxerr)
        b1 = 5.0D-01*(alist(maxerr)+blist(maxerr))
        b2 = blist(maxerr)
@@ -2793,10 +2767,10 @@ contains
 
        call qc25c ( f, a2, b2, c, area2, error2, krule, nev )
        neval = neval+nev
-       !
-       !  Improve previous approximations to integral and error
-       !  and test for accuracy.
-       !
+       !!
+       !!  Improve previous approximations to integral and error
+       !!  and test for accuracy.
+       !!
        area12 = area1 + area2
        erro12 = error1 + error2
        errsum = errsum + erro12 - errmax
@@ -2815,32 +2789,32 @@ contains
        errbnd = max ( epsabs, epsrel * abs(area) )
 
        if ( errsum > errbnd ) then
-          !
-          !  Test for roundoff error and eventually set error flag.
-          !
+          !!
+          !!  Test for roundoff error and eventually set error flag.
+          !!
           if ( iroff1 >= 6 .and. iroff2 > 20 ) then
              ier = 2
           end if
-          !
-          !  Set error flag in the case that number of interval
-          !  bisections exceeds limit.
-          !
+          !!
+          !!  Set error flag in the case that number of interval
+          !!  bisections exceeds limit.
+          !!
           if ( last == limit ) then
              ier = 1
           end if
-          !
-          !  Set error flag in the case of bad integrand behavior at
-          !  a point of the integration range.
-          !
+          !!
+          !!  Set error flag in the case of bad integrand behavior at
+          !!  a point of the integration range.
+          !!
           if ( max ( abs(a1), abs(b2) ) <= ( 1.0D+00 + 1.0D+03 * epsilon ( a1 ) ) &
                *( abs(a2)+1.0D+03* tiny ( a2 ) )) then
              ier = 3
           end if
 
        end if
-       !
-       !  Append the newly-created intervals to the list.
-       !
+       !!
+       !!  Append the newly-created intervals to the list.
+       !!
        if ( error2 <= error1 ) then
           alist(last) = a2
           blist(maxerr) = b1
@@ -2856,11 +2830,11 @@ contains
           elist(maxerr) = error2
           elist(last) = error1
        end if
-       !
-       !  Call QSORT to maintain the descending ordering
-       !  in the list of error estimates and select the subinterval
-       !  with NRMAX-th largest error estimate (to be bisected next).
-       !
+       !!
+       !!  Call QSORT to maintain the descending ordering
+       !!  in the list of error estimates and select the subinterval
+       !!  with NRMAX-th largest error estimate (to be bisected next).
+       !!
        call qsort ( limit, last, maxerr, errmax, elist, iord, nrmax )
 
        if ( ier /= 0 .or. errsum <= errbnd ) then
@@ -2868,9 +2842,9 @@ contains
        end if
 
     end do
-    !
-    !  Compute final result.
-    !
+    !!
+    !!  Compute final result.
+    !!
     result = sum ( rlist(1:last) )
 
     abserr = errsum
@@ -2883,100 +2857,98 @@ contains
 
     return
   end subroutine dqawce
-  subroutine dqawf ( f, a, omega, integr, epsabs, result, abserr, neval, ier )
 
-    !*****************************************************************************80
-    !
+  subroutine dqawf ( f, a, omega, integr, epsabs, result, abserr, neval, ier )
     !! DQAWF computes Fourier integrals over the interval [ A, +Infinity ).
-    !
-    !  Discussion:
-    !
-    !    The routine calculates an approximation RESULT to a definite integral  
-    ! 
-    !      I = integral of F*COS(OMEGA*X) 
-    !    or 
-    !      I = integral of F*SIN(OMEGA*X) 
-    !
-    !    over the interval [A,+Infinity), hopefully satisfying
-    !
-    !      || I - RESULT || <= EPSABS.
-    !
-    !    If OMEGA = 0 and INTEGR = 1, the integral is calculated by means 
-    !    of DQAGI, and IER has the meaning as described in the comments of DQAGI.
-    !
-    !  Author:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner
-    !
-    !  Reference:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner,
-    !    QUADPACK, a Subroutine Package for Automatic Integration,
-    !    Springer Verlag, 1983
-    !
-    !  Parameters:
-    !
-    !    Input, external real ( kind = 8 ) F, the name of the function routine, of the form
-    !      function f ( x )
-    !      real ( kind = 8 ) f
-    !      real ( kind = 8 ) x
-    !    which evaluates the integrand function.
-    !
-    !    Input, real ( kind = 8 ) A, the lower limit of integration.
-    !
-    !    Input, real ( kind = 8 ) OMEGA, the parameter in the weight function.
-    !
-    !    Input, integer INTEGR, indicates which weight functions is used
-    !    = 1, w(x) = cos(omega*x)
-    !    = 2, w(x) = sin(omega*x)
-    !
-    !    Input, real ( kind = 8 ) EPSABS, the absolute accuracy requested.
-    !
-    !    Output, real ( kind = 8 ) RESULT, the estimated value of the integral.
-    !
-    !    Output, real ( kind = 8 ) ABSERR, an estimate of || I - RESULT ||.
-    !
-    !    Output, integer NEVAL, the number of times the integral was evaluated.
-    !
-    !            ier    - integer
-    !                     ier = 0 normal and reliable termination of the
-    !                             routine. it is assumed that the
-    !                             requested accuracy has been achieved.
-    !                     ier > 0 abnormal termination of the routine.
-    !                             the estimates for integral and error are
-    !                             less reliable. it is assumed that the
-    !                             requested accuracy has not been achieved.
-    !                    if omega /= 0
-    !                     ier = 6 the input is invalid because
-    !                             (integr /= 1 and integr /= 2) or
-    !                              epsabs <= 0
-    !                              result, abserr, neval, lst are set to
-    !                              zero.
-    !                         = 7 abnormal termination of the computation
-    !                             of one or more subintegrals
-    !                         = 8 maximum number of cycles allowed
-    !                             has been achieved, i.e. of subintervals
-    !                             (a+(k-1)c,a+kc) where
-    !                             c = (2*int(abs(omega))+1)*pi/abs(omega),
-    !                             for k = 1, 2, ...
-    !                         = 9 the extrapolation table constructed for
-    !                             convergence acceleration of the series
-    !                             formed by the integral contributions
-    !                             over the cycles, does not converge to
-    !                             within the requested accuracy.
-    !
-    !  Local parameters:
-    !
-    !    integer LIMLST, gives an upper bound on the number of cycles, LIMLST >= 3.
-    !    if limlst < 3, the routine will end with ier = 6.
-    !
-    !    integer MAXP1, an upper bound on the number of Chebyshev moments which 
-    !    can be stored, i.e. for the intervals of lengths abs(b-a)*2**(-l), 
-    !    l = 0,1, ..., maxp1-2, maxp1 >= 1.  if maxp1 < 1, the routine will end
-    !    with ier = 6.
-    !
+    !!
+    !!  Discussion:
+    !!
+    !!    The routine calculates an approximation RESULT to a definite integral  
+    !! 
+    !!      I = integral of F*COS(OMEGA*X) 
+    !!    or 
+    !!      I = integral of F*SIN(OMEGA*X) 
+    !!
+    !!    over the interval [A,+Infinity), hopefully satisfying
+    !!
+    !!      || I - RESULT || <= EPSABS.
+    !!
+    !!    If OMEGA = 0 and INTEGR = 1, the integral is calculated by means 
+    !!    of DQAGI, and IER has the meaning as described in the comments of DQAGI.
+    !!
+    !!  Author:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner
+    !!
+    !!  Reference:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner,
+    !!    QUADPACK, a Subroutine Package for Automatic Integration,
+    !!    Springer Verlag, 1983
+    !!
+    !!  Parameters:
+    !!
+    !!    Input, external real ( kind = 8 ) F, the name of the function routine, of the form
+    !!      function f ( x )
+    !!      real ( kind = 8 ) f
+    !!      real ( kind = 8 ) x
+    !!    which evaluates the integrand function.
+    !!
+    !!    Input, real ( kind = 8 ) A, the lower limit of integration.
+    !!
+    !!    Input, real ( kind = 8 ) OMEGA, the parameter in the weight function.
+    !!
+    !!    Input, integer INTEGR, indicates which weight functions is used
+    !!    = 1, w(x) = cos(omega*x)
+    !!    = 2, w(x) = sin(omega*x)
+    !!
+    !!    Input, real ( kind = 8 ) EPSABS, the absolute accuracy requested.
+    !!
+    !!    Output, real ( kind = 8 ) RESULT, the estimated value of the integral.
+    !!
+    !!    Output, real ( kind = 8 ) ABSERR, an estimate of || I - RESULT ||.
+    !!
+    !!    Output, integer NEVAL, the number of times the integral was evaluated.
+    !!
+    !!            ier    - integer
+    !!                     ier = 0 normal and reliable termination of the
+    !!                             routine. it is assumed that the
+    !!                             requested accuracy has been achieved.
+    !!                     ier > 0 abnormal termination of the routine.
+    !!                             the estimates for integral and error are
+    !!                             less reliable. it is assumed that the
+    !!                             requested accuracy has not been achieved.
+    !!                    if omega /= 0
+    !!                     ier = 6 the input is invalid because
+    !!                             (integr /= 1 and integr /= 2) or
+    !!                              epsabs <= 0
+    !!                              result, abserr, neval, lst are set to
+    !!                              zero.
+    !!                         = 7 abnormal termination of the computation
+    !!                             of one or more subintegrals
+    !!                         = 8 maximum number of cycles allowed
+    !!                             has been achieved, i.e. of subintervals
+    !!                             (a+(k-1)c,a+kc) where
+    !!                             c = (2*int(abs(omega))+1)*pi/abs(omega),
+    !!                             for k = 1, 2, ...
+    !!                         = 9 the extrapolation table constructed for
+    !!                             convergence acceleration of the series
+    !!                             formed by the integral contributions
+    !!                             over the cycles, does not converge to
+    !!                             within the requested accuracy.
+    !!
+    !!  Local parameters:
+    !!
+    !!    integer LIMLST, gives an upper bound on the number of cycles, LIMLST >= 3.
+    !!    if limlst < 3, the routine will end with ier = 6.
+    !!
+    !!    integer MAXP1, an upper bound on the number of Chebyshev moments which 
+    !!    can be stored, i.e. for the intervals of lengths abs(b-a)*2**(-l), 
+    !!    l = 0,1, ..., maxp1-2, maxp1 >= 1.  if maxp1 < 1, the routine will end
+    !!    with ier = 6.
+    !!
     implicit none
 
     integer, parameter :: limit = 500
@@ -3022,205 +2994,202 @@ contains
   subroutine dqawfe ( f, a, omega, integr, epsabs, limlst, limit, maxp1, &
        result, abserr, neval, ier, rslst, erlst, ierlst, lst, alist, blist, &
        rlist, elist, iord, nnlog, chebmo )
-
-    !*****************************************************************************80
-    !
     !! DQAWFE computes Fourier integrals.
-    !
-    !  Discussion:
-    !
-    !    The routine calculates an approximation RESULT to a definite integral   
-    !      I = integral of F*COS(OMEGA*X) or F*SIN(OMEGA*X) over (A,+Infinity),
-    !    hopefully satisfying
-    !      || I - RESULT || <= EPSABS.
-    !
-    !  Author:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner
-    !
-    !  Reference:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner,
-    !    QUADPACK, a Subroutine Package for Automatic Integration,
-    !    Springer Verlag, 1983
-    !
-    !  Parameters:
-    !
-    !    Input, external real ( kind = 8 ) F, the name of the function routine, of the form
-    !      function f ( x )
-    !      real ( kind = 8 ) f
-    !      real ( kind = 8 ) x
-    !    which evaluates the integrand function.
-    !
-    !    Input, real ( kind = 8 ) A, the lower limit of integration.
-    !
-    !    Input, real ( kind = 8 ) OMEGA, the parameter in the weight function.
-    !
-    !    Input, integer INTEGR, indicates which weight function is used
-    !    = 1      w(x) = cos(omega*x)
-    !    = 2      w(x) = sin(omega*x)
-    !
-    !    Input, real ( kind = 8 ) EPSABS, the absolute accuracy requested.
-    !
-    !    Input, integer LIMLST, an upper bound on the number of cycles.
-    !    LIMLST must be at least 1.  In fact, if LIMLST < 3, the routine 
-    !    will end with IER= 6.
-    !
-    !    Input, integer LIMIT, an upper bound on the number of subintervals 
-    !    allowed in the partition of each cycle, limit >= 1.
-    !
-    !            maxp1  - integer
-    !                     gives an upper bound on the number of
-    !                     Chebyshev moments which can be stored, i.e.
-    !                     for the intervals of lengths abs(b-a)*2**(-l),
-    !                     l=0,1, ..., maxp1-2, maxp1 >= 1
-    !
-    !    Output, real ( kind = 8 ) RESULT, the estimated value of the integral.
-    !
-    !    Output, real ( kind = 8 ) ABSERR, an estimate of || I - RESULT ||.
-    !
-    !    Output, integer NEVAL, the number of times the integral was evaluated.
-    !
-    !            ier    - ier = 0 normal and reliable termination of
-    !                             the routine. it is assumed that the
-    !                             requested accuracy has been achieved.
-    !                     ier > 0 abnormal termination of the routine
-    !                             the estimates for integral and error
-    !                             are less reliable. it is assumed that
-    !                             the requested accuracy has not been
-    !                             achieved.
-    !                    if omega /= 0
-    !                     ier = 6 the input is invalid because
-    !                             (integr /= 1 and integr /= 2) or
-    !                              epsabs <= 0 or limlst < 3.
-    !                              result, abserr, neval, lst are set
-    !                              to zero.
-    !                         = 7 bad integrand behavior occurs within
-    !                             one or more of the cycles. location
-    !                             and type of the difficulty involved
-    !                             can be determined from the vector ierlst.
-    !                             here lst is the number of cycles actually
-    !                             needed (see below).
-    !                             ierlst(k) = 1 the maximum number of
-    !                                           subdivisions (= limit)
-    !                                           has been achieved on the
-    !                                           k th cycle.
-    !                                       = 2 occurence of roundoff
-    !                                           error is detected and
-    !                                           prevents the tolerance
-    !                                           imposed on the k th cycle
-    !                                           from being acheived.
-    !                                       = 3 extremely bad integrand
-    !                                           behavior occurs at some
-    !                                           points of the k th cycle.
-    !                                       = 4 the integration procedure
-    !                                           over the k th cycle does
-    !                                           not converge (to within the
-    !                                           required accuracy) due to
-    !                                           roundoff in the
-    !                                           extrapolation procedure
-    !                                           invoked on this cycle. it
-    !                                           is assumed that the result
-    !                                           on this interval is the
-    !                                           best which can be obtained.
-    !                                       = 5 the integral over the k th
-    !                                           cycle is probably divergent
-    !                                           or slowly convergent. it
-    !                                           must be noted that
-    !                                           divergence can occur with
-    !                                           any other value of
-    !                                           ierlst(k).
-    !                         = 8 maximum number of  cycles  allowed
-    !                             has been achieved, i.e. of subintervals
-    !                             (a+(k-1)c,a+kc) where
-    !                             c = (2*int(abs(omega))+1)*pi/abs(omega),
-    !                             for k = 1, 2, ..., lst.
-    !                             one can allow more cycles by increasing
-    !                             the value of limlst (and taking the
-    !                             according dimension adjustments into
-    !                             account).
-    !                             examine the array iwork which contains
-    !                             the error flags over the cycles, in order
-    !                             to eventual look for local integration
-    !                             difficulties.
-    !                             if the position of a local difficulty can
-    !                             be determined (e.g. singularity,
-    !                             discontinuity within the interval)
-    !                             one will probably gain from splitting
-    !                             up the interval at this point and
-    !                             calling appopriate integrators on the
-    !                             subranges.
-    !                         = 9 the extrapolation table constructed for
-    !                             convergence acceleration of the series
-    !                             formed by the integral contributions
-    !                             over the cycles, does not converge to
-    !                             within the required accuracy.
-    !                             as in the case of ier = 8, it is advised
-    !                             to examine the array iwork which contains
-    !                             the error flags on the cycles.
-    !                    if omega = 0 and integr = 1,
-    !                    the integral is calculated by means of dqagi
-    !                    and ier = ierlst(1) (with meaning as described
-    !                    for ierlst(k), k = 1).
-    !
-    !            rslst  - real
-    !                     vector of dimension at least limlst
-    !                     rslst(k) contains the integral contribution
-    !                     over the interval (a+(k-1)c,a+kc) where
-    !                     c = (2*int(abs(omega))+1)*pi/abs(omega),
-    !                     k = 1, 2, ..., lst.
-    !                     note that, if omega = 0, rslst(1) contains
-    !                     the value of the integral over (a,infinity).
-    !
-    !            erlst  - real
-    !                     vector of dimension at least limlst
-    !                     erlst(k) contains the error estimate
-    !                     corresponding with rslst(k).
-    !
-    !            ierlst - integer
-    !                     vector of dimension at least limlst
-    !                     ierlst(k) contains the error flag corresponding
-    !                     with rslst(k). for the meaning of the local error
-    !                     flags see description of output parameter ier.
-    !
-    !            lst    - integer
-    !                     number of subintervals needed for the integration
-    !                     if omega = 0 then lst is set to 1.
-    !
-    !            alist, blist, rlist, elist - real
-    !                     vector of dimension at least limit,
-    !
-    !            iord, nnlog - integer
-    !                     vector of dimension at least limit, providing
-    !                     space for the quantities needed in the
-    !                     subdivision process of each cycle
-    !
-    !            chebmo - real
-    !                     array of dimension at least (maxp1,25),
-    !                     providing space for the Chebyshev moments
-    !                     needed within the cycles
-    !
-    !  Local parameters:
-    !
-    !           c1, c2    - end points of subinterval (of length
-    !                       cycle)
-    !           cycle     - (2*int(abs(omega))+1)*pi/abs(omega)
-    !           psum      - vector of dimension at least (limexp+2)
-    !                       (see routine qextr)
-    !                       psum contains the part of the epsilon table
-    !                       which is still needed for further computations.
-    !                       each element of psum is a partial sum of
-    !                       the series which should sum to the value of
-    !                       the integral.
-    !           errsum    - sum of error estimates over the
-    !                       subintervals, calculated cumulatively
-    !           epsa      - absolute tolerance requested over current
-    !                       subinterval
-    !           chebmo    - array containing the modified Chebyshev
-    !                       moments (see also routine qc25o)
-    !
+    !!
+    !!  Discussion:
+    !!
+    !!    The routine calculates an approximation RESULT to a definite integral   
+    !!      I = integral of F*COS(OMEGA*X) or F*SIN(OMEGA*X) over (A,+Infinity),
+    !!    hopefully satisfying
+    !!      || I - RESULT || <= EPSABS.
+    !!
+    !!  Author:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner
+    !!
+    !!  Reference:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner,
+    !!    QUADPACK, a Subroutine Package for Automatic Integration,
+    !!    Springer Verlag, 1983
+    !!
+    !!  Parameters:
+    !!
+    !!    Input, external real ( kind = 8 ) F, the name of the function routine, of the form
+    !!      function f ( x )
+    !!      real ( kind = 8 ) f
+    !!      real ( kind = 8 ) x
+    !!    which evaluates the integrand function.
+    !!
+    !!    Input, real ( kind = 8 ) A, the lower limit of integration.
+    !!
+    !!    Input, real ( kind = 8 ) OMEGA, the parameter in the weight function.
+    !!
+    !!    Input, integer INTEGR, indicates which weight function is used
+    !!    = 1      w(x) = cos(omega*x)
+    !!    = 2      w(x) = sin(omega*x)
+    !!
+    !!    Input, real ( kind = 8 ) EPSABS, the absolute accuracy requested.
+    !!
+    !!    Input, integer LIMLST, an upper bound on the number of cycles.
+    !!    LIMLST must be at least 1.  In fact, if LIMLST < 3, the routine 
+    !!    will end with IER= 6.
+    !!
+    !!    Input, integer LIMIT, an upper bound on the number of subintervals 
+    !!    allowed in the partition of each cycle, limit >= 1.
+    !!
+    !!            maxp1  - integer
+    !!                     gives an upper bound on the number of
+    !!                     Chebyshev moments which can be stored, i.e.
+    !!                     for the intervals of lengths abs(b-a)*2**(-l),
+    !!                     l=0,1, ..., maxp1-2, maxp1 >= 1
+    !!
+    !!    Output, real ( kind = 8 ) RESULT, the estimated value of the integral.
+    !!
+    !!    Output, real ( kind = 8 ) ABSERR, an estimate of || I - RESULT ||.
+    !!
+    !!    Output, integer NEVAL, the number of times the integral was evaluated.
+    !!
+    !!            ier    - ier = 0 normal and reliable termination of
+    !!                             the routine. it is assumed that the
+    !!                             requested accuracy has been achieved.
+    !!                     ier > 0 abnormal termination of the routine
+    !!                             the estimates for integral and error
+    !!                             are less reliable. it is assumed that
+    !!                             the requested accuracy has not been
+    !!                             achieved.
+    !!                    if omega /= 0
+    !!                     ier = 6 the input is invalid because
+    !!                             (integr /= 1 and integr /= 2) or
+    !!                              epsabs <= 0 or limlst < 3.
+    !!                              result, abserr, neval, lst are set
+    !!                              to zero.
+    !!                         = 7 bad integrand behavior occurs within
+    !!                             one or more of the cycles. location
+    !!                             and type of the difficulty involved
+    !!                             can be determined from the vector ierlst.
+    !!                             here lst is the number of cycles actually
+    !!                             needed (see below).
+    !!                             ierlst(k) = 1 the maximum number of
+    !!                                           subdivisions (= limit)
+    !!                                           has been achieved on the
+    !!                                           k th cycle.
+    !!                                       = 2 occurence of roundoff
+    !!                                           error is detected and
+    !!                                           prevents the tolerance
+    !!                                           imposed on the k th cycle
+    !!                                           from being acheived.
+    !!                                       = 3 extremely bad integrand
+    !!                                           behavior occurs at some
+    !!                                           points of the k th cycle.
+    !!                                       = 4 the integration procedure
+    !!                                           over the k th cycle does
+    !!                                           not converge (to within the
+    !!                                           required accuracy) due to
+    !!                                           roundoff in the
+    !!                                           extrapolation procedure
+    !!                                           invoked on this cycle. it
+    !!                                           is assumed that the result
+    !!                                           on this interval is the
+    !!                                           best which can be obtained.
+    !!                                       = 5 the integral over the k th
+    !!                                           cycle is probably divergent
+    !!                                           or slowly convergent. it
+    !!                                           must be noted that
+    !!                                           divergence can occur with
+    !!                                           any other value of
+    !!                                           ierlst(k).
+    !!                         = 8 maximum number of  cycles  allowed
+    !!                             has been achieved, i.e. of subintervals
+    !!                             (a+(k-1)c,a+kc) where
+    !!                             c = (2*int(abs(omega))+1)*pi/abs(omega),
+    !!                             for k = 1, 2, ..., lst.
+    !!                             one can allow more cycles by increasing
+    !!                             the value of limlst (and taking the
+    !!                             according dimension adjustments into
+    !!                             account).
+    !!                             examine the array iwork which contains
+    !!                             the error flags over the cycles, in order
+    !!                             to eventual look for local integration
+    !!                             difficulties.
+    !!                             if the position of a local difficulty can
+    !!                             be determined (e.g. singularity,
+    !!                             discontinuity within the interval)
+    !!                             one will probably gain from splitting
+    !!                             up the interval at this point and
+    !!                             calling appopriate integrators on the
+    !!                             subranges.
+    !!                         = 9 the extrapolation table constructed for
+    !!                             convergence acceleration of the series
+    !!                             formed by the integral contributions
+    !!                             over the cycles, does not converge to
+    !!                             within the required accuracy.
+    !!                             as in the case of ier = 8, it is advised
+    !!                             to examine the array iwork which contains
+    !!                             the error flags on the cycles.
+    !!                    if omega = 0 and integr = 1,
+    !!                    the integral is calculated by means of dqagi
+    !!                    and ier = ierlst(1) (with meaning as described
+    !!                    for ierlst(k), k = 1).
+    !!
+    !!            rslst  - real
+    !!                     vector of dimension at least limlst
+    !!                     rslst(k) contains the integral contribution
+    !!                     over the interval (a+(k-1)c,a+kc) where
+    !!                     c = (2*int(abs(omega))+1)*pi/abs(omega),
+    !!                     k = 1, 2, ..., lst.
+    !!                     note that, if omega = 0, rslst(1) contains
+    !!                     the value of the integral over (a,infinity).
+    !!
+    !!            erlst  - real
+    !!                     vector of dimension at least limlst
+    !!                     erlst(k) contains the error estimate
+    !!                     corresponding with rslst(k).
+    !!
+    !!            ierlst - integer
+    !!                     vector of dimension at least limlst
+    !!                     ierlst(k) contains the error flag corresponding
+    !!                     with rslst(k). for the meaning of the local error
+    !!                     flags see description of output parameter ier.
+    !!
+    !!            lst    - integer
+    !!                     number of subintervals needed for the integration
+    !!                     if omega = 0 then lst is set to 1.
+    !!
+    !!            alist, blist, rlist, elist - real
+    !!                     vector of dimension at least limit,
+    !!
+    !!            iord, nnlog - integer
+    !!                     vector of dimension at least limit, providing
+    !!                     space for the quantities needed in the
+    !!                     subdivision process of each cycle
+    !!
+    !!            chebmo - real
+    !!                     array of dimension at least (maxp1,25),
+    !!                     providing space for the Chebyshev moments
+    !!                     needed within the cycles
+    !!
+    !!  Local parameters:
+    !!
+    !!           c1, c2    - end points of subinterval (of length
+    !!                       cycle)
+    !!           cycle     - (2*int(abs(omega))+1)*pi/abs(omega)
+    !!           psum      - vector of dimension at least (limexp+2)
+    !!                       (see routine qextr)
+    !!                       psum contains the part of the epsilon table
+    !!                       which is still needed for further computations.
+    !!                       each element of psum is a partial sum of
+    !!                       the series which should sum to the value of
+    !!                       the integral.
+    !!           errsum    - sum of error estimates over the
+    !!                       subintervals, calculated cumulatively
+    !!           epsa      - absolute tolerance requested over current
+    !!                       subinterval
+    !!           chebmo    - array containing the modified Chebyshev
+    !!                       moments (see also routine qc25o)
+    !!
     implicit none
 
     integer limit
@@ -3238,7 +3207,7 @@ contains
     real ( kind = 8 ) c1
     real ( kind = 8 ) c2
     real ( kind = 8 ) dl
-    ! real ( kind = 8 ) dla
+    !! real ( kind = 8 ) dla
     real ( kind = 8 ) drl
     real ( kind = 8 ) elist(limit)
     real ( kind = 8 ) ep
@@ -3273,13 +3242,13 @@ contains
     real ( kind = 8 ) res3la(3)
     real ( kind = 8 ) rlist(limit)
     real ( kind = 8 ) rslst(limlst)
-    !
-    !  The dimension of  psum  is determined by the value of
-    !  limexp in QEXTR (psum must be
-    !  of dimension (limexp+2) at least).
-    !
-    !  Test on validity of parameters.
-    !
+    !!
+    !!  The dimension of  psum  is determined by the value of
+    !!  limexp in QEXTR (psum must be
+    !!  of dimension (limexp+2) at least).
+    !!
+    !!  Test on validity of parameters.
+    !!
     result = 0.0D+00
     abserr = 0.0D+00
     neval = 0
@@ -3311,9 +3280,9 @@ contains
 
        return
     end if
-    !
-    !  Initializations.
-    !
+    !!
+    !!  Initializations.
+    !!
     l = int ( abs ( omega ) )
     dl = 2 * l + 1
     cycle = dl * pi / abs ( omega )
@@ -3338,10 +3307,10 @@ contains
     errsum = 0.0D+00
 
     do lst = 1, limlst
-       !
-       !  Integrate over current subinterval.
-       !
-       !   dla = lst
+       !!
+       !!  Integrate over current subinterval.
+       !!
+       !!   dla = lst
        epsa = eps * fact
 
        call qfour ( f, c1, c2, omega, integr, epsa, 0.0D+00, limit, lst, maxp1, &
@@ -3352,9 +3321,9 @@ contains
        fact = fact * p
        errsum = errsum + erlst(lst)
        drl = 5.0D+01 * abs(rslst(lst))
-       !
-       !  Test on accuracy with partial sum.
-       !
+       !!
+       !!  Test on accuracy with partial sum.
+       !!
        if ((errsum+drl) <= epsabs.and.lst >= 6) then
           go to 80
        end if
@@ -3380,19 +3349,19 @@ contains
        if ( lst == 2 ) then
           go to 40
        end if
-       !
-       !  Test on maximum number of subintervals
-       !
+       !!
+       !!  Test on maximum number of subintervals
+       !!
        if ( lst == limlst ) then
           ier = 8
        end if
-       !
-       !  Perform new extrapolation
-       !
+       !!
+       !!  Perform new extrapolation
+       !!
        call qextr ( numrl2, psum, reseps, abseps, res3la, nres )
-       !
-       !  Test whether extrapolated result is influenced by roundoff
-       !
+       !!
+       !!  Test whether extrapolated result is influenced by roundoff
+       !!
        ktmin = ktmin + 1
 
        if ( ktmin >= 15 .and. abserr <= 1.0D-03 * (errsum+drl) ) then
@@ -3404,11 +3373,11 @@ contains
           abserr = abseps
           result = reseps
           ktmin = 0
-          !
-          !  If IER is not 0, check whether direct result (partial
-          !  sum) or extrapolated result yields the best integral
-          !  approximation
-          !
+          !!
+          !!  If IER is not 0, check whether direct result (partial
+          !!  sum) or extrapolated result yields the best integral
+          !!  approximation
+          !!
           if ( ( abserr + 1.0D+01 * correc ) <= epsabs ) then
              exit
           end if
@@ -3430,10 +3399,10 @@ contains
        c2 = c2+cycle
 
     end do
-    !
-    !  Set final result and error estimate.
-    !
-    !60 continue
+    !!
+    !!  Set final result and error estimate.
+    !!
+    !!60 continue
 
     abserr = abserr + 1.0D+01 * correc
 
@@ -3473,113 +3442,111 @@ contains
   subroutine dqawo ( f, a, b, omega, integr, epsabs, epsrel, result, abserr, &
        neval, ier )
 
-    !*****************************************************************************80
-    !
     !! DQAWO computes the integrals of oscillatory integrands.
-    !
-    !  Discussion:
-    !
-    !    The routine calculates an approximation RESULT to a given
-    !    definite integral
-    !      I = Integral ( A <= X <= B ) F(X) * cos ( OMEGA * X ) dx
-    !    or 
-    !      I = Integral ( A <= X <= B ) F(X) * sin ( OMEGA * X ) dx
-    !    hopefully satisfying following claim for accuracy
-    !      | I - RESULT | <= max ( epsabs, epsrel * |I| ).
-    !
-    !  Author:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner
-    !
-    !  Reference:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner,
-    !    QUADPACK, a Subroutine Package for Automatic Integration,
-    !    Springer Verlag, 1983
-    !
-    !  Parameters:
-    !
-    !    Input, external real ( kind = 8 ) F, the name of the function routine, of the form
-    !      function f ( x )
-    !      real ( kind = 8 ) f
-    !      real ( kind = 8 ) x
-    !    which evaluates the integrand function.
-    !
-    !    Input, real ( kind = 8 ) A, B, the limits of integration.
-    !
-    !    Input, real ( kind = 8 ) OMEGA, the parameter in the weight function.
-    !
-    !    Input, integer INTEGR, specifies the weight function:
-    !    1, W(X) = cos ( OMEGA * X )
-    !    2, W(X) = sin ( OMEGA * X )
-    !
-    !    Input, real ( kind = 8 ) EPSABS, EPSREL, the absolute and relative accuracy requested.
-    !
-    !    Output, real ( kind = 8 ) RESULT, the estimated value of the integral.
-    !
-    !    Output, real ( kind = 8 ) ABSERR, an estimate of || I - RESULT ||.
-    !
-    !    Output, integer NEVAL, the number of times the integral was evaluated.
-    !
-    !            ier    - integer
-    !                     ier = 0 normal and reliable termination of the
-    !                             routine. it is assumed that the
-    !                             requested accuracy has been achieved.
-    !                   - ier > 0 abnormal termination of the routine.
-    !                             the estimates for integral and error are
-    !                             less reliable. it is assumed that the
-    !                             requested accuracy has not been achieved.
-    !                     ier = 1 maximum number of subdivisions allowed
-    !                             (= leniw/2) has been achieved. one can
-    !                             allow more subdivisions by increasing the
-    !                             value of leniw (and taking the according
-    !                             dimension adjustments into account).
-    !                             however, if this yields no improvement it
-    !                             is advised to analyze the integrand in
-    !                             order to determine the integration
-    !                             difficulties. if the position of a local
-    !                             difficulty can be determined (e.g.
-    !                             singularity, discontinuity within the
-    !                             interval) one will probably gain from
-    !                             splitting up the interval at this point
-    !                             and calling the integrator on the
-    !                             subranges. if possible, an appropriate
-    !                             special-purpose integrator should
-    !                             be used which is designed for handling
-    !                             the type of difficulty involved.
-    !                         = 2 the occurrence of roundoff error is
-    !                             detected, which prevents the requested
-    !                             tolerance from being achieved.
-    !                             the error may be under-estimated.
-    !                         = 3 extremely bad integrand behavior occurs
-    !                             at some interior points of the integration
-    !                             interval.
-    !                         = 4 the algorithm does not converge. roundoff
-    !                             error is detected in the extrapolation
-    !                             table. it is presumed that the requested
-    !                             tolerance cannot be achieved due to
-    !                             roundoff in the extrapolation table,
-    !                             and that the returned result is the best
-    !                             which can be obtained.
-    !                         = 5 the integral is probably divergent, or
-    !                             slowly convergent. it must be noted that
-    !                             divergence can occur with any other value
-    !                             of ier.
-    !                         = 6 the input is invalid, because
-    !                             epsabs < 0 and epsrel < 0,
-    !                             result, abserr, neval are set to zero.
-    !
-    !  Local parameters:
-    !
-    !    limit is the maximum number of subintervals allowed in the
-    !    subdivision process of QFOUR. take care that limit >= 1.
-    !
-    !    maxp1 gives an upper bound on the number of Chebyshev moments
-    !    which can be stored, i.e. for the intervals of lengths
-    !    abs(b-a)*2**(-l), l = 0, 1, ... , maxp1-2. take care that
-    !    maxp1 >= 1.
+    !!
+    !!  Discussion:
+    !!
+    !!    The routine calculates an approximation RESULT to a given
+    !!    definite integral
+    !!      I = Integral ( A <= X <= B ) F(X) * cos ( OMEGA * X ) dx
+    !!    or 
+    !!      I = Integral ( A <= X <= B ) F(X) * sin ( OMEGA * X ) dx
+    !!    hopefully satisfying following claim for accuracy
+    !!      | I - RESULT | <= max ( epsabs, epsrel * |I| ).
+    !!
+    !!  Author:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner
+    !!
+    !!  Reference:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner,
+    !!    QUADPACK, a Subroutine Package for Automatic Integration,
+    !!    Springer Verlag, 1983
+    !!
+    !!  Parameters:
+    !!
+    !!    Input, external real ( kind = 8 ) F, the name of the function routine, of the form
+    !!      function f ( x )
+    !!      real ( kind = 8 ) f
+    !!      real ( kind = 8 ) x
+    !!    which evaluates the integrand function.
+    !!
+    !!    Input, real ( kind = 8 ) A, B, the limits of integration.
+    !!
+    !!    Input, real ( kind = 8 ) OMEGA, the parameter in the weight function.
+    !!
+    !!    Input, integer INTEGR, specifies the weight function:
+    !!    1, W(X) = cos ( OMEGA * X )
+    !!    2, W(X) = sin ( OMEGA * X )
+    !!
+    !!    Input, real ( kind = 8 ) EPSABS, EPSREL, the absolute and relative accuracy requested.
+    !!
+    !!    Output, real ( kind = 8 ) RESULT, the estimated value of the integral.
+    !!
+    !!    Output, real ( kind = 8 ) ABSERR, an estimate of || I - RESULT ||.
+    !!
+    !!    Output, integer NEVAL, the number of times the integral was evaluated.
+    !!
+    !!            ier    - integer
+    !!                     ier = 0 normal and reliable termination of the
+    !!                             routine. it is assumed that the
+    !!                             requested accuracy has been achieved.
+    !!                   - ier > 0 abnormal termination of the routine.
+    !!                             the estimates for integral and error are
+    !!                             less reliable. it is assumed that the
+    !!                             requested accuracy has not been achieved.
+    !!                     ier = 1 maximum number of subdivisions allowed
+    !!                             (= leniw/2) has been achieved. one can
+    !!                             allow more subdivisions by increasing the
+    !!                             value of leniw (and taking the according
+    !!                             dimension adjustments into account).
+    !!                             however, if this yields no improvement it
+    !!                             is advised to analyze the integrand in
+    !!                             order to determine the integration
+    !!                             difficulties. if the position of a local
+    !!                             difficulty can be determined (e.g.
+    !!                             singularity, discontinuity within the
+    !!                             interval) one will probably gain from
+    !!                             splitting up the interval at this point
+    !!                             and calling the integrator on the
+    !!                             subranges. if possible, an appropriate
+    !!                             special-purpose integrator should
+    !!                             be used which is designed for handling
+    !!                             the type of difficulty involved.
+    !!                         = 2 the occurrence of roundoff error is
+    !!                             detected, which prevents the requested
+    !!                             tolerance from being achieved.
+    !!                             the error may be under-estimated.
+    !!                         = 3 extremely bad integrand behavior occurs
+    !!                             at some interior points of the integration
+    !!                             interval.
+    !!                         = 4 the algorithm does not converge. roundoff
+    !!                             error is detected in the extrapolation
+    !!                             table. it is presumed that the requested
+    !!                             tolerance cannot be achieved due to
+    !!                             roundoff in the extrapolation table,
+    !!                             and that the returned result is the best
+    !!                             which can be obtained.
+    !!                         = 5 the integral is probably divergent, or
+    !!                             slowly convergent. it must be noted that
+    !!                             divergence can occur with any other value
+    !!                             of ier.
+    !!                         = 6 the input is invalid, because
+    !!                             epsabs < 0 and epsrel < 0,
+    !!                             result, abserr, neval are set to zero.
+    !!
+    !!  Local parameters:
+    !!
+    !!    limit is the maximum number of subintervals allowed in the
+    !!    subdivision process of QFOUR. take care that limit >= 1.
+    !!
+    !!    maxp1 gives an upper bound on the number of Chebyshev moments
+    !!    which can be stored, i.e. for the intervals of lengths
+    !!    abs(b-a)*2**(-l), l = 0, 1, ... , maxp1-2. take care that
+    !!    maxp1 >= 1.
 
     implicit none
 
@@ -3614,101 +3581,98 @@ contains
   end subroutine dqawo
   subroutine dqaws ( f, a, b, alfa, beta, integr, epsabs, epsrel, result, &
        abserr, neval, ier )
-
-    !*****************************************************************************80
-    !
     !! DQAWS estimates integrals with algebraico-logarithmic endpoint singularities.
-    !
-    !  Discussion:
-    !
-    !    This routine calculates an approximation RESULT to a given
-    !    definite integral   
-    !      I = integral of f*w over (a,b) 
-    !    where w shows a singular behavior at the end points, see parameter
-    !    integr, hopefully satisfying following claim for accuracy
-    !      abs(i-result) <= max(epsabs,epsrel*abs(i)).
-    !
-    !  Author:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner
-    !
-    !  Reference:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner,
-    !    QUADPACK, a Subroutine Package for Automatic Integration,
-    !    Springer Verlag, 1983
-    !
-    !  Parameters:
-    !
-    !    Input, external real ( kind = 8 ) F, the name of the function routine, of the form
-    !      function f ( x )
-    !      real ( kind = 8 ) f
-    !      real ( kind = 8 ) x
-    !    which evaluates the integrand function.
-    !
-    !    Input, real ( kind = 8 ) A, B, the limits of integration.
-    !
-    !    Input, real ( kind = 8 ) ALFA, BETA, parameters used in the weight function.
-    !    ALFA and BETA should be greater than -1.
-    !
-    !    Input, integer INTEGR, indicates which weight function is to be used
-    !    = 1  (x-a)**alfa*(b-x)**beta
-    !    = 2  (x-a)**alfa*(b-x)**beta*log(x-a)
-    !    = 3  (x-a)**alfa*(b-x)**beta*log(b-x)
-    !    = 4  (x-a)**alfa*(b-x)**beta*log(x-a)*log(b-x)
-    !
-    !    Input, real ( kind = 8 ) EPSABS, EPSREL, the absolute and relative accuracy requested.
-    !
-    !    Output, real ( kind = 8 ) RESULT, the estimated value of the integral.
-    !
-    !    Output, real ( kind = 8 ) ABSERR, an estimate of || I - RESULT ||.
-    !
-    !    Output, integer NEVAL, the number of times the integral was evaluated.
-    !
-    !            ier    - integer
-    !                     ier = 0 normal and reliable termination of the
-    !                             routine. it is assumed that the requested
-    !                             accuracy has been achieved.
-    !                     ier > 0 abnormal termination of the routine
-    !                             the estimates for the integral and error
-    !                             are less reliable. it is assumed that the
-    !                             requested accuracy has not been achieved.
-    !                     ier = 1 maximum number of subdivisions allowed
-    !                             has been achieved. one can allow more
-    !                             subdivisions by increasing the data value
-    !                             of limit in dqaws (and taking the according
-    !                             dimension adjustments into account).
-    !                             however, if this yields no improvement it
-    !                             is advised to analyze the integrand, in
-    !                             order to determine the integration
-    !                             difficulties which prevent the requested
-    !                             tolerance from being achieved. in case of
-    !                             a jump discontinuity or a local
-    !                             singularity of algebraico-logarithmic type
-    !                             at one or more interior points of the
-    !                             integration range, one should proceed by
-    !                             splitting up the interval at these points
-    !                             and calling the integrator on the
-    !                             subranges.
-    !                         = 2 the occurrence of roundoff error is
-    !                             detected, which prevents the requested
-    !                             tolerance from being achieved.
-    !                         = 3 extremely bad integrand behavior occurs
-    !                             at some points of the integration
-    !                             interval.
-    !                         = 6 the input is invalid, because
-    !                             b <= a or alfa <= (-1) or beta <= (-1) or
-    !                             integr < 1 or integr > 4 or
-    !                             epsabs < 0 and epsrel < 0,
-    !                             result, abserr, neval are set to zero.
-    !
-    !  Local parameters:
-    !
-    !    LIMIT is the maximum number of subintervals allowed in the
-    !    subdivision process of dqawse. take care that limit >= 2.
-    !
+    !!
+    !!  Discussion:
+    !!
+    !!    This routine calculates an approximation RESULT to a given
+    !!    definite integral   
+    !!      I = integral of f*w over (a,b) 
+    !!    where w shows a singular behavior at the end points, see parameter
+    !!    integr, hopefully satisfying following claim for accuracy
+    !!      abs(i-result) <= max(epsabs,epsrel*abs(i)).
+    !!
+    !!  Author:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner
+    !!
+    !!  Reference:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner,
+    !!    QUADPACK, a Subroutine Package for Automatic Integration,
+    !!    Springer Verlag, 1983
+    !!
+    !!  Parameters:
+    !!
+    !!    Input, external real ( kind = 8 ) F, the name of the function routine, of the form
+    !!      function f ( x )
+    !!      real ( kind = 8 ) f
+    !!      real ( kind = 8 ) x
+    !!    which evaluates the integrand function.
+    !!
+    !!    Input, real ( kind = 8 ) A, B, the limits of integration.
+    !!
+    !!    Input, real ( kind = 8 ) ALFA, BETA, parameters used in the weight function.
+    !!    ALFA and BETA should be greater than -1.
+    !!
+    !!    Input, integer INTEGR, indicates which weight function is to be used
+    !!    = 1  (x-a)**alfa*(b-x)**beta
+    !!    = 2  (x-a)**alfa*(b-x)**beta*log(x-a)
+    !!    = 3  (x-a)**alfa*(b-x)**beta*log(b-x)
+    !!    = 4  (x-a)**alfa*(b-x)**beta*log(x-a)*log(b-x)
+    !!
+    !!    Input, real ( kind = 8 ) EPSABS, EPSREL, the absolute and relative accuracy requested.
+    !!
+    !!    Output, real ( kind = 8 ) RESULT, the estimated value of the integral.
+    !!
+    !!    Output, real ( kind = 8 ) ABSERR, an estimate of || I - RESULT ||.
+    !!
+    !!    Output, integer NEVAL, the number of times the integral was evaluated.
+    !!
+    !!            ier    - integer
+    !!                     ier = 0 normal and reliable termination of the
+    !!                             routine. it is assumed that the requested
+    !!                             accuracy has been achieved.
+    !!                     ier > 0 abnormal termination of the routine
+    !!                             the estimates for the integral and error
+    !!                             are less reliable. it is assumed that the
+    !!                             requested accuracy has not been achieved.
+    !!                     ier = 1 maximum number of subdivisions allowed
+    !!                             has been achieved. one can allow more
+    !!                             subdivisions by increasing the data value
+    !!                             of limit in dqaws (and taking the according
+    !!                             dimension adjustments into account).
+    !!                             however, if this yields no improvement it
+    !!                             is advised to analyze the integrand, in
+    !!                             order to determine the integration
+    !!                             difficulties which prevent the requested
+    !!                             tolerance from being achieved. in case of
+    !!                             a jump discontinuity or a local
+    !!                             singularity of algebraico-logarithmic type
+    !!                             at one or more interior points of the
+    !!                             integration range, one should proceed by
+    !!                             splitting up the interval at these points
+    !!                             and calling the integrator on the
+    !!                             subranges.
+    !!                         = 2 the occurrence of roundoff error is
+    !!                             detected, which prevents the requested
+    !!                             tolerance from being achieved.
+    !!                         = 3 extremely bad integrand behavior occurs
+    !!                             at some points of the integration
+    !!                             interval.
+    !!                         = 6 the input is invalid, because
+    !!                             b <= a or alfa <= (-1) or beta <= (-1) or
+    !!                             integr < 1 or integr > 4 or
+    !!                             epsabs < 0 and epsrel < 0,
+    !!                             result, abserr, neval are set to zero.
+    !!
+    !!  Local parameters:
+    !!
+    !!    LIMIT is the maximum number of subintervals allowed in the
+    !!    subdivision process of dqawse. take care that limit >= 2.
+    !!
     implicit none
 
     integer, parameter :: limit = 500
@@ -3739,141 +3703,138 @@ contains
   end subroutine dqaws
   subroutine dqawse ( f, a, b, alfa, beta, integr, epsabs, epsrel, limit, &
        result, abserr, neval, ier, alist, blist, rlist, elist, iord, last )
-
-    !*****************************************************************************80
-    !
     !! DQAWSE estimates integrals with algebraico-logarithmic endpoint singularities.
-    !
-    !  Discussion:
-    !
-    !    This routine calculates an approximation RESULT to an integral
-    !      I = integral of F(X) * W(X) over (a,b), 
-    !    where W(X) shows a singular behavior at the endpoints, hopefully 
-    !    satisfying:
-    !      | I - RESULT | <= max ( epsabs, epsrel * |I| ).
-    !
-    !  Author:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner
-    !
-    !  Reference:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner,
-    !    QUADPACK, a Subroutine Package for Automatic Integration,
-    !    Springer Verlag, 1983
-    !
-    !  Parameters:
-    !
-    !    Input, external real ( kind = 8 ) F, the name of the function routine, of the form
-    !      function f ( x )
-    !      real ( kind = 8 ) f
-    !      real ( kind = 8 ) x
-    !    which evaluates the integrand function.
-    !
-    !    Input, real ( kind = 8 ) A, B, the limits of integration.
-    !
-    !    Input, real ( kind = 8 ) ALFA, BETA, parameters used in the weight function.
-    !    ALFA and BETA should be greater than -1.
-    !
-    !    Input, integer INTEGR, indicates which weight function is used:
-    !    = 1  (x-a)**alfa*(b-x)**beta
-    !    = 2  (x-a)**alfa*(b-x)**beta*log(x-a)
-    !    = 3  (x-a)**alfa*(b-x)**beta*log(b-x)
-    !    = 4  (x-a)**alfa*(b-x)**beta*log(x-a)*log(b-x)
-    !
-    !    Input, real ( kind = 8 ) EPSABS, EPSREL, the absolute and relative accuracy requested.
-    !
-    !    Input, integer LIMIT, an upper bound on the number of subintervals
-    !    in the partition of (A,B), LIMIT >= 2.  If LIMIT < 2, the routine 
-    !     will end with IER = 6.
-    !
-    !    Output, real ( kind = 8 ) RESULT, the estimated value of the integral.
-    !
-    !    Output, real ( kind = 8 ) ABSERR, an estimate of || I - RESULT ||.
-    !
-    !    Output, integer NEVAL, the number of times the integral was evaluated.
-    !
-    !            ier    - integer
-    !                     ier = 0 normal and reliable termination of the
-    !                             routine. it is assumed that the requested
-    !                             accuracy has been achieved.
-    !                     ier > 0 abnormal termination of the routine
-    !                             the estimates for the integral and error
-    !                             are less reliable. it is assumed that the
-    !                             requested accuracy has not been achieved.
-    !                         = 1 maximum number of subdivisions allowed
-    !                             has been achieved. one can allow more
-    !                             subdivisions by increasing the value of
-    !                             limit. however, if this yields no
-    !                             improvement it is advised to analyze the
-    !                             integrand, in order to determine the
-    !                             integration difficulties which prevent
-    !                             the requested tolerance from being
-    !                             achieved. in case of a jump discontinuity
-    !                             or a local singularity of algebraico-
-    !                             logarithmic type at one or more interior
-    !                             points of the integration range, one
-    !                             should proceed by splitting up the
-    !                             interval at these points and calling the
-    !                             integrator on the subranges.
-    !                         = 2 the occurrence of roundoff error is
-    !                             detected, which prevents the requested
-    !                             tolerance from being achieved.
-    !                         = 3 extremely bad integrand behavior occurs
-    !                             at some points of the integration
-    !                             interval.
-    !                         = 6 the input is invalid, because
-    !                             b <= a or alfa <= (-1) or beta <= (-1) or
-    !                             integr < 1 or integr > 4, or
-    !                             epsabs < 0 and epsrel < 0,
-    !                             or limit < 2.
-    !                             result, abserr, neval, rlist(1), elist(1),
-    !                             iord(1) and last are set to zero.
-    !                             alist(1) and blist(1) are set to a and b
-    !                             respectively.
-    !
-    !    Workspace, real ( kind = 8 ) ALIST(LIMIT), BLIST(LIMIT), contains in entries 1 
-    !    through LAST the left and right ends of the partition subintervals.
-    !
-    !    Workspace, real ( kind = 8 ) RLIST(LIMIT), contains in entries 1 through LAST
-    !    the integral approximations on the subintervals.
-    !
-    !    Workspace, real ( kind = 8 ) ELIST(LIMIT), contains in entries 1 through LAST
-    !    the absolute error estimates on the subintervals.
-    !
-    !            iord   - integer
-    !                     vector of dimension at least limit, the first k
-    !                     elements of which are pointers to the error
-    !                     estimates over the subintervals, so that
-    !                     elist(iord(1)), ..., elist(iord(k)) with k = last
-    !                     if last <= (limit/2+2), and k = limit+1-last
-    !                     otherwise, form a decreasing sequence.
-    !
-    !    Output, integer LAST, the number of subintervals actually produced in 
-    !    the subdivision process.
-    !
-    !  Local parameters:
-    !
-    !           alist     - list of left end points of all subintervals
-    !                       considered up to now
-    !           blist     - list of right end points of all subintervals
-    !                       considered up to now
-    !           rlist(i)  - approximation to the integral over
-    !                       (alist(i),blist(i))
-    !           elist(i)  - error estimate applying to rlist(i)
-    !           maxerr    - pointer to the interval with largest error
-    !                       estimate
-    !           errmax    - elist(maxerr)
-    !           area      - sum of the integrals over the subintervals
-    !           errsum    - sum of the errors over the subintervals
-    !           errbnd    - requested accuracy max(epsabs,epsrel*
-    !                       abs(result))
-    !           *****1    - variable for the left subinterval
-    !           *****2    - variable for the right subinterval
-    !           last      - index for subdivision
-    !
+    !!
+    !!  Discussion:
+    !!
+    !!    This routine calculates an approximation RESULT to an integral
+    !!      I = integral of F(X) * W(X) over (a,b), 
+    !!    where W(X) shows a singular behavior at the endpoints, hopefully 
+    !!    satisfying:
+    !!      | I - RESULT | <= max ( epsabs, epsrel * |I| ).
+    !!
+    !!  Author:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner
+    !!
+    !!  Reference:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner,
+    !!    QUADPACK, a Subroutine Package for Automatic Integration,
+    !!    Springer Verlag, 1983
+    !!
+    !!  Parameters:
+    !!
+    !!    Input, external real ( kind = 8 ) F, the name of the function routine, of the form
+    !!      function f ( x )
+    !!      real ( kind = 8 ) f
+    !!      real ( kind = 8 ) x
+    !!    which evaluates the integrand function.
+    !!
+    !!    Input, real ( kind = 8 ) A, B, the limits of integration.
+    !!
+    !!    Input, real ( kind = 8 ) ALFA, BETA, parameters used in the weight function.
+    !!    ALFA and BETA should be greater than -1.
+    !!
+    !!    Input, integer INTEGR, indicates which weight function is used:
+    !!    = 1  (x-a)**alfa*(b-x)**beta
+    !!    = 2  (x-a)**alfa*(b-x)**beta*log(x-a)
+    !!    = 3  (x-a)**alfa*(b-x)**beta*log(b-x)
+    !!    = 4  (x-a)**alfa*(b-x)**beta*log(x-a)*log(b-x)
+    !!
+    !!    Input, real ( kind = 8 ) EPSABS, EPSREL, the absolute and relative accuracy requested.
+    !!
+    !!    Input, integer LIMIT, an upper bound on the number of subintervals
+    !!    in the partition of (A,B), LIMIT >= 2.  If LIMIT < 2, the routine 
+    !!     will end with IER = 6.
+    !!
+    !!    Output, real ( kind = 8 ) RESULT, the estimated value of the integral.
+    !!
+    !!    Output, real ( kind = 8 ) ABSERR, an estimate of || I - RESULT ||.
+    !!
+    !!    Output, integer NEVAL, the number of times the integral was evaluated.
+    !!
+    !!            ier    - integer
+    !!                     ier = 0 normal and reliable termination of the
+    !!                             routine. it is assumed that the requested
+    !!                             accuracy has been achieved.
+    !!                     ier > 0 abnormal termination of the routine
+    !!                             the estimates for the integral and error
+    !!                             are less reliable. it is assumed that the
+    !!                             requested accuracy has not been achieved.
+    !!                         = 1 maximum number of subdivisions allowed
+    !!                             has been achieved. one can allow more
+    !!                             subdivisions by increasing the value of
+    !!                             limit. however, if this yields no
+    !!                             improvement it is advised to analyze the
+    !!                             integrand, in order to determine the
+    !!                             integration difficulties which prevent
+    !!                             the requested tolerance from being
+    !!                             achieved. in case of a jump discontinuity
+    !!                             or a local singularity of algebraico-
+    !!                             logarithmic type at one or more interior
+    !!                             points of the integration range, one
+    !!                             should proceed by splitting up the
+    !!                             interval at these points and calling the
+    !!                             integrator on the subranges.
+    !!                         = 2 the occurrence of roundoff error is
+    !!                             detected, which prevents the requested
+    !!                             tolerance from being achieved.
+    !!                         = 3 extremely bad integrand behavior occurs
+    !!                             at some points of the integration
+    !!                             interval.
+    !!                         = 6 the input is invalid, because
+    !!                             b <= a or alfa <= (-1) or beta <= (-1) or
+    !!                             integr < 1 or integr > 4, or
+    !!                             epsabs < 0 and epsrel < 0,
+    !!                             or limit < 2.
+    !!                             result, abserr, neval, rlist(1), elist(1),
+    !!                             iord(1) and last are set to zero.
+    !!                             alist(1) and blist(1) are set to a and b
+    !!                             respectively.
+    !!
+    !!    Workspace, real ( kind = 8 ) ALIST(LIMIT), BLIST(LIMIT), contains in entries 1 
+    !!    through LAST the left and right ends of the partition subintervals.
+    !!
+    !!    Workspace, real ( kind = 8 ) RLIST(LIMIT), contains in entries 1 through LAST
+    !!    the integral approximations on the subintervals.
+    !!
+    !!    Workspace, real ( kind = 8 ) ELIST(LIMIT), contains in entries 1 through LAST
+    !!    the absolute error estimates on the subintervals.
+    !!
+    !!            iord   - integer
+    !!                     vector of dimension at least limit, the first k
+    !!                     elements of which are pointers to the error
+    !!                     estimates over the subintervals, so that
+    !!                     elist(iord(1)), ..., elist(iord(k)) with k = last
+    !!                     if last <= (limit/2+2), and k = limit+1-last
+    !!                     otherwise, form a decreasing sequence.
+    !!
+    !!    Output, integer LAST, the number of subintervals actually produced in 
+    !!    the subdivision process.
+    !!
+    !!  Local parameters:
+    !!
+    !!           alist     - list of left end points of all subintervals
+    !!                       considered up to now
+    !!           blist     - list of right end points of all subintervals
+    !!                       considered up to now
+    !!           rlist(i)  - approximation to the integral over
+    !!                       (alist(i),blist(i))
+    !!           elist(i)  - error estimate applying to rlist(i)
+    !!           maxerr    - pointer to the interval with largest error
+    !!                       estimate
+    !!           errmax    - elist(maxerr)
+    !!           area      - sum of the integrals over the subintervals
+    !!           errsum    - sum of the errors over the subintervals
+    !!           errbnd    - requested accuracy max(epsabs,epsrel*
+    !!                       abs(result))
+    !!           *****1    - variable for the left subinterval
+    !!           *****2    - variable for the right subinterval
+    !!           last      - index for subdivision
+    !!
     implicit none
 
     integer limit
@@ -3922,9 +3883,9 @@ contains
     real ( kind = 8 ) ri(25)
     real ( kind = 8 ) rj(25)
     real ( kind = 8 ) rlist(limit)
-    !
-    !  Test on validity of parameters.
-    !
+    !!
+    !!  Test on validity of parameters.
+    !!
     ier = 0
     neval = 0
     last = 0
@@ -3944,13 +3905,13 @@ contains
        ier = 6
        return
     end if
-    !
-    !  Compute the modified Chebyshev moments.
-    !
+    !!
+    !!  Compute the modified Chebyshev moments.
+    !!
     call qmomo ( alfa, beta, ri, rj, rg, rh, integr )
-    !
-    !  Integrate over the intervals (a,(a+b)/2) and ((a+b)/2,b).
-    !
+    !!
+    !!  Integrate over the intervals (a,(a+b)/2) and ((a+b)/2,b).
+    !!
     centre = 5.0D-01 * ( b + a )
 
     call qc25s ( f, a, b, a, centre, alfa, beta, ri, rj, rg, rh, area1, &
@@ -3965,13 +3926,13 @@ contains
     neval = neval+nev
     result = area1+area2
     abserr = error1+error2
-    !
-    !  Test on accuracy.
-    !
+    !!
+    !!  Test on accuracy.
+    !!
     errbnd = max ( epsabs, epsrel * abs ( result ) )
-    !
-    !  Initialization.
-    !
+    !!
+    !!  Initialization.
+    !!
     if ( error2 <= error1 ) then
        alist(1) = a
        alist(2) = centre
@@ -4013,9 +3974,9 @@ contains
     iroff2 = 0
 
     do last = 3, limit
-       !
-       !  Bisect the subinterval with largest error estimate.
-       !
+       !!
+       !!  Bisect the subinterval with largest error estimate.
+       !!
        a1 = alist(maxerr)
        b1 = 5.0D-01 * ( alist(maxerr) + blist(maxerr) )
        a2 = b1
@@ -4030,17 +3991,17 @@ contains
             error2, resas2, integr, nev )
 
        neval = neval + nev
-       !
-       !  Improve previous approximations integral and error and
-       !  test for accuracy.
-       !
+       !!
+       !!  Improve previous approximations integral and error and
+       !!  test for accuracy.
+       !!
        area12 = area1+area2
        erro12 = error1+error2
        errsum = errsum+erro12-errmax
        area = area+area12-rlist(maxerr)
-       !
-       !  Test for roundoff error.
-       !
+       !!
+       !!  Test for roundoff error.
+       !!
        if ( a /= a1 .and. b /= b2 ) then
 
           if ( resas1 /= error1 .and. resas2 /= error2 ) then
@@ -4060,38 +4021,38 @@ contains
 
        rlist(maxerr) = area1
        rlist(last) = area2
-       !
-       !  Test on accuracy.
-       !
+       !!
+       !!  Test on accuracy.
+       !!
        errbnd = max ( epsabs, epsrel * abs ( area ) )
 
        if ( errsum > errbnd ) then
-          !
-          !  Set error flag in the case that the number of interval
-          !  bisections exceeds limit.
-          !
+          !!
+          !!  Set error flag in the case that the number of interval
+          !!  bisections exceeds limit.
+          !!
           if ( last == limit ) then
              ier = 1
           end if
-          !
-          !  Set error flag in the case of roundoff error.
-          !
+          !!
+          !!  Set error flag in the case of roundoff error.
+          !!
           if ( iroff1 >= 6 .or. iroff2 >= 20 ) then
              ier = 2
           end if
-          !
-          !  Set error flag in the case of bad integrand behavior
-          !  at interior points of integration range.
-          !
+          !!
+          !!  Set error flag in the case of bad integrand behavior
+          !!  at interior points of integration range.
+          !!
           if ( max ( abs(a1),abs(b2)) <= (1.0D+00+1.0D+03* epsilon ( a1 ) )* &
                ( abs(a2) + 1.0D+03* tiny ( a2) )) then
              ier = 3
           end if
 
        end if
-       !
-       !  Append the newly-created intervals to the list.
-       !
+       !!
+       !!  Append the newly-created intervals to the list.
+       !!
        if ( error2 <= error1 ) then
           alist(last) = a2
           blist(maxerr) = b1
@@ -4107,11 +4068,11 @@ contains
           elist(maxerr) = error2
           elist(last) = error1
        end if
-       !
-       !  Call QSORT to maintain the descending ordering
-       !  in the list of error estimates and select the subinterval
-       !  with largest error estimate (to be bisected next).
-       !
+       !!
+       !!  Call QSORT to maintain the descending ordering
+       !!  in the list of error estimates and select the subinterval
+       !!  with largest error estimate (to be bisected next).
+       !!
        call qsort ( limit, last, maxerr, errmax, elist, iord, nrmax )
 
        if ( ier /= 0 .or. errsum <= errbnd ) then
@@ -4119,83 +4080,81 @@ contains
        end if
 
     end do
-    !
-    !  Compute final result.
-    !
+    !!
+    !!  Compute final result.
+    !!
     result = sum ( rlist(1:last) )
 
     abserr = errsum
 
     return
   end subroutine dqawse
-  subroutine qc25c ( f, a, b, c, result, abserr, krul, neval )
 
-    !*****************************************************************************80
-    !
+  subroutine qc25c ( f, a, b, c, result, abserr, krul, neval )
     !! QC25C returns integration rules for Cauchy Principal Value integrals.
-    !
-    !  Discussion:
-    !
-    !    This routine estimates 
-    !      I = integral of F(X) * W(X) over (a,b) 
-    !    with error estimate, where 
-    !      w(x) = 1/(x-c)
-    !
-    !  Author:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner
-    !
-    !  Reference:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner,
-    !    QUADPACK, a Subroutine Package for Automatic Integration,
-    !    Springer Verlag, 1983
-    !
-    !  Parameters:
-    !
-    !    Input, external real ( kind = 8 ) F, the name of the function routine, of the form
-    !      function f ( x )
-    !      real ( kind = 8 ) f
-    !      real ( kind = 8 ) x
-    !    which evaluates the integrand function.
-    !
-    !    Input, real ( kind = 8 ) A, B, the limits of integration.
-    !
-    !    Input, real ( kind = 8 ) C, the parameter in the weight function.
-    !
-    !    Output, real ( kind = 8 ) RESULT, the estimated value of the integral.
-    !    RESULT is computed by using a generalized Clenshaw-Curtis method if
-    !    C lies within ten percent of the integration interval.  In the 
-    !    other case the 15-point Kronrod rule obtained by optimal addition
-    !    of abscissae to the 7-point Gauss rule, is applied.
-    !
-    !    Output, real ( kind = 8 ) ABSERR, an estimate of || I - RESULT ||.
-    !
-    !           krul   - integer
-    !                    key which is decreased by 1 if the 15-point
-    !                    Gauss-Kronrod scheme has been used
-    !
-    !    Output, integer NEVAL, the number of times the integral was evaluated.
-    !
-    !  Local parameters:
-    !
-    !           fval   - value of the function f at the points
-    !                    cos(k*pi/24),  k = 0, ..., 24
-    !           cheb12 - Chebyshev series expansion coefficients, for the
-    !                    function f, of degree 12
-    !           cheb24 - Chebyshev series expansion coefficients, for the
-    !                    function f, of degree 24
-    !           res12  - approximation to the integral corresponding to the
-    !                    use of cheb12
-    !           res24  - approximation to the integral corresponding to the
-    !                    use of cheb24
-    !           qwgtc  - external function subprogram defining the weight
-    !                    function
-    !           hlgth  - half-length of the interval
-    !           centr  - mid point of the interval
-    !
+    !!
+    !!  Discussion:
+    !!
+    !!    This routine estimates 
+    !!      I = integral of F(X) * W(X) over (a,b) 
+    !!    with error estimate, where 
+    !!      w(x) = 1/(x-c)
+    !!
+    !!  Author:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner
+    !!
+    !!  Reference:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner,
+    !!    QUADPACK, a Subroutine Package for Automatic Integration,
+    !!    Springer Verlag, 1983
+    !!
+    !!  Parameters:
+    !!
+    !!    Input, external real ( kind = 8 ) F, the name of the function routine, of the form
+    !!      function f ( x )
+    !!      real ( kind = 8 ) f
+    !!      real ( kind = 8 ) x
+    !!    which evaluates the integrand function.
+    !!
+    !!    Input, real ( kind = 8 ) A, B, the limits of integration.
+    !!
+    !!    Input, real ( kind = 8 ) C, the parameter in the weight function.
+    !!
+    !!    Output, real ( kind = 8 ) RESULT, the estimated value of the integral.
+    !!    RESULT is computed by using a generalized Clenshaw-Curtis method if
+    !!    C lies within ten percent of the integration interval.  In the 
+    !!    other case the 15-point Kronrod rule obtained by optimal addition
+    !!    of abscissae to the 7-point Gauss rule, is applied.
+    !!
+    !!    Output, real ( kind = 8 ) ABSERR, an estimate of || I - RESULT ||.
+    !!
+    !!           krul   - integer
+    !!                    key which is decreased by 1 if the 15-point
+    !!                    Gauss-Kronrod scheme has been used
+    !!
+    !!    Output, integer NEVAL, the number of times the integral was evaluated.
+    !!
+    !!  Local parameters:
+    !!
+    !!           fval   - value of the function f at the points
+    !!                    cos(k*pi/24),  k = 0, ..., 24
+    !!           cheb12 - Chebyshev series expansion coefficients, for the
+    !!                    function f, of degree 12
+    !!           cheb24 - Chebyshev series expansion coefficients, for the
+    !!                    function f, of degree 24
+    !!           res12  - approximation to the integral corresponding to the
+    !!                    use of cheb12
+    !!           res24  - approximation to the integral corresponding to the
+    !!                    use of cheb24
+    !!           qwgtc  - external function subprogram defining the weight
+    !!                    function
+    !!           hlgth  - half-length of the interval
+    !!           centr  - mid point of the interval
+    !!
     implicit none
 
     real ( kind = 8 ) a
@@ -4236,13 +4195,13 @@ contains
          6.087614290087206D-01, 5.000000000000000D-01, &
          3.826834323650898D-01, 2.588190451025208D-01, &
          1.305261922200516D-01 /)
-    !
-    !  Check the position of C.
-    !
+    !!
+    !!  Check the position of C.
+    !!
     cc = ( 2.0D+00 * c - b - a ) / ( b - a )
-    !
-    !  Apply the 15-point Gauss-Kronrod scheme.
-    !
+    !!
+    !!  Apply the 15-point Gauss-Kronrod scheme.
+    !!
     if ( abs ( cc ) >= 1.1D+00 ) then
        krul = krul - 1
        call qk15w ( f, qwgtc, c, p2, p3, p4, kp, a, b, result, abserr, &
@@ -4253,9 +4212,9 @@ contains
        end if
        return
     end if
-    !
-    !  Use the generalized Clenshaw-Curtis method.
-    !
+    !!
+    !!  Use the generalized Clenshaw-Curtis method.
+    !!
     hlgth = 5.0D-01 * ( b - a )
     centr = 5.0D-01 * ( b + a )
     neval = 25
@@ -4269,14 +4228,14 @@ contains
        fval(i) = f(u+centr)
        fval(isym) = f(centr-u)
     end do
-    !
-    !  Compute the Chebyshev series expansion.
-    !
+    !!
+    !!  Compute the Chebyshev series expansion.
+    !!
     call qcheb ( x, fval, cheb12, cheb24 )
-    !
-    !  The modified Chebyshev moments are computed by forward
-    !  recursion, using AMOM0 and AMOM1 as starting values.
-    !
+    !!
+    !!  The modified Chebyshev moments are computed by forward
+    !!  recursion, using AMOM0 and AMOM1 as starting values.
+    !!
     amom0 = log ( abs ( ( 1.0D+00 - cc ) / ( 1.0D+00 + cc ) ) )
     amom1 = 2.0D+00 + cc * amom0
     res12 = cheb12(1) * amom0 + cheb12(2) * amom1
@@ -4312,133 +4271,130 @@ contains
   end subroutine qc25c
   subroutine qc25o ( f, a, b, omega, integr, nrmom, maxp1, ksave, result, &
        abserr, neval, resabs, resasc, momcom, chebmo )
-
-    !*****************************************************************************80
-    !
     !! QC25O returns integration rules for integrands with a COS or SIN factor.
-    !
-    !  Discussion:
-    !
-    !    This routine estimates the integral
-    !      I = integral of f(x) * w(x) over (a,b)
-    !    where
-    !      w(x) = cos(omega*x)
-    !    or 
-    !      w(x) = sin(omega*x),
-    !    and estimates
-    !      J = integral ( A <= X <= B ) |F(X)| dx.
-    !
-    !    For small values of OMEGA or small intervals (a,b) the 15-point
-    !    Gauss-Kronrod rule is used.  In all other cases a generalized
-    !    Clenshaw-Curtis method is used, that is, a truncated Chebyshev 
-    !    expansion of the function F is computed on (a,b), so that the 
-    !    integrand can be written as a sum of terms of the form W(X)*T(K,X), 
-    !    where T(K,X) is the Chebyshev polynomial of degree K.  The Chebyshev
-    !    moments are computed with use of a linear recurrence relation.
-    !
-    !  Author:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner
-    !
-    !  Reference:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner,
-    !    QUADPACK, a Subroutine Package for Automatic Integration,
-    !    Springer Verlag, 1983
-    !
-    !  Parameters:
-    !
-    !    Input, external real ( kind = 8 ) F, the name of the function routine, of the form
-    !      function f ( x )
-    !      real ( kind = 8 ) f
-    !      real ( kind = 8 ) x
-    !    which evaluates the integrand function.
-    !
-    !    Input, real ( kind = 8 ) A, B, the limits of integration.
-    !
-    !    Input, real ( kind = 8 ) OMEGA, the parameter in the weight function.
-    !
-    !    Input, integer INTEGR, indicates which weight function is to be used
-    !    = 1, w(x) = cos(omega*x)
-    !    = 2, w(x) = sin(omega*x)
-    !
-    !    ?, integer NRMOM, the length of interval (a,b) is equal to the length
-    !    of the original integration interval divided by
-    !    2**nrmom (we suppose that the routine is used in an
-    !    adaptive integration process, otherwise set
-    !    nrmom = 0).  nrmom must be zero at the first call.
-    !
-    !           maxp1  - integer
-    !                    gives an upper bound on the number of Chebyshev
-    !                    moments which can be stored, i.e. for the intervals
-    !                    of lengths abs(bb-aa)*2**(-l), l = 0,1,2, ...,
-    !                    maxp1-2.
-    !
-    !           ksave  - integer
-    !                    key which is one when the moments for the
-    !                    current interval have been computed
-    !
-    !    Output, real ( kind = 8 ) RESULT, the estimated value of the integral.
-    !
-    !           abserr - real
-    !                    estimate of the modulus of the absolute
-    !                    error, which should equal or exceed abs(i-result)
-    !
-    !    Output, integer NEVAL, the number of times the integral was evaluated.
-    !
-    !    Output, real ( kind = 8 ) RESABS, approximation to the integral J.
-    !
-    !    Output, real ( kind = 8 ) RESASC, approximation to the integral of abs(F-I/(B-A)).
-    !
-    !         on entry and return
-    !           momcom - integer
-    !                    for each interval length we need to compute
-    !                    the Chebyshev moments. momcom counts the number
-    !                    of intervals for which these moments have already
-    !                    been computed. if nrmom < momcom or ksave = 1,
-    !                    the Chebyshev moments for the interval (a,b)
-    !                    have already been computed and stored, otherwise
-    !                    we compute them and we increase momcom.
-    !
-    !           chebmo - real
-    !                    array of dimension at least (maxp1,25) containing
-    !                    the modified Chebyshev moments for the first momcom
-    !                    interval lengths
-    !
-    !  Local parameters:
-    !
-    !    maxp1 gives an upper bound
-    !           on the number of Chebyshev moments which can be
-    !           computed, i.e. for the interval (bb-aa), ...,
-    !           (bb-aa)/2**(maxp1-2).
-    !           should this number be altered, the first dimension of
-    !           chebmo needs to be adapted.
-    !
-    !    x contains the values cos(k*pi/24)
-    !           k = 1, ...,11, to be used for the Chebyshev expansion of f
-    !
-    !           centr  - mid point of the integration interval
-    !           hlgth  - half length of the integration interval
-    !           fval   - value of the function f at the points
-    !                    (b-a)*0.5*cos(k*pi/12) + (b+a)*0.5
-    !                    k = 0, ...,24
-    !           cheb12 - coefficients of the Chebyshev series expansion
-    !                    of degree 12, for the function f, in the
-    !                    interval (a,b)
-    !           cheb24 - coefficients of the Chebyshev series expansion
-    !                    of degree 24, for the function f, in the
-    !                    interval (a,b)
-    !           resc12 - approximation to the integral of
-    !                    cos(0.5*(b-a)*omega*x)*f(0.5*(b-a)*x+0.5*(b+a))
-    !                    over (-1,+1), using the Chebyshev series
-    !                    expansion of degree 12
-    !           resc24 - approximation to the same integral, using the
-    !                    Chebyshev series expansion of degree 24
-    !           ress12 - the analogue of resc12 for the sine
-    !           ress24 - the analogue of resc24 for the sine
-    !
+    !!
+    !!  Discussion:
+    !!
+    !!    This routine estimates the integral
+    !!      I = integral of f(x) * w(x) over (a,b)
+    !!    where
+    !!      w(x) = cos(omega*x)
+    !!    or 
+    !!      w(x) = sin(omega*x),
+    !!    and estimates
+    !!      J = integral ( A <= X <= B ) |F(X)| dx.
+    !!
+    !!    For small values of OMEGA or small intervals (a,b) the 15-point
+    !!    Gauss-Kronrod rule is used.  In all other cases a generalized
+    !!    Clenshaw-Curtis method is used, that is, a truncated Chebyshev 
+    !!    expansion of the function F is computed on (a,b), so that the 
+    !!    integrand can be written as a sum of terms of the form W(X)*T(K,X), 
+    !!    where T(K,X) is the Chebyshev polynomial of degree K.  The Chebyshev
+    !!    moments are computed with use of a linear recurrence relation.
+    !!
+    !!  Author:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner
+    !!
+    !!  Reference:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner,
+    !!    QUADPACK, a Subroutine Package for Automatic Integration,
+    !!    Springer Verlag, 1983
+    !!
+    !!  Parameters:
+    !!
+    !!    Input, external real ( kind = 8 ) F, the name of the function routine, of the form
+    !!      function f ( x )
+    !!      real ( kind = 8 ) f
+    !!      real ( kind = 8 ) x
+    !!    which evaluates the integrand function.
+    !!
+    !!    Input, real ( kind = 8 ) A, B, the limits of integration.
+    !!
+    !!    Input, real ( kind = 8 ) OMEGA, the parameter in the weight function.
+    !!
+    !!    Input, integer INTEGR, indicates which weight function is to be used
+    !!    = 1, w(x) = cos(omega*x)
+    !!    = 2, w(x) = sin(omega*x)
+    !!
+    !!    ?, integer NRMOM, the length of interval (a,b) is equal to the length
+    !!    of the original integration interval divided by
+    !!    2**nrmom (we suppose that the routine is used in an
+    !!    adaptive integration process, otherwise set
+    !!    nrmom = 0).  nrmom must be zero at the first call.
+    !!
+    !!           maxp1  - integer
+    !!                    gives an upper bound on the number of Chebyshev
+    !!                    moments which can be stored, i.e. for the intervals
+    !!                    of lengths abs(bb-aa)*2**(-l), l = 0,1,2, ...,
+    !!                    maxp1-2.
+    !!
+    !!           ksave  - integer
+    !!                    key which is one when the moments for the
+    !!                    current interval have been computed
+    !!
+    !!    Output, real ( kind = 8 ) RESULT, the estimated value of the integral.
+    !!
+    !!           abserr - real
+    !!                    estimate of the modulus of the absolute
+    !!                    error, which should equal or exceed abs(i-result)
+    !!
+    !!    Output, integer NEVAL, the number of times the integral was evaluated.
+    !!
+    !!    Output, real ( kind = 8 ) RESABS, approximation to the integral J.
+    !!
+    !!    Output, real ( kind = 8 ) RESASC, approximation to the integral of abs(F-I/(B-A)).
+    !!
+    !!         on entry and return
+    !!           momcom - integer
+    !!                    for each interval length we need to compute
+    !!                    the Chebyshev moments. momcom counts the number
+    !!                    of intervals for which these moments have already
+    !!                    been computed. if nrmom < momcom or ksave = 1,
+    !!                    the Chebyshev moments for the interval (a,b)
+    !!                    have already been computed and stored, otherwise
+    !!                    we compute them and we increase momcom.
+    !!
+    !!           chebmo - real
+    !!                    array of dimension at least (maxp1,25) containing
+    !!                    the modified Chebyshev moments for the first momcom
+    !!                    interval lengths
+    !!
+    !!  Local parameters:
+    !!
+    !!    maxp1 gives an upper bound
+    !!           on the number of Chebyshev moments which can be
+    !!           computed, i.e. for the interval (bb-aa), ...,
+    !!           (bb-aa)/2**(maxp1-2).
+    !!           should this number be altered, the first dimension of
+    !!           chebmo needs to be adapted.
+    !!
+    !!    x contains the values cos(k*pi/24)
+    !!           k = 1, ...,11, to be used for the Chebyshev expansion of f
+    !!
+    !!           centr  - mid point of the integration interval
+    !!           hlgth  - half length of the integration interval
+    !!           fval   - value of the function f at the points
+    !!                    (b-a)*0.5*cos(k*pi/12) + (b+a)*0.5
+    !!                    k = 0, ...,24
+    !!           cheb12 - coefficients of the Chebyshev series expansion
+    !!                    of degree 12, for the function f, in the
+    !!                    interval (a,b)
+    !!           cheb24 - coefficients of the Chebyshev series expansion
+    !!                    of degree 24, for the function f, in the
+    !!                    interval (a,b)
+    !!           resc12 - approximation to the integral of
+    !!                    cos(0.5*(b-a)*omega*x)*f(0.5*(b-a)*x+0.5*(b+a))
+    !!                    over (-1,+1), using the Chebyshev series
+    !!                    expansion of degree 12
+    !!           resc24 - approximation to the same integral, using the
+    !!                    Chebyshev series expansion of degree 24
+    !!           ress12 - the analogue of resc12 for the sine
+    !!           ress24 - the analogue of resc24 for the sine
+    !!
     implicit none
 
     integer maxp1
@@ -4509,13 +4465,13 @@ contains
     centr = 5.0D-01 * ( b + a )
     hlgth = 5.0D-01 * ( b - a )
     parint = omega * hlgth
-    !
-    !  Compute the integral using the 15-point Gauss-Kronrod
-    !  formula if the value of the parameter in the integrand
-    !  is small or if the length of the integration interval
-    !  is less than (bb-aa)/2**(maxp1-2), where (aa,bb) is the
-    !  original integration interval.
-    !
+    !!
+    !!  Compute the integral using the 15-point Gauss-Kronrod
+    !!  formula if the value of the parameter in the integrand
+    !!  is small or if the length of the integration interval
+    !!  is less than (bb-aa)/2**(maxp1-2), where (aa,bb) is the
+    !!  original integration interval.
+    !!
     if ( abs ( parint ) <= 2.0D+00 ) then
 
        call qk15w ( f, qwgto, omega, p2, p3, p4, integr, a, b, result, &
@@ -4525,31 +4481,31 @@ contains
        return
 
     end if
-    !
-    !  Compute the integral using the generalized clenshaw-curtis method.
-    !
+    !!
+    !!  Compute the integral using the generalized clenshaw-curtis method.
+    !!
     conc = hlgth * cos(centr*omega)
     cons = hlgth * sin(centr*omega)
     resasc = huge ( resasc )
     neval = 25
-    !
-    !  Check whether the Chebyshev moments for this interval
-    !  have already been computed.
-    !
+    !!
+    !!  Check whether the Chebyshev moments for this interval
+    !!  have already been computed.
+    !!
     if ( nrmom < momcom .or. ksave == 1 ) then
        go to 140
     end if
-    !
-    !  Compute a new set of Chebyshev moments.
-    !
+    !!
+    !!  Compute a new set of Chebyshev moments.
+    !!
     m = momcom + 1
     par2 = parint * parint
     par22 = par2 + 2.0D+00
     sinpar = sin(parint)
     cospar = cos(parint)
-    !
-    !  Compute the Chebyshev moments with respect to cosine.
-    !
+    !!
+    !!  Compute the Chebyshev moments with respect to cosine.
+    !!
     v(1) = 2.0D+00 * sinpar / parint
     v(2) = (8.0D+00*cospar+(par2+par2-8.0D+00)*sinpar/ parint)/par2
     v(3) = (3.2D+01*(par2-1.2D+01)*cospar+(2.0D+00* &
@@ -4561,11 +4517,11 @@ contains
     if ( abs ( parint ) > 2.4D+01 ) then
        go to 70
     end if
-    !
-    !  Compute the Chebyshev moments as the solutions of a boundary value 
-    !  problem with one initial value (v(3)) and one end value computed
-    !  using an asymptotic formula.
-    !
+    !!
+    !!  Compute the Chebyshev moments as the solutions of a boundary value 
+    !!  problem with one initial value (v(3)) and one end value computed
+    !!  using an asymptotic formula.
+    !!
     noequ = nmac-3
     noeq1 = noequ-1
     an = 6.0D+00
@@ -4589,10 +4545,10 @@ contains
          +1.5D+01*ass)/an2-cospar+3.0D+00*ass)/an2-cospar)/an2
     v(noequ+3) = v(noequ+3)-2.0D+00*asap*par2*(an-1.0D+00)* &
          (an-2.0D+00)
-    !
-    !  Solve the tridiagonal system by means of Gaussian
-    !  elimination with partial pivoting.
-    !
+    !!
+    !!  Solve the tridiagonal system by means of Gaussian
+    !!  elimination with partial pivoting.
+    !!
     d3(1:noequ) = 0.0D+00
 
     d2(noequ) = 0.0D+00
@@ -4628,9 +4584,9 @@ contains
     end do
 
     go to 90
-    !
-    !  Compute the Chebyshev moments by means of forward recursion
-    !
+    !!
+    !!  Compute the Chebyshev moments by means of forward recursion
+    !!
 70  continue
 
     an = 4.0D+00
@@ -4648,9 +4604,9 @@ contains
     do j = 1, 13
        chebmo(m,2*j-1) = v(j)
     end do
-    !
-    !  Compute the Chebyshev moments with respect to sine.
-    !
+    !!
+    !!  Compute the Chebyshev moments with respect to sine.
+    !!
     v(1) = 2.0D+00*(sinpar-parint*cospar)/par2
     v(2) = (1.8D+01-4.8D+01/par2)*sinpar/par2 &
          +(-2.0D+00+4.8D+01/par2)*cospar/parint
@@ -4666,9 +4622,9 @@ contains
           chebmo(m,2*k) = -sinpar/(an*(2.0D+00*an-2.0D+00)) &
                -2.5D-01*parint*(v(k+1)/an-v(k)/(an-1.0D+00))
        end do
-       !
-       !  Compute the Chebyshev moments by means of forward recursion.
-       !
+       !!
+       !!  Compute the Chebyshev moments by means of forward recursion.
+       !!
     else
 
        an = 3.0D+00
@@ -4693,10 +4649,10 @@ contains
     if ( momcom < maxp1 - 1 .and. nrmom >= momcom ) then
        momcom = momcom + 1
     end if
-    !
-    !  Compute the coefficients of the Chebyshev expansions
-    !  of degrees 12 and 24 of the function F.
-    !
+    !!
+    !!  Compute the coefficients of the Chebyshev expansions
+    !!  of degrees 12 and 24 of the function F.
+    !!
     fval(1) = 5.0D-01 * f(centr+hlgth)
     fval(13) = f(centr)
     fval(25) = 5.0D-01 * f(centr-hlgth)
@@ -4708,9 +4664,9 @@ contains
     end do
 
     call qcheb ( x, fval, cheb12, cheb24 )
-    !
-    !  Compute the integral and error estimates.
-    !
+    !!
+    !!  Compute the integral and error estimates.
+    !!
     resc12 = cheb12(13) * chebmo(m,13)
     ress12 = 0.0D+00
     estc = abs ( cheb24(25)*chebmo(m,25))+abs((cheb12(13)- &
@@ -4758,93 +4714,91 @@ contains
 
     return
   end subroutine qc25o
+
   subroutine qc25s ( f, a, b, bl, br, alfa, beta, ri, rj, rg, rh, result, &
        abserr, resasc, integr, neval )
-
-    !*****************************************************************************80
-    !
     !! QC25S returns rules for algebraico-logarithmic end point singularities.
-    !
-    !  Discussion:
-    !
-    !    This routine computes 
-    !      i = integral of F(X) * W(X) over (bl,br), 
-    !    with error estimate, where the weight function W(X) has a singular
-    !    behavior of algebraico-logarithmic type at the points
-    !    a and/or b. 
-    !
-    !    The interval (bl,br) is a subinterval of (a,b).
-    !
-    !  Author:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner
-    !
-    !  Reference:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner,
-    !    QUADPACK, a Subroutine Package for Automatic Integration,
-    !    Springer Verlag, 1983
-    !
-    !  Parameters:
-    !
-    !    Input, external real ( kind = 8 ) F, the name of the function routine, of the form
-    !      function f ( x )
-    !      real ( kind = 8 ) f
-    !      real ( kind = 8 ) x
-    !    which evaluates the integrand function.
-    !
-    !    Input, real ( kind = 8 ) A, B, the limits of integration.
-    !
-    !    Input, real ( kind = 8 ) BL, BR, the lower and upper limits of integration.
-    !    A <= BL < BR <= B.
-    !
-    !    Input, real ( kind = 8 ) ALFA, BETA, parameters in the weight function.
-    !
-    !    Input, real ( kind = 8 ) RI(25), RJ(25), RG(25), RH(25), modified Chebyshev moments 
-    !    for the application of the generalized Clenshaw-Curtis method,
-    !    computed in QMOMO.
-    !
-    !    Output, real ( kind = 8 ) RESULT, the estimated value of the integral, computed by 
-    !    using a generalized clenshaw-curtis method if b1 = a or br = b.
-    !    In all other cases the 15-point Kronrod rule is applied, obtained by
-    !    optimal addition of abscissae to the 7-point Gauss rule.
-    !
-    !    Output, real ( kind = 8 ) ABSERR, an estimate of || I - RESULT ||.
-    !
-    !    Output, real ( kind = 8 ) RESASC, approximation to the integral of abs(F*W-I/(B-A)).
-    !
-    !    Input, integer INTEGR,  determines the weight function
-    !    1, w(x) = (x-a)**alfa*(b-x)**beta
-    !    2, w(x) = (x-a)**alfa*(b-x)**beta*log(x-a)
-    !    3, w(x) = (x-a)**alfa*(b-x)**beta*log(b-x)
-    !    4, w(x) = (x-a)**alfa*(b-x)**beta*log(x-a)*log(b-x)
-    !
-    !    Output, integer NEVAL, the number of times the integral was evaluated.
-    !
-    !  Local Parameters:
-    !
-    !           fval   - value of the function f at the points
-    !                    (br-bl)*0.5*cos(k*pi/24)+(br+bl)*0.5
-    !                    k = 0, ..., 24
-    !           cheb12 - coefficients of the Chebyshev series expansion
-    !                    of degree 12, for the function f, in the interval
-    !                    (bl,br)
-    !           cheb24 - coefficients of the Chebyshev series expansion
-    !                    of degree 24, for the function f, in the interval
-    !                    (bl,br)
-    !           res12  - approximation to the integral obtained from cheb12
-    !           res24  - approximation to the integral obtained from cheb24
-    !           qwgts  - external function subprogram defining the four
-    !                    possible weight functions
-    !           hlgth  - half-length of the interval (bl,br)
-    !           centr  - mid point of the interval (bl,br)
-    !
-    !           the vector x contains the values cos(k*pi/24)
-    !           k = 1, ..., 11, to be used for the computation of the
-    !           Chebyshev series expansion of f.
-    !
+    !!
+    !!  Discussion:
+    !!
+    !!    This routine computes 
+    !!      i = integral of F(X) * W(X) over (bl,br), 
+    !!    with error estimate, where the weight function W(X) has a singular
+    !!    behavior of algebraico-logarithmic type at the points
+    !!    a and/or b. 
+    !!
+    !!    The interval (bl,br) is a subinterval of (a,b).
+    !!
+    !!  Author:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner
+    !!
+    !!  Reference:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner,
+    !!    QUADPACK, a Subroutine Package for Automatic Integration,
+    !!    Springer Verlag, 1983
+    !!
+    !!  Parameters:
+    !!
+    !!    Input, external real ( kind = 8 ) F, the name of the function routine, of the form
+    !!      function f ( x )
+    !!      real ( kind = 8 ) f
+    !!      real ( kind = 8 ) x
+    !!    which evaluates the integrand function.
+    !!
+    !!    Input, real ( kind = 8 ) A, B, the limits of integration.
+    !!
+    !!    Input, real ( kind = 8 ) BL, BR, the lower and upper limits of integration.
+    !!    A <= BL < BR <= B.
+    !!
+    !!    Input, real ( kind = 8 ) ALFA, BETA, parameters in the weight function.
+    !!
+    !!    Input, real ( kind = 8 ) RI(25), RJ(25), RG(25), RH(25), modified Chebyshev moments 
+    !!    for the application of the generalized Clenshaw-Curtis method,
+    !!    computed in QMOMO.
+    !!
+    !!    Output, real ( kind = 8 ) RESULT, the estimated value of the integral, computed by 
+    !!    using a generalized clenshaw-curtis method if b1 = a or br = b.
+    !!    In all other cases the 15-point Kronrod rule is applied, obtained by
+    !!    optimal addition of abscissae to the 7-point Gauss rule.
+    !!
+    !!    Output, real ( kind = 8 ) ABSERR, an estimate of || I - RESULT ||.
+    !!
+    !!    Output, real ( kind = 8 ) RESASC, approximation to the integral of abs(F*W-I/(B-A)).
+    !!
+    !!    Input, integer INTEGR,  determines the weight function
+    !!    1, w(x) = (x-a)**alfa*(b-x)**beta
+    !!    2, w(x) = (x-a)**alfa*(b-x)**beta*log(x-a)
+    !!    3, w(x) = (x-a)**alfa*(b-x)**beta*log(b-x)
+    !!    4, w(x) = (x-a)**alfa*(b-x)**beta*log(x-a)*log(b-x)
+    !!
+    !!    Output, integer NEVAL, the number of times the integral was evaluated.
+    !!
+    !!  Local Parameters:
+    !!
+    !!           fval   - value of the function f at the points
+    !!                    (br-bl)*0.5*cos(k*pi/24)+(br+bl)*0.5
+    !!                    k = 0, ..., 24
+    !!           cheb12 - coefficients of the Chebyshev series expansion
+    !!                    of degree 12, for the function f, in the interval
+    !!                    (bl,br)
+    !!           cheb24 - coefficients of the Chebyshev series expansion
+    !!                    of degree 24, for the function f, in the interval
+    !!                    (bl,br)
+    !!           res12  - approximation to the integral obtained from cheb12
+    !!           res24  - approximation to the integral obtained from cheb24
+    !!           qwgts  - external function subprogram defining the four
+    !!                    possible weight functions
+    !!           hlgth  - half-length of the interval (bl,br)
+    !!           centr  - mid point of the interval (bl,br)
+    !!
+    !!           the vector x contains the values cos(k*pi/24)
+    !!           k = 1, ..., 11, to be used for the computation of the
+    !!           Chebyshev series expansion of f.
+    !!
     implicit none
 
     real ( kind = 8 ) a
@@ -4894,20 +4848,20 @@ contains
 
     if ( br == b .and. (beta /= 0.0D+00 .or. integr == 3 .or. integr == 4)) &
          go to 140
-    !
-    !  If a > bl and b < br, apply the 15-point Gauss-Kronrod scheme.
-    !
+    !!
+    !!  If a > bl and b < br, apply the 15-point Gauss-Kronrod scheme.
+    !!
     call qk15w ( f, qwgts, a, b, alfa, beta, integr, bl, br, result, abserr, &
          resabs, resasc )
 
     neval = 15
     return
-    !
-    !  This part of the program is executed only if a = bl.
-    !
-    !  Compute the Chebyshev series expansion of the function
-    !  f1 = (0.5*(b+b-br-a)-0.5*(br-a)*x)**beta*f(0.5*(br-a)*x+0.5*(br+a))
-    !
+    !!
+    !!  This part of the program is executed only if a = bl.
+    !!
+    !!  Compute the Chebyshev series expansion of the function
+    !!  f1 = (0.5*(b+b-br-a)-0.5*(br-a)*x)**beta*f(0.5*(br-a)*x+0.5*(br+a))
+    !!
 10  continue
 
     hlgth = 5.0D-01*(br-bl)
@@ -4933,9 +4887,9 @@ contains
     if ( integr > 2 ) go to 70
 
     call qcheb ( x, fval, cheb12, cheb24 )
-    !
-    !  integr = 1  (or 2)
-    !
+    !!
+    !!  integr = 1  (or 2)
+    !!
     do i = 1, 13
        res12 = res12+cheb12(i)*ri(i)
        res24 = res24+cheb24(i)*ri(i)
@@ -4946,9 +4900,9 @@ contains
     end do
 
     if ( integr == 1 ) go to 130
-    !
-    !  integr = 2
-    !
+    !!
+    !!  integr = 2
+    !!
     dc = log ( br - bl )
     result = res24 * dc
     abserr = abs((res24-res12)*dc)
@@ -4965,10 +4919,10 @@ contains
     end do
 
     go to 130
-    !
-    !  Compute the Chebyshev series expansion of the function
-    !  F4 = f1*log(0.5*(b+b-br-a)-0.5*(br-a)*x)
-    !
+    !!
+    !!  Compute the Chebyshev series expansion of the function
+    !!  F4 = f1*log(0.5*(b+b-br-a)-0.5*(br-a)*x)
+    !!
 70  continue
 
     fval(1) = fval(1) * log ( fix - hlgth )
@@ -4983,9 +4937,9 @@ contains
     end do
 
     call qcheb ( x, fval, cheb12, cheb24 )
-    !
-    !  integr = 3  (or 4)
-    !
+    !!
+    !!  integr = 3  (or 4)
+    !!
     do i = 1, 13
        res12 = res12+cheb12(i)*ri(i)
        res24 = res24+cheb24(i)*ri(i)
@@ -4998,9 +4952,9 @@ contains
     if ( integr == 3 ) then
        go to 130
     end if
-    !
-    !  integr = 4
-    !
+    !!
+    !!  integr = 4
+    !!
     dc = log ( br - bl )
     result = res24*dc
     abserr = abs((res24-res12)*dc)
@@ -5021,12 +4975,12 @@ contains
     result = (result+res24)*factor
     abserr = (abserr+abs(res24-res12))*factor
     go to 270
-    !
-    !  This part of the program is executed only if b = br.
-    !
-    !  Compute the Chebyshev series expansion of the function
-    !  f2 = (0.5*(b+bl-a-a)+0.5*(b-bl)*x)**alfa*f(0.5*(b-bl)*x+0.5*(b+bl))
-    !
+    !!
+    !!  This part of the program is executed only if b = br.
+    !!
+    !!  Compute the Chebyshev series expansion of the function
+    !!  f2 = (0.5*(b+bl-a-a)+0.5*(b-bl)*x)**alfa*f(0.5*(b-bl)*x+0.5*(b+bl))
+    !!
 140 continue
 
     hlgth = 5.0D-01*(br-bl)
@@ -5052,9 +5006,9 @@ contains
     if ( integr == 2 .or. integr == 4 ) then
        go to 200
     end if
-    !
-    !  integr = 1  (or 3)
-    !
+    !!
+    !!  integr = 1  (or 3)
+    !!
     call qcheb ( x, fval, cheb12, cheb24 )
 
     do i = 1, 13
@@ -5067,9 +5021,9 @@ contains
     end do
 
     if ( integr == 1 ) go to 260
-    !
-    !  integr = 3
-    !
+    !!
+    !!  integr = 3
+    !!
     dc = log ( br - bl )
     result = res24*dc
     abserr = abs((res24-res12)*dc)
@@ -5086,10 +5040,10 @@ contains
     end do
 
     go to 260
-    !
-    !  Compute the Chebyshev series expansion of the function
-    !  f3 = f2*log(0.5*(b-bl)*x+0.5*(b+bl-a-a))
-    !
+    !!
+    !!  Compute the Chebyshev series expansion of the function
+    !!  f3 = f2*log(0.5*(b-bl)*x+0.5*(b+bl-a-a))
+    !!
 200 continue
 
     fval(1) = fval(1) * log ( hlgth + fix )
@@ -5104,9 +5058,9 @@ contains
     end do
 
     call qcheb ( x, fval, cheb12, cheb24 )
-    !
-    !  integr = 2  (or 4)
-    !
+    !!
+    !!  integr = 2  (or 4)
+    !!
     do i = 1, 13
        res12 = res12+cheb12(i)*rj(i)
        res24 = res24+cheb24(i)*rj(i)
@@ -5123,9 +5077,9 @@ contains
     abserr = abs((res24-res12)*dc)
     res12 = 0.0D+00
     res24 = 0.0D+00
-    !
-    !  integr = 4
-    !
+    !!
+    !!  integr = 4
+    !!
     do i = 1, 13
        res12 = res12+cheb12(i)*rh(i)
        res24 = res24+cheb24(i)*rh(i)
@@ -5145,46 +5099,43 @@ contains
     return
   end subroutine qc25s
   subroutine qcheb ( x, fval, cheb12, cheb24 )
-
-    !*****************************************************************************80
-    !
     !! QCHEB computes the Chebyshev series expansion.
-    !
-    !  Discussion:
-    !
-    !    This routine computes the Chebyshev series expansion
-    !    of degrees 12 and 24 of a function using a fast Fourier transform method
-    !
-    !      f(x) = sum(k=1, ...,13) (cheb12(k)*t(k-1,x)),
-    !      f(x) = sum(k=1, ...,25) (cheb24(k)*t(k-1,x)),
-    !
-    !    where T(K,X) is the Chebyshev polynomial of degree K.
-    !
-    !  Author:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner
-    !
-    !  Reference:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner,
-    !    QUADPACK, a Subroutine Package for Automatic Integration,
-    !    Springer Verlag, 1983
-    !
-    !  Parameters:
-    !
-    !    Input, real ( kind = 8 ) X(11), contains the values of COS(K*PI/24), for K = 1 to 11.
-    !
-    !    Input/output, real ( kind = 8 ) FVAL(25), the function values at the points
-    !    (b+a+(b-a)*cos(k*pi/24))/2, k = 0, ...,24, where (a,b) is the 
-    !    approximation interval.  FVAL(1) and FVAL(25) are divided by two
-    !    These values are destroyed at output.
-    !
-    !    Output, real ( kind = 8 ) CHEB12(13), the Chebyshev coefficients for degree 12.
-    !
-    !    Output, real ( kind = 8 ) CHEB24(25), the Chebyshev coefficients for degree 24.
-    !
+    !!
+    !!  Discussion:
+    !!
+    !!    This routine computes the Chebyshev series expansion
+    !!    of degrees 12 and 24 of a function using a fast Fourier transform method
+    !!
+    !!      f(x) = sum(k=1, ...,13) (cheb12(k)*t(k-1,x)),
+    !!      f(x) = sum(k=1, ...,25) (cheb24(k)*t(k-1,x)),
+    !!
+    !!    where T(K,X) is the Chebyshev polynomial of degree K.
+    !!
+    !!  Author:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner
+    !!
+    !!  Reference:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner,
+    !!    QUADPACK, a Subroutine Package for Automatic Integration,
+    !!    Springer Verlag, 1983
+    !!
+    !!  Parameters:
+    !!
+    !!    Input, real ( kind = 8 ) X(11), contains the values of COS(K*PI/24), for K = 1 to 11.
+    !!
+    !!    Input/output, real ( kind = 8 ) FVAL(25), the function values at the points
+    !!    (b+a+(b-a)*cos(k*pi/24))/2, k = 0, ...,24, where (a,b) is the 
+    !!    approximation interval.  FVAL(1) and FVAL(25) are divided by two
+    !!    These values are destroyed at output.
+    !!
+    !!    Output, real ( kind = 8 ) CHEB12(13), the Chebyshev coefficients for degree 12.
+    !!
+    !!    Output, real ( kind = 8 ) CHEB24(25), the Chebyshev coefficients for degree 24.
+    !!
     implicit none
 
     real ( kind = 8 ) alam
@@ -5308,68 +5259,65 @@ contains
     return
   end subroutine qcheb
   subroutine qextr ( n, epstab, result, abserr, res3la, nres )
-
-    !*****************************************************************************80
-    !
     !! QEXTR carries out the Epsilon extrapolation algorithm.
-    !
-    !  Discussion:
-    !
-    !    The routine determines the limit of a given sequence of approximations, 
-    !    by means of the epsilon algorithm of P. Wynn.  An estimate of the 
-    !    absolute error is also given.  The condensed epsilon table is computed.
-    !    Only those elements needed for the computation of the next diagonal
-    !    are preserved.
-    !
-    !  Author:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner
-    !
-    !  Reference:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner,
-    !    QUADPACK, a Subroutine Package for Automatic Integration,
-    !    Springer Verlag, 1983
-    !
-    !  Parameters:
-    !
-    !    Input, integer N, indicates the entry of EPSTAB which contains
-    !    the new element in the first column of the epsilon table.
-    !
-    !    Input/output, real ( kind = 8 ) EPSTAB(52), the two lower diagonals of the triangular
-    !    epsilon table.  The elements are numbered starting at the right-hand 
-    !    corner of the triangle.
-    !
-    !    Output, real ( kind = 8 ) RESULT, the estimated value of the integral.
-    !
-    !    Output, real ( kind = 8 ) ABSERR, estimate of the absolute error computed from
-    !    RESULT and the 3 previous results.
-    !
-    !    ?, real ( kind = 8 ) RES3LA(3), the last 3 results.
-    !
-    !    Input/output, integer NRES, the number of calls to the routine.  This
-    !    should be zero on the first call, and is automatically updated
-    !    before return.
-    !
-    !  Local Parameters:
-    !
-    !           e0     - the 4 elements on which the
-    !           e1       computation of a new element in
-    !           e2       the epsilon table is based
-    !           e3                 e0
-    !                        e3    e1    new
-    !                              e2
-    !           newelm - number of elements to be computed in the new
-    !                    diagonal
-    !           error  - error = abs(e1-e0)+abs(e2-e1)+abs(new-e2)
-    !           result - the element in the new diagonal with least value
-    !                    of error
-    !           limexp is the maximum number of elements the epsilon table
-    !           can contain. if this number is reached, the upper diagonal
-    !           of the epsilon table is deleted.
-    !
+    !!
+    !!  Discussion:
+    !!
+    !!    The routine determines the limit of a given sequence of approximations, 
+    !!    by means of the epsilon algorithm of P. Wynn.  An estimate of the 
+    !!    absolute error is also given.  The condensed epsilon table is computed.
+    !!    Only those elements needed for the computation of the next diagonal
+    !!    are preserved.
+    !!
+    !!  Author:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner
+    !!
+    !!  Reference:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner,
+    !!    QUADPACK, a Subroutine Package for Automatic Integration,
+    !!    Springer Verlag, 1983
+    !!
+    !!  Parameters:
+    !!
+    !!    Input, integer N, indicates the entry of EPSTAB which contains
+    !!    the new element in the first column of the epsilon table.
+    !!
+    !!    Input/output, real ( kind = 8 ) EPSTAB(52), the two lower diagonals of the triangular
+    !!    epsilon table.  The elements are numbered starting at the right-hand 
+    !!    corner of the triangle.
+    !!
+    !!    Output, real ( kind = 8 ) RESULT, the estimated value of the integral.
+    !!
+    !!    Output, real ( kind = 8 ) ABSERR, estimate of the absolute error computed from
+    !!    RESULT and the 3 previous results.
+    !!
+    !!    ?, real ( kind = 8 ) RES3LA(3), the last 3 results.
+    !!
+    !!    Input/output, integer NRES, the number of calls to the routine.  This
+    !!    should be zero on the first call, and is automatically updated
+    !!    before return.
+    !!
+    !!  Local Parameters:
+    !!
+    !!           e0     - the 4 elements on which the
+    !!           e1       computation of a new element in
+    !!           e2       the epsilon table is based
+    !!           e3                 e0
+    !!                        e3    e1    new
+    !!                              e2
+    !!           newelm - number of elements to be computed in the new
+    !!                    diagonal
+    !!           error  - error = abs(e1-e0)+abs(e2-e1)+abs(new-e2)
+    !!           result - the element in the new diagonal with least value
+    !!                    of error
+    !!           limexp is the maximum number of elements the epsilon table
+    !!           can contain. if this number is reached, the upper diagonal
+    !!           of the epsilon table is deleted.
+    !!
     implicit none
 
     real ( kind = 8 ) abserr
@@ -5439,10 +5387,10 @@ contains
        delta3 = e1-e0
        err3 = abs(delta3)
        tol3 = max ( e1abs,abs(e0))* epsilon ( e0 )
-       !
-       !  If e0, e1 and e2 are equal to within machine accuracy, convergence 
-       !  is assumed.
-       !
+       !!
+       !!  If e0, e1 and e2 are equal to within machine accuracy, convergence 
+       !!  is assumed.
+       !!
        if ( err2 <= tol2 .and. err3 <= tol3 ) then
           result = res
           abserr = err2+err3
@@ -5455,10 +5403,10 @@ contains
        delta1 = e1-e3
        err1 = abs(delta1)
        tol1 = max ( e1abs,abs(e3))* epsilon ( e3 )
-       !
-       !  If two elements are very close to each other, omit a part
-       !  of the table by adjusting the value of N.
-       !
+       !!
+       !!  If two elements are very close to each other, omit a part
+       !!  of the table by adjusting the value of N.
+       !!
        if ( err1 <= tol1 .or. err2 <= tol2 .or. err3 <= tol3 ) go to 20
 
        if(abs(delta1) > 1.0D-12 .and. abs(delta2) > 1.0D-12 .and. abs(delta3) > 1.0D-12) then
@@ -5468,19 +5416,19 @@ contains
           ss = 1.0D0
           epsinf = 1.0D0
        end if
-       !
-       !  Test to detect irregular behavior in the table, and
-       !  eventually omit a part of the table adjusting the value of N.
-       !
+       !!
+       !!  Test to detect irregular behavior in the table, and
+       !!  eventually omit a part of the table adjusting the value of N.
+       !!
        if ( epsinf > 1.0D-04 ) go to 30
 
 20     continue
 
        n = i+i-1
        exit
-       !
-       !  Compute a new element and eventually adjust the value of RESULT.
-       !
+       !!
+       !!  Compute a new element and eventually adjust the value of RESULT.
+       !!
 30     continue
 
        if(abs(ss) > 1.0D-12) then
@@ -5498,9 +5446,9 @@ contains
        end if
 
     end do
-    !
-    !  Shift the table.
-    !
+    !!
+    !!  Shift the table.
+    !!
     if ( n == limexp ) then
        n = 2*(limexp/2)-1
     end if
@@ -5545,219 +5493,217 @@ contains
 
     return
   end subroutine qextr
+
   subroutine qfour ( f, a, b, omega, integr, epsabs, epsrel, limit, icall, &
        maxp1, result, abserr, neval, ier, alist, blist, rlist, elist, iord, &
        nnlog, momcom, chebmo )
-
-    !*****************************************************************************80
-    !
     !! QFOUR estimates the integrals of oscillatory functions.
-    !
-    !  Discussion:
-    !
-    !    This routine calculates an approximation RESULT to a definite integral
-    !      I = integral of F(X) * COS(OMEGA*X) 
-    !    or
-    !      I = integral of F(X) * SIN(OMEGA*X) 
-    !    over (A,B), hopefully satisfying:
-    !      | I - RESULT | <= max ( epsabs, epsrel * |I| ) ).
-    !
-    !    QFOUR is called by DQAWO and DQAWF.  It can also be called directly in 
-    !    a user-written program.  In the latter case it is possible for the 
-    !    user to determine the first dimension of array CHEBMO(MAXP1,25).
-    !    See also parameter description of MAXP1.  Additionally see
-    !    parameter description of ICALL for eventually re-using
-    !    Chebyshev moments computed during former call on subinterval
-    !    of equal length abs(B-A).
-    !
-    !  Author:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner
-    !
-    !  Reference:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner,
-    !    QUADPACK, a Subroutine Package for Automatic Integration,
-    !    Springer Verlag, 1983
-    !
-    !  Parameters:
-    !
-    !    Input, external real ( kind = 8 ) F, the name of the function routine, of the form
-    !      function f ( x )
-    !      real ( kind = 8 ) f
-    !      real ( kind = 8 ) x
-    !    which evaluates the integrand function.
-    !
-    !    Input, real ( kind = 8 ) A, B, the limits of integration.
-    !
-    !    Input, real ( kind = 8 ) OMEGA, the multiplier of X in the weight function.
-    !
-    !    Input, integer INTEGR, indicates the weight functions to be used.
-    !    = 1, w(x) = cos(omega*x)
-    !    = 2, w(x) = sin(omega*x)
-    !
-    !    Input, real ( kind = 8 ) EPSABS, EPSREL, the absolute and relative accuracy requested.
-    !
-    !    Input, integer LIMIT, the maximum number of subintervals of [A,B]
-    !    that can be generated.
-    !
-    !    icall  - integer
-    !                     if qfour is to be used only once, ICALL must
-    !                     be set to 1.  assume that during this call, the
-    !                     Chebyshev moments (for clenshaw-curtis integration
-    !                     of degree 24) have been computed for intervals of
-    !                     lenghts (abs(b-a))*2**(-l), l=0,1,2,...momcom-1.
-    !                     the Chebyshev moments already computed can be
-    !                     re-used in subsequent calls, if qfour must be
-    !                     called twice or more times on intervals of the
-    !                     same length abs(b-a). from the second call on, one
-    !                     has to put then ICALL > 1.
-    !                     if ICALL < 1, the routine will end with ier = 6.
-    !
-    !            maxp1  - integer
-    !                     gives an upper bound on the number of
-    !                     Chebyshev moments which can be stored, i.e.
-    !                     for the intervals of lenghts abs(b-a)*2**(-l),
-    !                     l=0,1, ..., maxp1-2, maxp1 >= 1.
-    !                     if maxp1 < 1, the routine will end with ier = 6.
-    !                     increasing (decreasing) the value of maxp1
-    !                     decreases (increases) the computational time but
-    !                     increases (decreases) the required memory space.
-    !
-    !    Output, real ( kind = 8 ) RESULT, the estimated value of the integral.
-    !
-    !    Output, real ( kind = 8 ) ABSERR, an estimate of || I - RESULT ||.
-    !
-    !    Output, integer NEVAL, the number of times the integral was evaluated.
-    !
-    !            ier    - integer
-    !                     ier = 0 normal and reliable termination of the
-    !                             routine. it is assumed that the
-    !                             requested accuracy has been achieved.
-    !                   - ier > 0 abnormal termination of the routine.
-    !                             the estimates for integral and error are
-    !                             less reliable. it is assumed that the
-    !                             requested accuracy has not been achieved.
-    !                     ier = 1 maximum number of subdivisions allowed
-    !                             has been achieved. one can allow more
-    !                             subdivisions by increasing the value of
-    !                             limit (and taking according dimension
-    !                             adjustments into account). however, if
-    !                             this yields no improvement it is advised
-    !                             to analyze the integrand, in order to
-    !                             determine the integration difficulties.
-    !                             if the position of a local difficulty can
-    !                             be determined (e.g. singularity,
-    !                             discontinuity within the interval) one
-    !                             will probably gain from splitting up the
-    !                             interval at this point and calling the
-    !                             integrator on the subranges. if possible,
-    !                             an appropriate special-purpose integrator
-    !                             should be used which is designed for
-    !                             handling the type of difficulty involved.
-    !                         = 2 the occurrence of roundoff error is
-    !                             detected, which prevents the requested
-    !                             tolerance from being achieved.
-    !                             the error may be under-estimated.
-    !                         = 3 extremely bad integrand behavior occurs
-    !                             at some points of the integration
-    !                             interval.
-    !                         = 4 the algorithm does not converge. roundoff
-    !                             error is detected in the extrapolation
-    !                             table. it is presumed that the requested
-    !                             tolerance cannot be achieved due to
-    !                             roundoff in the extrapolation table, and
-    !                             that the returned result is the best which
-    !                             can be obtained.
-    !                         = 5 the integral is probably divergent, or
-    !                             slowly convergent. it must be noted that
-    !                             divergence can occur with any other value
-    !                             of ier > 0.
-    !                         = 6 the input is invalid, because
-    !                             epsabs < 0 and epsrel < 0,
-    !                             or (integr /= 1 and integr /= 2) or
-    !                             ICALL < 1 or maxp1 < 1.
-    !                             result, abserr, neval, last, rlist(1),
-    !                             elist(1), iord(1) and nnlog(1) are set to
-    !                             zero. alist(1) and blist(1) are set to a
-    !                             and b respectively.
-    !
-    !    Workspace, real ( kind = 8 ) ALIST(LIMIT), BLIST(LIMIT), contains in entries 1 
-    !    through LAST the left and right ends of the partition subintervals.
-    !
-    !    Workspace, real ( kind = 8 ) RLIST(LIMIT), contains in entries 1 through LAST
-    !    the integral approximations on the subintervals.
-    !
-    !    Workspace, real ( kind = 8 ) ELIST(LIMIT), contains in entries 1 through LAST
-    !    the absolute error estimates on the subintervals.
-    !
-    !            iord   - integer
-    !                     vector of dimension at least limit, the first k
-    !                     elements of which are pointers to the error
-    !                     estimates over the subintervals, such that
-    !                     elist(iord(1)), ..., elist(iord(k)), form
-    !                     a decreasing sequence, with k = last
-    !                     if last <= (limit/2+2), and
-    !                     k = limit+1-last otherwise.
-    !
-    !            nnlog  - integer
-    !                     vector of dimension at least limit, indicating the
-    !                     subdivision levels of the subintervals, i.e.
-    !                     iwork(i) = l means that the subinterval numbered
-    !                     i is of length abs(b-a)*2**(1-l)
-    !
-    !         on entry and return
-    !            momcom - integer
-    !                     indicating that the Chebyshev moments have been
-    !                     computed for intervals of lengths
-    !                     (abs(b-a))*2**(-l), l=0,1,2, ..., momcom-1,
-    !                     momcom < maxp1
-    !
-    !            chebmo - real
-    !                     array of dimension (maxp1,25) containing the
-    !                     Chebyshev moments
-    !
-    !  Local Parameters:
-    !
-    !           alist     - list of left end points of all subintervals
-    !                       considered up to now
-    !           blist     - list of right end points of all subintervals
-    !                       considered up to now
-    !           rlist(i)  - approximation to the integral over
-    !                       (alist(i),blist(i))
-    !           rlist2    - array of dimension at least limexp+2 containing
-    !                       the part of the epsilon table which is still
-    !                       needed for further computations
-    !           elist(i)  - error estimate applying to rlist(i)
-    !           maxerr    - pointer to the interval with largest error
-    !                       estimate
-    !           errmax    - elist(maxerr)
-    !           erlast    - error on the interval currently subdivided
-    !           area      - sum of the integrals over the subintervals
-    !           errsum    - sum of the errors over the subintervals
-    !           errbnd    - requested accuracy max(epsabs,epsrel*
-    !                       abs(result))
-    !           *****1    - variable for the left subinterval
-    !           *****2    - variable for the right subinterval
-    !           last      - index for subdivision
-    !           nres      - number of calls to the extrapolation routine
-    !           numrl2    - number of elements in rlist2. if an appropriate
-    !                       approximation to the compounded integral has
-    !                       been obtained it is put in rlist2(numrl2) after
-    !                       numrl2 has been increased by one
-    !           small     - length of the smallest interval considered
-    !                       up to now, multiplied by 1.5
-    !           erlarg    - sum of the errors over the intervals larger
-    !                       than the smallest interval considered up to now
-    !           extrap    - logical variable denoting that the routine is
-    !                       attempting to perform extrapolation, i.e. before
-    !                       subdividing the smallest interval we try to
-    !                       decrease the value of erlarg
-    !           noext     - logical variable denoting that extrapolation
-    !                       is no longer allowed (true value)
-    !
+    !!
+    !!  Discussion:
+    !!
+    !!    This routine calculates an approximation RESULT to a definite integral
+    !!      I = integral of F(X) * COS(OMEGA*X) 
+    !!    or
+    !!      I = integral of F(X) * SIN(OMEGA*X) 
+    !!    over (A,B), hopefully satisfying:
+    !!      | I - RESULT | <= max ( epsabs, epsrel * |I| ) ).
+    !!
+    !!    QFOUR is called by DQAWO and DQAWF.  It can also be called directly in 
+    !!    a user-written program.  In the latter case it is possible for the 
+    !!    user to determine the first dimension of array CHEBMO(MAXP1,25).
+    !!    See also parameter description of MAXP1.  Additionally see
+    !!    parameter description of ICALL for eventually re-using
+    !!    Chebyshev moments computed during former call on subinterval
+    !!    of equal length abs(B-A).
+    !!
+    !!  Author:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner
+    !!
+    !!  Reference:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner,
+    !!    QUADPACK, a Subroutine Package for Automatic Integration,
+    !!    Springer Verlag, 1983
+    !!
+    !!  Parameters:
+    !!
+    !!    Input, external real ( kind = 8 ) F, the name of the function routine, of the form
+    !!      function f ( x )
+    !!      real ( kind = 8 ) f
+    !!      real ( kind = 8 ) x
+    !!    which evaluates the integrand function.
+    !!
+    !!    Input, real ( kind = 8 ) A, B, the limits of integration.
+    !!
+    !!    Input, real ( kind = 8 ) OMEGA, the multiplier of X in the weight function.
+    !!
+    !!    Input, integer INTEGR, indicates the weight functions to be used.
+    !!    = 1, w(x) = cos(omega*x)
+    !!    = 2, w(x) = sin(omega*x)
+    !!
+    !!    Input, real ( kind = 8 ) EPSABS, EPSREL, the absolute and relative accuracy requested.
+    !!
+    !!    Input, integer LIMIT, the maximum number of subintervals of [A,B]
+    !!    that can be generated.
+    !!
+    !!    icall  - integer
+    !!                     if qfour is to be used only once, ICALL must
+    !!                     be set to 1.  assume that during this call, the
+    !!                     Chebyshev moments (for clenshaw-curtis integration
+    !!                     of degree 24) have been computed for intervals of
+    !!                     lenghts (abs(b-a))*2**(-l), l=0,1,2,...momcom-1.
+    !!                     the Chebyshev moments already computed can be
+    !!                     re-used in subsequent calls, if qfour must be
+    !!                     called twice or more times on intervals of the
+    !!                     same length abs(b-a). from the second call on, one
+    !!                     has to put then ICALL > 1.
+    !!                     if ICALL < 1, the routine will end with ier = 6.
+    !!
+    !!            maxp1  - integer
+    !!                     gives an upper bound on the number of
+    !!                     Chebyshev moments which can be stored, i.e.
+    !!                     for the intervals of lenghts abs(b-a)*2**(-l),
+    !!                     l=0,1, ..., maxp1-2, maxp1 >= 1.
+    !!                     if maxp1 < 1, the routine will end with ier = 6.
+    !!                     increasing (decreasing) the value of maxp1
+    !!                     decreases (increases) the computational time but
+    !!                     increases (decreases) the required memory space.
+    !!
+    !!    Output, real ( kind = 8 ) RESULT, the estimated value of the integral.
+    !!
+    !!    Output, real ( kind = 8 ) ABSERR, an estimate of || I - RESULT ||.
+    !!
+    !!    Output, integer NEVAL, the number of times the integral was evaluated.
+    !!
+    !!            ier    - integer
+    !!                     ier = 0 normal and reliable termination of the
+    !!                             routine. it is assumed that the
+    !!                             requested accuracy has been achieved.
+    !!                   - ier > 0 abnormal termination of the routine.
+    !!                             the estimates for integral and error are
+    !!                             less reliable. it is assumed that the
+    !!                             requested accuracy has not been achieved.
+    !!                     ier = 1 maximum number of subdivisions allowed
+    !!                             has been achieved. one can allow more
+    !!                             subdivisions by increasing the value of
+    !!                             limit (and taking according dimension
+    !!                             adjustments into account). however, if
+    !!                             this yields no improvement it is advised
+    !!                             to analyze the integrand, in order to
+    !!                             determine the integration difficulties.
+    !!                             if the position of a local difficulty can
+    !!                             be determined (e.g. singularity,
+    !!                             discontinuity within the interval) one
+    !!                             will probably gain from splitting up the
+    !!                             interval at this point and calling the
+    !!                             integrator on the subranges. if possible,
+    !!                             an appropriate special-purpose integrator
+    !!                             should be used which is designed for
+    !!                             handling the type of difficulty involved.
+    !!                         = 2 the occurrence of roundoff error is
+    !!                             detected, which prevents the requested
+    !!                             tolerance from being achieved.
+    !!                             the error may be under-estimated.
+    !!                         = 3 extremely bad integrand behavior occurs
+    !!                             at some points of the integration
+    !!                             interval.
+    !!                         = 4 the algorithm does not converge. roundoff
+    !!                             error is detected in the extrapolation
+    !!                             table. it is presumed that the requested
+    !!                             tolerance cannot be achieved due to
+    !!                             roundoff in the extrapolation table, and
+    !!                             that the returned result is the best which
+    !!                             can be obtained.
+    !!                         = 5 the integral is probably divergent, or
+    !!                             slowly convergent. it must be noted that
+    !!                             divergence can occur with any other value
+    !!                             of ier > 0.
+    !!                         = 6 the input is invalid, because
+    !!                             epsabs < 0 and epsrel < 0,
+    !!                             or (integr /= 1 and integr /= 2) or
+    !!                             ICALL < 1 or maxp1 < 1.
+    !!                             result, abserr, neval, last, rlist(1),
+    !!                             elist(1), iord(1) and nnlog(1) are set to
+    !!                             zero. alist(1) and blist(1) are set to a
+    !!                             and b respectively.
+    !!
+    !!    Workspace, real ( kind = 8 ) ALIST(LIMIT), BLIST(LIMIT), contains in entries 1 
+    !!    through LAST the left and right ends of the partition subintervals.
+    !!
+    !!    Workspace, real ( kind = 8 ) RLIST(LIMIT), contains in entries 1 through LAST
+    !!    the integral approximations on the subintervals.
+    !!
+    !!    Workspace, real ( kind = 8 ) ELIST(LIMIT), contains in entries 1 through LAST
+    !!    the absolute error estimates on the subintervals.
+    !!
+    !!            iord   - integer
+    !!                     vector of dimension at least limit, the first k
+    !!                     elements of which are pointers to the error
+    !!                     estimates over the subintervals, such that
+    !!                     elist(iord(1)), ..., elist(iord(k)), form
+    !!                     a decreasing sequence, with k = last
+    !!                     if last <= (limit/2+2), and
+    !!                     k = limit+1-last otherwise.
+    !!
+    !!            nnlog  - integer
+    !!                     vector of dimension at least limit, indicating the
+    !!                     subdivision levels of the subintervals, i.e.
+    !!                     iwork(i) = l means that the subinterval numbered
+    !!                     i is of length abs(b-a)*2**(1-l)
+    !!
+    !!         on entry and return
+    !!            momcom - integer
+    !!                     indicating that the Chebyshev moments have been
+    !!                     computed for intervals of lengths
+    !!                     (abs(b-a))*2**(-l), l=0,1,2, ..., momcom-1,
+    !!                     momcom < maxp1
+    !!
+    !!            chebmo - real
+    !!                     array of dimension (maxp1,25) containing the
+    !!                     Chebyshev moments
+    !!
+    !!  Local Parameters:
+    !!
+    !!           alist     - list of left end points of all subintervals
+    !!                       considered up to now
+    !!           blist     - list of right end points of all subintervals
+    !!                       considered up to now
+    !!           rlist(i)  - approximation to the integral over
+    !!                       (alist(i),blist(i))
+    !!           rlist2    - array of dimension at least limexp+2 containing
+    !!                       the part of the epsilon table which is still
+    !!                       needed for further computations
+    !!           elist(i)  - error estimate applying to rlist(i)
+    !!           maxerr    - pointer to the interval with largest error
+    !!                       estimate
+    !!           errmax    - elist(maxerr)
+    !!           erlast    - error on the interval currently subdivided
+    !!           area      - sum of the integrals over the subintervals
+    !!           errsum    - sum of the errors over the subintervals
+    !!           errbnd    - requested accuracy max(epsabs,epsrel*
+    !!                       abs(result))
+    !!           *****1    - variable for the left subinterval
+    !!           *****2    - variable for the right subinterval
+    !!           last      - index for subdivision
+    !!           nres      - number of calls to the extrapolation routine
+    !!           numrl2    - number of elements in rlist2. if an appropriate
+    !!                       approximation to the compounded integral has
+    !!                       been obtained it is put in rlist2(numrl2) after
+    !!                       numrl2 has been increased by one
+    !!           small     - length of the smallest interval considered
+    !!                       up to now, multiplied by 1.5
+    !!           erlarg    - sum of the errors over the intervals larger
+    !!                       than the smallest interval considered up to now
+    !!           extrap    - logical variable denoting that the routine is
+    !!                       attempting to perform extrapolation, i.e. before
+    !!                       subdividing the smallest interval we try to
+    !!                       decrease the value of erlarg
+    !!           noext     - logical variable denoting that extrapolation
+    !!                       is no longer allowed (true value)
+    !!
     implicit none
 
     integer limit
@@ -5832,13 +5778,13 @@ contains
     real ( kind = 8 ) rlist2(52)
     real ( kind = 8 ) small
     real ( kind = 8 ) width
-    !
-    !  the dimension of rlist2 is determined by  the value of
-    !  limexp in QEXTR (rlist2 should be of dimension
-    !  (limexp+2) at least).
-    !
-    !  Test on validity of parameters.
-    !
+    !!
+    !!  the dimension of rlist2 is determined by  the value of
+    !!  limexp in QEXTR (rlist2 should be of dimension
+    !!  (limexp+2) at least).
+    !!
+    !!  Test on validity of parameters.
+    !!
     ier = 0
     neval = 0
     last = 0
@@ -5856,9 +5802,9 @@ contains
        ier = 6
        return
     end if
-    !
-    !  First approximation to the integral.
-    !
+    !!
+    !!  First approximation to the integral.
+    !!
     domega = abs ( omega )
     nrmom = 0
 
@@ -5868,9 +5814,9 @@ contains
 
     call qc25o ( f, a, b, domega, integr, nrmom, maxp1, 0, result, abserr, &
          neval, defabs, resabs, momcom, chebmo )
-    !
-    !  Test on accuracy.
-    !
+    !!
+    !!  Test on accuracy.
+    !!
     dres = abs(result)
     errbnd = max ( epsabs,epsrel*dres)
     rlist(1) = result
@@ -5886,9 +5832,9 @@ contains
     if ( ier /= 0 .or. abserr <= errbnd ) then
        go to 200
     end if
-    !
-    !  Initializations
-    !
+    !!
+    !!  Initializations
+    !!
     errmax = abserr
     maxerr = 1
     area = result
@@ -5922,13 +5868,13 @@ contains
     else
        ksgn = -1
     end if
-    !
-    !  main do-loop
-    !
+    !!
+    !!  main do-loop
+    !!
     do last = 2, limit
-       !
-       !  Bisect the subinterval with the nrmax-th largest error estimate.
-       !
+       !!
+       !!  Bisect the subinterval with the nrmax-th largest error estimate.
+       !!
        nrmom = nnlog(maxerr)+1
        a1 = alist(maxerr)
        b1 = 5.0D-01*(alist(maxerr)+blist(maxerr))
@@ -5945,10 +5891,10 @@ contains
             error2, nev, resabs, defab2, momcom, chebmo )
 
        neval = neval+nev
-       !
-       !  Improve previous approximations to integral and error and
-       !  test for accuracy.
-       !
+       !!
+       !!  Improve previous approximations to integral and error and
+       !!  test for accuracy.
+       !!
        area12 = area1+area2
        erro12 = error1+error2
        errsum = errsum+erro12-errmax
@@ -5973,30 +5919,30 @@ contains
        nnlog(maxerr) = nrmom
        nnlog(last) = nrmom
        errbnd = max ( epsabs,epsrel*abs(area))
-       !
-       !  Test for roundoff error and eventually set error flag
-       !
+       !!
+       !!  Test for roundoff error and eventually set error flag
+       !!
        if ( iroff1+iroff2 >= 10 .or. iroff3 >= 20 ) ier = 2
 
        if ( iroff2 >= 5) ierro = 3
-       !
-       !  Set error flag in the case that the number of subintervals
-       !  equals limit.
-       !
+       !!
+       !!  Set error flag in the case that the number of subintervals
+       !!  equals limit.
+       !!
        if ( last == limit ) then
           ier = 1
        end if
-       !
-       !  Set error flag in the case of bad integrand behavior at
-       !  a point of the integration range.
-       !
+       !!
+       !!  Set error flag in the case of bad integrand behavior at
+       !!  a point of the integration range.
+       !!
        if ( max ( abs(a1),abs(b2)) <= (1.0D+00+1.0D+03* epsilon ( a1 ) ) &
             *(abs(a2)+1.0D+03* tiny ( a2 ) )) then
           ier = 4
        end if
-       !
-       !  Append the newly-created intervals to the list.
-       !
+       !!
+       !!  Append the newly-created intervals to the list.
+       !!
        if ( error2 <= error1 ) then
           alist(last) = a2
           blist(maxerr) = b1
@@ -6012,11 +5958,11 @@ contains
           elist(maxerr) = error2
           elist(last) = error1
        end if
-       !
-       !  Call QSORT to maintain the descending ordering
-       !  in the list of error estimates and select the subinterval
-       !  with nrmax-th largest error estimate (to be bisected next).
-       !
+       !!
+       !!  Call QSORT to maintain the descending ordering
+       !!  in the list of error estimates and select the subinterval
+       !!  with nrmax-th largest error estimate (to be bisected next).
+       !!
 
        call qsort ( limit, last, maxerr, errmax, elist, iord, nrmax )
 
@@ -6038,10 +5984,10 @@ contains
        erlarg = erlarg-erlast
        if ( abs(b1-a1) > small ) erlarg = erlarg+erro12
        if ( extrap ) go to 70
-       !
-       !  Test whether the interval to be bisected next is the
-       !  smallest interval.
-       !
+       !!
+       !!  Test whether the interval to be bisected next is the
+       !!  smallest interval.
+       !!
 50     continue
 
        width = abs(blist(maxerr)-alist(maxerr))
@@ -6051,11 +5997,11 @@ contains
        end if
 
        if ( extall ) go to 60
-       !
-       !  Test whether we can start with the extrapolation procedure
-       !  (we do this if we integrate over the next interval with
-       !  use of a Gauss-Kronrod rule - see QC25O).
-       !
+       !!
+       !!  Test whether we can start with the extrapolation procedure
+       !!  (we do this if we integrate over the next interval with
+       !!  use of a Gauss-Kronrod rule - see QC25O).
+       !!
        small = small*5.0D-01
 
        if ( 2.5D-01*width*domega > 2.0D+00 ) then
@@ -6073,11 +6019,11 @@ contains
 70     continue
 
        if ( ierro == 3 .or. erlarg <= ertest ) go to 90
-       !
-       !  The smallest interval has the largest error.
-       !  Before bisecting decrease the sum of the errors over the
-       !  larger intervals (ERLARG) and perform extrapolation.
-       !
+       !!
+       !!  The smallest interval has the largest error.
+       !!  Before bisecting decrease the sum of the errors over the
+       !!  larger intervals (ERLARG) and perform extrapolation.
+       !!
        jupbnd = last
 
        if ( last > (limit/2+2) ) then
@@ -6092,9 +6038,9 @@ contains
           if ( abs(blist(maxerr)-alist(maxerr)) > small ) go to 140
           nrmax = nrmax+1
        end do
-       !
-       !  Perform extrapolation.
-       !
+       !!
+       !!  Perform extrapolation.
+       !!
 90     continue
 
        numrl2 = numrl2+1
@@ -6120,9 +6066,9 @@ contains
        if ( abserr <= ertest ) then
           exit
        end if
-       !
-       !  Prepare bisection of the smallest interval.
-       !
+       !!
+       !!  Prepare bisection of the smallest interval.
+       !!
 100    continue
 
        if ( numrl2 == 1 ) then
@@ -6157,9 +6103,9 @@ contains
 140    continue
 
     end do
-    !
-    !  set the final result.
-    !
+    !!
+    !!  set the final result.
+    !!
     if ( abserr == huge ( abserr ) .or. nres == 0 ) then
        go to 170
     end if
@@ -6175,9 +6121,9 @@ contains
 160 continue
 
     if ( abserr/abs(result) > errsum/abs(area) ) go to 170
-    !
-    !  Test on divergence.
-    !
+    !!
+    !!  Test on divergence.
+    !!
 165 continue
 
     if ( ksgn == (-1) .and. max ( abs(result),abs(area)) <=  &
@@ -6187,9 +6133,9 @@ contains
          .or. errsum >= abs(area) ) ier = 6
 
     go to 190
-    !
-    !  Compute global integral sum.
-    !
+    !!
+    !!  Compute global integral sum.
+    !!
 170 continue
 
     result = sum ( rlist(1:last) )
@@ -6208,79 +6154,77 @@ contains
 
     return
   end subroutine qfour
-  subroutine qk15 ( f, a, b, result, abserr, resabs, resasc )
 
-    !*****************************************************************************80
-    !
+  subroutine qk15 ( f, a, b, result, abserr, resabs, resasc )
     !! QK15 carries out a 15 point Gauss-Kronrod quadrature rule.
-    !
-    !  Discussion:
-    !
-    !    This routine approximates
-    !      I = integral ( A <= X <= B ) F(X) dx
-    !    with an error estimate, and
-    !      J = integral ( A <= X <= B ) | F(X) | dx
-    !
-    !  Author:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner
-    !
-    !  Reference:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner,
-    !    QUADPACK, a Subroutine Package for Automatic Integration,
-    !    Springer Verlag, 1983
-    !
-    !  Parameters:
-    !
-    !    Input, external real ( kind = 8 ) F, the name of the function routine, of the form
-    !      function f ( x )
-    !      real ( kind = 8 ) f
-    !      real ( kind = 8 ) x
-    !    which evaluates the integrand function.
-    !
-    !    Input, real ( kind = 8 ) A, B, the limits of integration.
-    !
-    !    Output, real ( kind = 8 ) RESULT, the estimated value of the integral.
-    !    RESULT is computed by applying the 15-point Kronrod rule (RESK) 
-    !    obtained by optimal addition of abscissae to the 7-point Gauss rule 
-    !    (RESG).
-    !
-    !    Output, real ( kind = 8 ) ABSERR, an estimate of | I - RESULT |.
-    !
-    !    Output, real ( kind = 8 ) RESABS, approximation to the integral of the absolute
-    !    value of F.
-    !
-    !    Output, real ( kind = 8 ) RESASC, approximation to the integral | F-I/(B-A) | 
-    !    over [A,B].
-    !
-    !  Local Parameters:
-    !
-    !           the abscissae and weights are given for the interval (-1,1).
-    !           because of symmetry only the positive abscissae and their
-    !           corresponding weights are given.
-    !
-    !           xgk    - abscissae of the 15-point Kronrod rule
-    !                    xgk(2), xgk(4), ...  abscissae of the 7-point
-    !                    Gauss rule
-    !                    xgk(1), xgk(3), ...  abscissae which are optimally
-    !                    added to the 7-point Gauss rule
-    !
-    !           wgk    - weights of the 15-point Kronrod rule
-    !
-    !           wg     - weights of the 7-point Gauss rule
-    !
-    !           centr  - mid point of the interval
-    !           hlgth  - half-length of the interval
-    !           absc   - abscissa
-    !           fval*  - function value
-    !           resg   - result of the 7-point Gauss formula
-    !           resk   - result of the 15-point Kronrod formula
-    !           reskh  - approximation to the mean value of f over (a,b),
-    !                    i.e. to i/(b-a)
-    !
+    !!
+    !!  Discussion:
+    !!
+    !!    This routine approximates
+    !!      I = integral ( A <= X <= B ) F(X) dx
+    !!    with an error estimate, and
+    !!      J = integral ( A <= X <= B ) | F(X) | dx
+    !!
+    !!  Author:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner
+    !!
+    !!  Reference:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner,
+    !!    QUADPACK, a Subroutine Package for Automatic Integration,
+    !!    Springer Verlag, 1983
+    !!
+    !!  Parameters:
+    !!
+    !!    Input, external real ( kind = 8 ) F, the name of the function routine, of the form
+    !!      function f ( x )
+    !!      real ( kind = 8 ) f
+    !!      real ( kind = 8 ) x
+    !!    which evaluates the integrand function.
+    !!
+    !!    Input, real ( kind = 8 ) A, B, the limits of integration.
+    !!
+    !!    Output, real ( kind = 8 ) RESULT, the estimated value of the integral.
+    !!    RESULT is computed by applying the 15-point Kronrod rule (RESK) 
+    !!    obtained by optimal addition of abscissae to the 7-point Gauss rule 
+    !!    (RESG).
+    !!
+    !!    Output, real ( kind = 8 ) ABSERR, an estimate of | I - RESULT |.
+    !!
+    !!    Output, real ( kind = 8 ) RESABS, approximation to the integral of the absolute
+    !!    value of F.
+    !!
+    !!    Output, real ( kind = 8 ) RESASC, approximation to the integral | F-I/(B-A) | 
+    !!    over [A,B].
+    !!
+    !!  Local Parameters:
+    !!
+    !!           the abscissae and weights are given for the interval (-1,1).
+    !!           because of symmetry only the positive abscissae and their
+    !!           corresponding weights are given.
+    !!
+    !!           xgk    - abscissae of the 15-point Kronrod rule
+    !!                    xgk(2), xgk(4), ...  abscissae of the 7-point
+    !!                    Gauss rule
+    !!                    xgk(1), xgk(3), ...  abscissae which are optimally
+    !!                    added to the 7-point Gauss rule
+    !!
+    !!           wgk    - weights of the 15-point Kronrod rule
+    !!
+    !!           wg     - weights of the 7-point Gauss rule
+    !!
+    !!           centr  - mid point of the interval
+    !!           hlgth  - half-length of the interval
+    !!           absc   - abscissa
+    !!           fval*  - function value
+    !!           resg   - result of the 7-point Gauss formula
+    !!           resk   - result of the 15-point Kronrod formula
+    !!           reskh  - approximation to the mean value of f over (a,b),
+    !!                    i.e. to i/(b-a)
+    !!
     implicit none
 
     real ( kind = 8 ) a
@@ -6323,14 +6267,14 @@ contains
     data wg(1),wg(2),wg(3),wg(4)/ &
          1.294849661688697D-01,   2.797053914892767D-01, &
          3.818300505051189D-01,   4.179591836734694D-01/
-    !
+    !!
     centr = 5.0D-01*(a+b)
     hlgth = 5.0D-01*(b-a)
     dhlgth = abs(hlgth)
-    !
-    !  Compute the 15-point Kronrod approximation to the integral,
-    !  and estimate the absolute error.
-    !
+    !!
+    !!  Compute the 15-point Kronrod approximation to the integral,
+    !!  and estimate the absolute error.
+    !!
     fc = f(centr)
     resg = fc*wg(4)
     resk = fc*wgk(8)
@@ -6383,76 +6327,74 @@ contains
 
     return
   end subroutine qk15
-  subroutine qk15i ( f, boun, inf, a, b, result, abserr, resabs, resasc )
 
-    !*****************************************************************************80
-    !
+  subroutine qk15i ( f, boun, inf, a, b, result, abserr, resabs, resasc )
     !! QK15I applies a 15 point Gauss-Kronrod quadrature on an infinite interval.
-    !
-    !  Discussion:
-    !
-    !    The original infinite integration range is mapped onto the interval 
-    !    (0,1) and (a,b) is a part of (0,1).  The routine then computes:
-    !
-    !    i = integral of transformed integrand over (a,b),
-    !    j = integral of abs(transformed integrand) over (a,b).
-    !
-    !  Author:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner
-    !
-    !  Reference:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner,
-    !    QUADPACK, a Subroutine Package for Automatic Integration,
-    !    Springer Verlag, 1983
-    !
-    !  Parameters:
-    !
-    !    Input, external real ( kind = 8 ) F, the name of the function routine, of the form
-    !      function f ( x )
-    !      real ( kind = 8 ) f
-    !      real ( kind = 8 ) x
-    !    which evaluates the integrand function.
-    !
-    !    Input, real ( kind = 8 ) BOUN, the finite bound of the original integration range,
-    !    or zero if INF is 2.
-    !
-    !    Input, integer INF, indicates the type of the interval.
-    !    -1: the original interval is (-infinity,BOUN),
-    !    +1, the original interval is (BOUN,+infinity),
-    !    +2, the original interval is (-infinity,+infinity) and
-    !    the integral is computed as the sum of two integrals, one 
-    !    over (-infinity,0) and one over (0,+infinity).
-    !
-    !    Input, real ( kind = 8 ) A, B, the limits of integration, over a subrange of [0,1].
-    !
-    !    Output, real ( kind = 8 ) RESULT, the estimated value of the integral.
-    !    RESULT is computed by applying the 15-point Kronrod rule (RESK) obtained 
-    !    by optimal addition of abscissae to the 7-point Gauss rule (RESG).
-    !
-    !    Output, real ( kind = 8 ) ABSERR, an estimate of | I - RESULT |.
-    !
-    !    Output, real ( kind = 8 ) RESABS, approximation to the integral of the absolute
-    !    value of F.
-    !
-    !    Output, real ( kind = 8 ) RESASC, approximation to the integral of the
-    !    transformated integrand | F-I/(B-A) | over [A,B].
-    !
-    !  Local Parameters:
-    !
-    !           centr  - mid point of the interval
-    !           hlgth  - half-length of the interval
-    !           absc*  - abscissa
-    !           tabsc* - transformed abscissa
-    !           fval*  - function value
-    !           resg   - result of the 7-point Gauss formula
-    !           resk   - result of the 15-point Kronrod formula
-    !           reskh  - approximation to the mean value of the transformed
-    !                    integrand over (a,b), i.e. to i/(b-a)
-    !
+    !!
+    !!  Discussion:
+    !!
+    !!    The original infinite integration range is mapped onto the interval 
+    !!    (0,1) and (a,b) is a part of (0,1).  The routine then computes:
+    !!
+    !!    i = integral of transformed integrand over (a,b),
+    !!    j = integral of abs(transformed integrand) over (a,b).
+    !!
+    !!  Author:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner
+    !!
+    !!  Reference:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner,
+    !!    QUADPACK, a Subroutine Package for Automatic Integration,
+    !!    Springer Verlag, 1983
+    !!
+    !!  Parameters:
+    !!
+    !!    Input, external real ( kind = 8 ) F, the name of the function routine, of the form
+    !!      function f ( x )
+    !!      real ( kind = 8 ) f
+    !!      real ( kind = 8 ) x
+    !!    which evaluates the integrand function.
+    !!
+    !!    Input, real ( kind = 8 ) BOUN, the finite bound of the original integration range,
+    !!    or zero if INF is 2.
+    !!
+    !!    Input, integer INF, indicates the type of the interval.
+    !!    -1: the original interval is (-infinity,BOUN),
+    !!    +1, the original interval is (BOUN,+infinity),
+    !!    +2, the original interval is (-infinity,+infinity) and
+    !!    the integral is computed as the sum of two integrals, one 
+    !!    over (-infinity,0) and one over (0,+infinity).
+    !!
+    !!    Input, real ( kind = 8 ) A, B, the limits of integration, over a subrange of [0,1].
+    !!
+    !!    Output, real ( kind = 8 ) RESULT, the estimated value of the integral.
+    !!    RESULT is computed by applying the 15-point Kronrod rule (RESK) obtained 
+    !!    by optimal addition of abscissae to the 7-point Gauss rule (RESG).
+    !!
+    !!    Output, real ( kind = 8 ) ABSERR, an estimate of | I - RESULT |.
+    !!
+    !!    Output, real ( kind = 8 ) RESABS, approximation to the integral of the absolute
+    !!    value of F.
+    !!
+    !!    Output, real ( kind = 8 ) RESASC, approximation to the integral of the
+    !!    transformated integrand | F-I/(B-A) | over [A,B].
+    !!
+    !!  Local Parameters:
+    !!
+    !!           centr  - mid point of the interval
+    !!           hlgth  - half-length of the interval
+    !!           absc*  - abscissa
+    !!           tabsc* - transformed abscissa
+    !!           fval*  - function value
+    !!           resg   - result of the 7-point Gauss formula
+    !!           resk   - result of the 15-point Kronrod formula
+    !!           reskh  - approximation to the mean value of the transformed
+    !!                    integrand over (a,b), i.e. to i/(b-a)
+    !!
     implicit none
 
     real ( kind = 8 ) a
@@ -6485,23 +6427,23 @@ contains
     real ( kind = 8 ) wg(8)
     real ( kind = 8 ) wgk(8)
     real ( kind = 8 ) xgk(8)
-    !
-    !  the abscissae and weights are supplied for the interval
-    !  (-1,1).  because of symmetry only the positive abscissae and
-    !  their corresponding weights are given.
-    !
-    !           xgk    - abscissae of the 15-point Kronrod rule
-    !                    xgk(2), xgk(4), ... abscissae of the 7-point Gauss
-    !                    rule
-    !                    xgk(1), xgk(3), ...  abscissae which are optimally
-    !                    added to the 7-point Gauss rule
-    !
-    !           wgk    - weights of the 15-point Kronrod rule
-    !
-    !           wg     - weights of the 7-point Gauss rule, corresponding
-    !                    to the abscissae xgk(2), xgk(4), ...
-    !                    wg(1), wg(3), ... are set to zero.
-    !
+    !!
+    !!  the abscissae and weights are supplied for the interval
+    !!  (-1,1).  because of symmetry only the positive abscissae and
+    !!  their corresponding weights are given.
+    !!
+    !!           xgk    - abscissae of the 15-point Kronrod rule
+    !!                    xgk(2), xgk(4), ... abscissae of the 7-point Gauss
+    !!                    rule
+    !!                    xgk(1), xgk(3), ...  abscissae which are optimally
+    !!                    added to the 7-point Gauss rule
+    !!
+    !!           wgk    - weights of the 15-point Kronrod rule
+    !!
+    !!           wg     - weights of the 7-point Gauss rule, corresponding
+    !!                    to the abscissae xgk(2), xgk(4), ...
+    !!                    wg(1), wg(3), ... are set to zero.
+    !!
     data xgk(1),xgk(2),xgk(3),xgk(4),xgk(5),xgk(6),xgk(7),xgk(8)/ &
          9.914553711208126D-01,     9.491079123427585D-01, &
          8.648644233597691D-01,     7.415311855993944D-01, &
@@ -6528,10 +6470,10 @@ contains
     fval1 = f(tabsc1)
     if ( inf == 2 ) fval1 = fval1+f(-tabsc1)
     fc = (fval1/centr)/centr
-    !
-    !  Compute the 15-point Kronrod approximation to the integral,
-    !  and estimate the error.
-    !
+    !!
+    !!  Compute the 15-point Kronrod approximation to the integral,
+    !!  and estimate the error.
+    !!
     resg = wg(8)*fc
     resk = wgk(8)*fc
     resabs = abs(resk)
@@ -6585,73 +6527,70 @@ contains
   end subroutine qk15i
   subroutine qk15w ( f, w, p1, p2, p3, p4, kp, a, b, result, abserr, resabs, &
        resasc )
-
-    !*****************************************************************************80
-    !
     !! QK15W applies a 15 point Gauss-Kronrod rule for a weighted integrand.
-    !
-    !  Discussion:
-    !
-    !    This routine approximates 
-    !      i = integral of f*w over (a,b), 
-    !    with error estimate, and
-    !      j = integral of abs(f*w) over (a,b)
-    !
-    !  Author:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner
-    !
-    !  Reference:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner,
-    !    QUADPACK, a Subroutine Package for Automatic Integration,
-    !    Springer Verlag, 1983
-    !
-    !  Parameters:
-    !
-    !    Input, external real ( kind = 8 ) F, the name of the function routine, of the form
-    !      function f ( x )
-    !      real ( kind = 8 ) f
-    !      real ( kind = 8 ) x
-    !    which evaluates the integrand function.
-    !
-    !              w      - real
-    !                       function subprogram defining the integrand
-    !                       weight function w(x). the actual name for w
-    !                       needs to be declared e x t e r n a l in the
-    !                       calling program.
-    !
-    !    ?, real ( kind = 8 ) P1, P2, P3, P4, parameters in the weight function
-    !
-    !    Input, integer KP, key for indicating the type of weight function
-    !
-    !    Input, real ( kind = 8 ) A, B, the limits of integration.
-    !
-    !    Output, real ( kind = 8 ) RESULT, the estimated value of the integral.
-    !    RESULT is computed by applying the 15-point Kronrod rule (RESK) obtained by
-    !    optimal addition of abscissae to the 7-point Gauss rule (RESG).
-    !
-    !    Output, real ( kind = 8 ) ABSERR, an estimate of | I - RESULT |.
-    !
-    !    Output, real ( kind = 8 ) RESABS, approximation to the integral of the absolute
-    !    value of F.
-    !
-    !    Output, real ( kind = 8 ) RESASC, approximation to the integral | F-I/(B-A) | 
-    !    over [A,B].
-    !
-    !  Local Parameters:
-    !
-    !           centr  - mid point of the interval
-    !           hlgth  - half-length of the interval
-    !           absc*  - abscissa
-    !           fval*  - function value
-    !           resg   - result of the 7-point Gauss formula
-    !           resk   - result of the 15-point Kronrod formula
-    !           reskh  - approximation to the mean value of f*w over (a,b),
-    !                    i.e. to i/(b-a)
-    !
+    !!
+    !!  Discussion:
+    !!
+    !!    This routine approximates 
+    !!      i = integral of f*w over (a,b), 
+    !!    with error estimate, and
+    !!      j = integral of abs(f*w) over (a,b)
+    !!
+    !!  Author:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner
+    !!
+    !!  Reference:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner,
+    !!    QUADPACK, a Subroutine Package for Automatic Integration,
+    !!    Springer Verlag, 1983
+    !!
+    !!  Parameters:
+    !!
+    !!    Input, external real ( kind = 8 ) F, the name of the function routine, of the form
+    !!      function f ( x )
+    !!      real ( kind = 8 ) f
+    !!      real ( kind = 8 ) x
+    !!    which evaluates the integrand function.
+    !!
+    !!              w      - real
+    !!                       function subprogram defining the integrand
+    !!                       weight function w(x). the actual name for w
+    !!                       needs to be declared e x t e r n a l in the
+    !!                       calling program.
+    !!
+    !!    ?, real ( kind = 8 ) P1, P2, P3, P4, parameters in the weight function
+    !!
+    !!    Input, integer KP, key for indicating the type of weight function
+    !!
+    !!    Input, real ( kind = 8 ) A, B, the limits of integration.
+    !!
+    !!    Output, real ( kind = 8 ) RESULT, the estimated value of the integral.
+    !!    RESULT is computed by applying the 15-point Kronrod rule (RESK) obtained by
+    !!    optimal addition of abscissae to the 7-point Gauss rule (RESG).
+    !!
+    !!    Output, real ( kind = 8 ) ABSERR, an estimate of | I - RESULT |.
+    !!
+    !!    Output, real ( kind = 8 ) RESABS, approximation to the integral of the absolute
+    !!    value of F.
+    !!
+    !!    Output, real ( kind = 8 ) RESASC, approximation to the integral | F-I/(B-A) | 
+    !!    over [A,B].
+    !!
+    !!  Local Parameters:
+    !!
+    !!           centr  - mid point of the interval
+    !!           hlgth  - half-length of the interval
+    !!           absc*  - abscissa
+    !!           fval*  - function value
+    !!           resg   - result of the 7-point Gauss formula
+    !!           resk   - result of the 15-point Kronrod formula
+    !!           reskh  - approximation to the mean value of f*w over (a,b),
+    !!                    i.e. to i/(b-a)
+    !!
     implicit none
 
     real ( kind = 8 ) a
@@ -6690,21 +6629,21 @@ contains
          3.818300505051889D-01,     4.179591836734694D-01 /)
     real ( kind = 8 ) wgk(8)
     real ( kind = 8 ) xgk(8)
-    !
-    !  the abscissae and weights are given for the interval (-1,1).
-    !  because of symmetry only the positive abscissae and their
-    !  corresponding weights are given.
-    !
-    !           xgk    - abscissae of the 15-point Gauss-Kronrod rule
-    !                    xgk(2), xgk(4), ... abscissae of the 7-point Gauss
-    !                    rule
-    !                    xgk(1), xgk(3), ... abscissae which are optimally
-    !                    added to the 7-point Gauss rule
-    !
-    !           wgk    - weights of the 15-point Gauss-Kronrod rule
-    !
-    !           wg     - weights of the 7-point Gauss rule
-    !
+    !!
+    !!  the abscissae and weights are given for the interval (-1,1).
+    !!  because of symmetry only the positive abscissae and their
+    !!  corresponding weights are given.
+    !!
+    !!           xgk    - abscissae of the 15-point Gauss-Kronrod rule
+    !!                    xgk(2), xgk(4), ... abscissae of the 7-point Gauss
+    !!                    rule
+    !!                    xgk(1), xgk(3), ... abscissae which are optimally
+    !!                    added to the 7-point Gauss rule
+    !!
+    !!           wgk    - weights of the 15-point Gauss-Kronrod rule
+    !!
+    !!           wg     - weights of the 7-point Gauss rule
+    !!
     data xgk(1),xgk(2),xgk(3),xgk(4),xgk(5),xgk(6),xgk(7),xgk(8)/ &
          9.914553711208126D-01,     9.491079123427585D-01, &
          8.648644233597691D-01,     7.415311855993944D-01, &
@@ -6716,14 +6655,14 @@ contains
          1.047900103222502D-01,     1.406532597155259D-01, &
          1.690047266392679D-01,     1.903505780647854D-01, &
          2.044329400752989D-01,     2.094821410847278D-01/
-    !
+    !!
     centr = 5.0D-01*(a+b)
     hlgth = 5.0D-01*(b-a)
     dhlgth = abs(hlgth)
-    !
-    !  Compute the 15-point Kronrod approximation to the integral,
-    !  and estimate the error.
-    !
+    !!
+    !!  Compute the 15-point Kronrod approximation to the integral,
+    !!  and estimate the error.
+    !!
     fc = f(centr)*w(centr,p1,p2,p3,p4,kp)
     resg = wg(4)*fc
     resk = wgk(8)*fc
@@ -6780,54 +6719,52 @@ contains
 
     return
   end subroutine qk15w
-  subroutine qk21 ( f, a, b, result, abserr, resabs, resasc )
 
-    !*****************************************************************************80
-    !
+  subroutine qk21 ( f, a, b, result, abserr, resabs, resasc )
     !! QK21 carries out a 21 point Gauss-Kronrod quadrature rule.
-    !
-    !  Discussion:
-    !
-    !    This routine approximates
-    !      I = integral ( A <= X <= B ) F(X) dx
-    !    with an error estimate, and
-    !      J = integral ( A <= X <= B ) | F(X) | dx
-    !
-    !  Author:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner
-    !
-    !  Reference:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner,
-    !    QUADPACK, a Subroutine Package for Automatic Integration,
-    !    Springer Verlag, 1983
-    !
-    !  Parameters:
-    !
-    !    Input, external real ( kind = 8 ) F, the name of the function routine, of the form
-    !      function f ( x )
-    !      real ( kind = 8 ) f
-    !      real ( kind = 8 ) x
-    !    which evaluates the integrand function.
-    !
-    !    Input, real ( kind = 8 ) A, B, the limits of integration.
-    !
-    !    Output, real ( kind = 8 ) RESULT, the estimated value of the integral.
-    !    RESULT is computed by applying the 21-point Kronrod rule (resk) 
-    !    obtained by optimal addition of abscissae to the 10-point Gauss 
-    !    rule (resg).
-    !
-    !    Output, real ( kind = 8 ) ABSERR, an estimate of | I - RESULT |.
-    !
-    !    Output, real ( kind = 8 ) RESABS, approximation to the integral of the absolute
-    !    value of F.
-    !
-    !    Output, real ( kind = 8 ) RESASC, approximation to the integral | F-I/(B-A) | 
-    !    over [A,B].
-    !
+    !!
+    !!  Discussion:
+    !!
+    !!    This routine approximates
+    !!      I = integral ( A <= X <= B ) F(X) dx
+    !!    with an error estimate, and
+    !!      J = integral ( A <= X <= B ) | F(X) | dx
+    !!
+    !!  Author:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner
+    !!
+    !!  Reference:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner,
+    !!    QUADPACK, a Subroutine Package for Automatic Integration,
+    !!    Springer Verlag, 1983
+    !!
+    !!  Parameters:
+    !!
+    !!    Input, external real ( kind = 8 ) F, the name of the function routine, of the form
+    !!      function f ( x )
+    !!      real ( kind = 8 ) f
+    !!      real ( kind = 8 ) x
+    !!    which evaluates the integrand function.
+    !!
+    !!    Input, real ( kind = 8 ) A, B, the limits of integration.
+    !!
+    !!    Output, real ( kind = 8 ) RESULT, the estimated value of the integral.
+    !!    RESULT is computed by applying the 21-point Kronrod rule (resk) 
+    !!    obtained by optimal addition of abscissae to the 10-point Gauss 
+    !!    rule (resg).
+    !!
+    !!    Output, real ( kind = 8 ) ABSERR, an estimate of | I - RESULT |.
+    !!
+    !!    Output, real ( kind = 8 ) RESABS, approximation to the integral of the absolute
+    !!    value of F.
+    !!
+    !!    Output, real ( kind = 8 ) RESASC, approximation to the integral | F-I/(B-A) | 
+    !!    over [A,B].
+    !!
     implicit none
 
     real ( kind = 8 ) a
@@ -6856,21 +6793,21 @@ contains
     real ( kind = 8 ) wg(5)
     real ( kind = 8 ) wgk(11)
     real ( kind = 8 ) xgk(11)
-    !
-    !           the abscissae and weights are given for the interval (-1,1).
-    !           because of symmetry only the positive abscissae and their
-    !           corresponding weights are given.
-    !
-    !           xgk    - abscissae of the 21-point Kronrod rule
-    !                    xgk(2), xgk(4), ...  abscissae of the 10-point
-    !                    Gauss rule
-    !                    xgk(1), xgk(3), ...  abscissae which are optimally
-    !                    added to the 10-point Gauss rule
-    !
-    !           wgk    - weights of the 21-point Kronrod rule
-    !
-    !           wg     - weights of the 10-point Gauss rule
-    !
+    !!
+    !!           the abscissae and weights are given for the interval (-1,1).
+    !!           because of symmetry only the positive abscissae and their
+    !!           corresponding weights are given.
+    !!
+    !!           xgk    - abscissae of the 21-point Kronrod rule
+    !!                    xgk(2), xgk(4), ...  abscissae of the 10-point
+    !!                    Gauss rule
+    !!                    xgk(1), xgk(3), ...  abscissae which are optimally
+    !!                    added to the 10-point Gauss rule
+    !!
+    !!           wgk    - weights of the 21-point Kronrod rule
+    !!
+    !!           wg     - weights of the 10-point Gauss rule
+    !!
     data xgk(1),xgk(2),xgk(3),xgk(4),xgk(5),xgk(6),xgk(7),xgk(8), &
          xgk(9),xgk(10),xgk(11)/ &
          9.956571630258081D-01,     9.739065285171717D-01, &
@@ -6879,7 +6816,7 @@ contains
          5.627571346686047D-01,     4.333953941292472D-01, &
          2.943928627014602D-01,     1.488743389816312D-01, &
          0.000000000000000D+00/
-    !
+    !!
     data wgk(1),wgk(2),wgk(3),wgk(4),wgk(5),wgk(6),wgk(7),wgk(8), &
          wgk(9),wgk(10),wgk(11)/ &
          1.169463886737187D-02,     3.255816230796473D-02, &
@@ -6888,31 +6825,31 @@ contains
          1.234919762620659D-01,     1.347092173114733D-01, &
          1.427759385770601D-01,     1.477391049013385D-01, &
          1.494455540029169D-01/
-    !
+    !!
     data wg(1),wg(2),wg(3),wg(4),wg(5)/ &
          6.667134430868814D-02,     1.494513491505806D-01, &
          2.190863625159820D-01,     2.692667193099964D-01, &
          2.955242247147529D-01/
-    !
-    !
-    !           list of major variables
-    !
-    !           centr  - mid point of the interval
-    !           hlgth  - half-length of the interval
-    !           absc   - abscissa
-    !           fval*  - function value
-    !           resg   - result of the 10-point Gauss formula
-    !           resk   - result of the 21-point Kronrod formula
-    !           reskh  - approximation to the mean value of f over (a,b),
-    !                    i.e. to i/(b-a)
-    !
+    !!
+    !!
+    !!           list of major variables
+    !!
+    !!           centr  - mid point of the interval
+    !!           hlgth  - half-length of the interval
+    !!           absc   - abscissa
+    !!           fval*  - function value
+    !!           resg   - result of the 10-point Gauss formula
+    !!           resk   - result of the 21-point Kronrod formula
+    !!           reskh  - approximation to the mean value of f over (a,b),
+    !!                    i.e. to i/(b-a)
+    !!
     centr = 5.0D-01*(a+b)
     hlgth = 5.0D-01*(b-a)
     dhlgth = abs(hlgth)
-    !
-    !  Compute the 21-point Kronrod approximation to the
-    !  integral, and estimate the absolute error.
-    !
+    !!
+    !!  Compute the 21-point Kronrod approximation to the
+    !!  integral, and estimate the absolute error.
+    !!
     resg = 0.0D+00
     fc = f(centr)
     resk = wgk(11)*fc
@@ -6966,54 +6903,51 @@ contains
     return
   end subroutine qk21
   subroutine qk31 ( f, a, b, result, abserr, resabs, resasc )
-
-    !*****************************************************************************80
-    !
     !! QK31 carries out a 31 point Gauss-Kronrod quadrature rule.
-    !
-    !  Discussion:
-    !
-    !    This routine approximates
-    !      I = integral ( A <= X <= B ) F(X) dx
-    !    with an error estimate, and
-    !      J = integral ( A <= X <= B ) | F(X) | dx
-    !
-    !  Author:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner
-    !
-    !  Reference:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner,
-    !    QUADPACK, a Subroutine Package for Automatic Integration,
-    !    Springer Verlag, 1983
-    !
-    !  Parameters:
-    !
-    !    Input, external real ( kind = 8 ) F, the name of the function routine, of the form
-    !      function f ( x )
-    !      real ( kind = 8 ) f
-    !      real ( kind = 8 ) x
-    !    which evaluates the integrand function.
-    !
-    !    Input, real ( kind = 8 ) A, B, the limits of integration.
-    !
-    !    Output, real ( kind = 8 ) RESULT, the estimated value of the integral.
-    !                       result is computed by applying the 31-point
-    !                       Gauss-Kronrod rule (resk), obtained by optimal
-    !                       addition of abscissae to the 15-point Gauss
-    !                       rule (resg).
-    !
-    !    Output, real ( kind = 8 ) ABSERR, an estimate of | I - RESULT |.
-    !
-    !    Output, real ( kind = 8 ) RESABS, approximation to the integral of the absolute
-    !    value of F.
-    !
-    !    Output, real ( kind = 8 ) RESASC, approximation to the integral | F-I/(B-A) | 
-    !    over [A,B].
-    !
+    !!
+    !!  Discussion:
+    !!
+    !!    This routine approximates
+    !!      I = integral ( A <= X <= B ) F(X) dx
+    !!    with an error estimate, and
+    !!      J = integral ( A <= X <= B ) | F(X) | dx
+    !!
+    !!  Author:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner
+    !!
+    !!  Reference:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner,
+    !!    QUADPACK, a Subroutine Package for Automatic Integration,
+    !!    Springer Verlag, 1983
+    !!
+    !!  Parameters:
+    !!
+    !!    Input, external real ( kind = 8 ) F, the name of the function routine, of the form
+    !!      function f ( x )
+    !!      real ( kind = 8 ) f
+    !!      real ( kind = 8 ) x
+    !!    which evaluates the integrand function.
+    !!
+    !!    Input, real ( kind = 8 ) A, B, the limits of integration.
+    !!
+    !!    Output, real ( kind = 8 ) RESULT, the estimated value of the integral.
+    !!                       result is computed by applying the 31-point
+    !!                       Gauss-Kronrod rule (resk), obtained by optimal
+    !!                       addition of abscissae to the 15-point Gauss
+    !!                       rule (resg).
+    !!
+    !!    Output, real ( kind = 8 ) ABSERR, an estimate of | I - RESULT |.
+    !!
+    !!    Output, real ( kind = 8 ) RESABS, approximation to the integral of the absolute
+    !!    value of F.
+    !!
+    !!    Output, real ( kind = 8 ) RESASC, approximation to the integral | F-I/(B-A) | 
+    !!    over [A,B].
+    !!
     implicit none
 
     real ( kind = 8 ) a
@@ -7042,21 +6976,21 @@ contains
     real ( kind = 8 ) wg(8)
     real ( kind = 8 ) wgk(16)
     real ( kind = 8 ) xgk(16)
-    !
-    !           the abscissae and weights are given for the interval (-1,1).
-    !           because of symmetry only the positive abscissae and their
-    !           corresponding weights are given.
-    !
-    !           xgk    - abscissae of the 31-point Kronrod rule
-    !                    xgk(2), xgk(4), ...  abscissae of the 15-point
-    !                    Gauss rule
-    !                    xgk(1), xgk(3), ...  abscissae which are optimally
-    !                    added to the 15-point Gauss rule
-    !
-    !           wgk    - weights of the 31-point Kronrod rule
-    !
-    !           wg     - weights of the 15-point Gauss rule
-    !
+    !!
+    !!           the abscissae and weights are given for the interval (-1,1).
+    !!           because of symmetry only the positive abscissae and their
+    !!           corresponding weights are given.
+    !!
+    !!           xgk    - abscissae of the 31-point Kronrod rule
+    !!                    xgk(2), xgk(4), ...  abscissae of the 15-point
+    !!                    Gauss rule
+    !!                    xgk(1), xgk(3), ...  abscissae which are optimally
+    !!                    added to the 15-point Gauss rule
+    !!
+    !!           wgk    - weights of the 31-point Kronrod rule
+    !!
+    !!           wg     - weights of the 15-point Gauss rule
+    !!
     data xgk(1),xgk(2),xgk(3),xgk(4),xgk(5),xgk(6),xgk(7),xgk(8), &
          xgk(9),xgk(10),xgk(11),xgk(12),xgk(13),xgk(14),xgk(15),xgk(16)/ &
          9.980022986933971D-01,   9.879925180204854D-01, &
@@ -7082,26 +7016,26 @@ contains
          1.071592204671719D-01,   1.395706779261543D-01, &
          1.662692058169939D-01,   1.861610000155622D-01, &
          1.984314853271116D-01,   2.025782419255613D-01/
-    !
-    !
-    !           list of major variables
-    !
-    !           centr  - mid point of the interval
-    !           hlgth  - half-length of the interval
-    !           absc   - abscissa
-    !           fval*  - function value
-    !           resg   - result of the 15-point Gauss formula
-    !           resk   - result of the 31-point Kronrod formula
-    !           reskh  - approximation to the mean value of f over (a,b),
-    !                    i.e. to i/(b-a)
-    !
+    !!
+    !!
+    !!           list of major variables
+    !!
+    !!           centr  - mid point of the interval
+    !!           hlgth  - half-length of the interval
+    !!           absc   - abscissa
+    !!           fval*  - function value
+    !!           resg   - result of the 15-point Gauss formula
+    !!           resk   - result of the 31-point Kronrod formula
+    !!           reskh  - approximation to the mean value of f over (a,b),
+    !!                    i.e. to i/(b-a)
+    !!
     centr = 5.0D-01*(a+b)
     hlgth = 5.0D-01*(b-a)
     dhlgth = abs(hlgth)
-    !
-    !  Compute the 31-point Kronrod approximation to the integral,
-    !  and estimate the absolute error.
-    !
+    !!
+    !!  Compute the 31-point Kronrod approximation to the integral,
+    !!  and estimate the absolute error.
+    !!
     fc = f(centr)
     resg = wg(8)*fc
     resk = wgk(16)*fc
@@ -7153,66 +7087,64 @@ contains
 
     return
   end subroutine qk31
-  subroutine qk41 ( f, a, b, result, abserr, resabs, resasc )
 
-    !*****************************************************************************80
-    !
+  subroutine qk41 ( f, a, b, result, abserr, resabs, resasc )
     !! QK41 carries out a 41 point Gauss-Kronrod quadrature rule.
-    !
-    !  Discussion:
-    !
-    !    This routine approximates
-    !      I = integral ( A <= X <= B ) F(X) dx
-    !    with an error estimate, and
-    !      J = integral ( A <= X <= B ) | F(X) | dx
-    !
-    !  Author:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner
-    !
-    !  Reference:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner,
-    !    QUADPACK, a Subroutine Package for Automatic Integration,
-    !    Springer Verlag, 1983
-    !
-    !  Parameters:
-    !
-    !    Input, external real ( kind = 8 ) F, the name of the function routine, of the form
-    !      function f ( x )
-    !      real ( kind = 8 ) f
-    !      real ( kind = 8 ) x
-    !    which evaluates the integrand function.
-    !
-    !    Input, real ( kind = 8 ) A, B, the limits of integration.
-    !
-    !    Output, real ( kind = 8 ) RESULT, the estimated value of the integral.
-    !                       result is computed by applying the 41-point
-    !                       Gauss-Kronrod rule (resk) obtained by optimal
-    !                       addition of abscissae to the 20-point Gauss
-    !                       rule (resg).
-    !
-    !    Output, real ( kind = 8 ) ABSERR, an estimate of | I - RESULT |.
-    !
-    !    Output, real ( kind = 8 ) RESABS, approximation to the integral of the absolute
-    !    value of F.
-    !
-    !    Output, real ( kind = 8 ) RESASC, approximation to the integral | F-I/(B-A) | 
-    !    over [A,B].
-    !
-    !  Local Parameters:
-    !
-    !           centr  - mid point of the interval
-    !           hlgth  - half-length of the interval
-    !           absc   - abscissa
-    !           fval*  - function value
-    !           resg   - result of the 20-point Gauss formula
-    !           resk   - result of the 41-point Kronrod formula
-    !           reskh  - approximation to mean value of f over (a,b), i.e.
-    !                    to i/(b-a)
-    !
+    !!
+    !!  Discussion:
+    !!
+    !!    This routine approximates
+    !!      I = integral ( A <= X <= B ) F(X) dx
+    !!    with an error estimate, and
+    !!      J = integral ( A <= X <= B ) | F(X) | dx
+    !!
+    !!  Author:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner
+    !!
+    !!  Reference:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner,
+    !!    QUADPACK, a Subroutine Package for Automatic Integration,
+    !!    Springer Verlag, 1983
+    !!
+    !!  Parameters:
+    !!
+    !!    Input, external real ( kind = 8 ) F, the name of the function routine, of the form
+    !!      function f ( x )
+    !!      real ( kind = 8 ) f
+    !!      real ( kind = 8 ) x
+    !!    which evaluates the integrand function.
+    !!
+    !!    Input, real ( kind = 8 ) A, B, the limits of integration.
+    !!
+    !!    Output, real ( kind = 8 ) RESULT, the estimated value of the integral.
+    !!                       result is computed by applying the 41-point
+    !!                       Gauss-Kronrod rule (resk) obtained by optimal
+    !!                       addition of abscissae to the 20-point Gauss
+    !!                       rule (resg).
+    !!
+    !!    Output, real ( kind = 8 ) ABSERR, an estimate of | I - RESULT |.
+    !!
+    !!    Output, real ( kind = 8 ) RESABS, approximation to the integral of the absolute
+    !!    value of F.
+    !!
+    !!    Output, real ( kind = 8 ) RESASC, approximation to the integral | F-I/(B-A) | 
+    !!    over [A,B].
+    !!
+    !!  Local Parameters:
+    !!
+    !!           centr  - mid point of the interval
+    !!           hlgth  - half-length of the interval
+    !!           absc   - abscissa
+    !!           fval*  - function value
+    !!           resg   - result of the 20-point Gauss formula
+    !!           resk   - result of the 41-point Kronrod formula
+    !!           reskh  - approximation to mean value of f over (a,b), i.e.
+    !!                    to i/(b-a)
+    !!
     implicit none
 
     real ( kind = 8 ) a
@@ -7241,21 +7173,21 @@ contains
     real ( kind = 8 ) wg(10)
     real ( kind = 8 ) wgk(21)
     real ( kind = 8 ) xgk(21)
-    !
-    !           the abscissae and weights are given for the interval (-1,1).
-    !           because of symmetry only the positive abscissae and their
-    !           corresponding weights are given.
-    !
-    !           xgk    - abscissae of the 41-point Gauss-Kronrod rule
-    !                    xgk(2), xgk(4), ...  abscissae of the 20-point
-    !                    Gauss rule
-    !                    xgk(1), xgk(3), ...  abscissae which are optimally
-    !                    added to the 20-point Gauss rule
-    !
-    !           wgk    - weights of the 41-point Gauss-Kronrod rule
-    !
-    !           wg     - weights of the 20-point Gauss rule
-    !
+    !!
+    !!           the abscissae and weights are given for the interval (-1,1).
+    !!           because of symmetry only the positive abscissae and their
+    !!           corresponding weights are given.
+    !!
+    !!           xgk    - abscissae of the 41-point Gauss-Kronrod rule
+    !!                    xgk(2), xgk(4), ...  abscissae of the 20-point
+    !!                    Gauss rule
+    !!                    xgk(1), xgk(3), ...  abscissae which are optimally
+    !!                    added to the 20-point Gauss rule
+    !!
+    !!           wgk    - weights of the 41-point Gauss-Kronrod rule
+    !!
+    !!           wg     - weights of the 20-point Gauss rule
+    !!
     data xgk(1),xgk(2),xgk(3),xgk(4),xgk(5),xgk(6),xgk(7),xgk(8), &
          xgk(9),xgk(10),xgk(11),xgk(12),xgk(13),xgk(14),xgk(15),xgk(16), &
          xgk(17),xgk(18),xgk(19),xgk(20),xgk(21)/ &
@@ -7290,14 +7222,14 @@ contains
          1.019301198172404D-01,   1.181945319615184D-01, &
          1.316886384491766D-01,   1.420961093183821D-01, &
          1.491729864726037D-01,   1.527533871307259D-01/
-    !
+    !!
     centr = 5.0D-01*(a+b)
     hlgth = 5.0D-01*(b-a)
     dhlgth = abs(hlgth)
-    !
-    !  Compute 41-point Gauss-Kronrod approximation to the
-    !  the integral, and estimate the absolute error.
-    !
+    !!
+    !!  Compute 41-point Gauss-Kronrod approximation to the
+    !!  the integral, and estimate the absolute error.
+    !!
     resg = 0.0D+00
     fc = f(centr)
     resk = wgk(21)*fc
@@ -7350,64 +7282,61 @@ contains
     return
   end subroutine qk41
   subroutine qk51 ( f, a, b, result, abserr, resabs, resasc )
-
-    !*****************************************************************************80
-    !
     !! QK51 carries out a 51 point Gauss-Kronrod quadrature rule.
-    !
-    !  Discussion:
-    !
-    !    This routine approximates
-    !      I = integral ( A <= X <= B ) F(X) dx
-    !    with an error estimate, and
-    !      J = integral ( A <= X <= B ) | F(X) | dx
-    !
-    !  Author:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner
-    !
-    !  Reference:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner,
-    !    QUADPACK, a Subroutine Package for Automatic Integration,
-    !    Springer Verlag, 1983
-    !
-    !  Parameters:
-    !
-    !    Input, external real ( kind = 8 ) F, the name of the function routine, of the form
-    !      function f ( x )
-    !      real ( kind = 8 ) f
-    !      real ( kind = 8 ) x
-    !    which evaluates the integrand function.
-    !
-    !    Input, real ( kind = 8 ) A, B, the limits of integration.
-    !
-    !    Output, real ( kind = 8 ) RESULT, the estimated value of the integral.
-    !                       result is computed by applying the 51-point
-    !                       Kronrod rule (resk) obtained by optimal addition
-    !                       of abscissae to the 25-point Gauss rule (resg).
-    !
-    !    Output, real ( kind = 8 ) ABSERR, an estimate of | I - RESULT |.
-    !
-    !    Output, real ( kind = 8 ) RESABS, approximation to the integral of the absolute
-    !    value of F.
-    !
-    !    Output, real ( kind = 8 ) RESASC, approximation to the integral | F-I/(B-A) | 
-    !    over [A,B].
-    !
-    !  Local Parameters:
-    !
-    !           centr  - mid point of the interval
-    !           hlgth  - half-length of the interval
-    !           absc   - abscissa
-    !           fval*  - function value
-    !           resg   - result of the 25-point Gauss formula
-    !           resk   - result of the 51-point Kronrod formula
-    !           reskh  - approximation to the mean value of f over (a,b),
-    !                    i.e. to i/(b-a)
-    !
+    !!
+    !!  Discussion:
+    !!
+    !!    This routine approximates
+    !!      I = integral ( A <= X <= B ) F(X) dx
+    !!    with an error estimate, and
+    !!      J = integral ( A <= X <= B ) | F(X) | dx
+    !!
+    !!  Author:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner
+    !!
+    !!  Reference:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner,
+    !!    QUADPACK, a Subroutine Package for Automatic Integration,
+    !!    Springer Verlag, 1983
+    !!
+    !!  Parameters:
+    !!
+    !!    Input, external real ( kind = 8 ) F, the name of the function routine, of the form
+    !!      function f ( x )
+    !!      real ( kind = 8 ) f
+    !!      real ( kind = 8 ) x
+    !!    which evaluates the integrand function.
+    !!
+    !!    Input, real ( kind = 8 ) A, B, the limits of integration.
+    !!
+    !!    Output, real ( kind = 8 ) RESULT, the estimated value of the integral.
+    !!                       result is computed by applying the 51-point
+    !!                       Kronrod rule (resk) obtained by optimal addition
+    !!                       of abscissae to the 25-point Gauss rule (resg).
+    !!
+    !!    Output, real ( kind = 8 ) ABSERR, an estimate of | I - RESULT |.
+    !!
+    !!    Output, real ( kind = 8 ) RESABS, approximation to the integral of the absolute
+    !!    value of F.
+    !!
+    !!    Output, real ( kind = 8 ) RESASC, approximation to the integral | F-I/(B-A) | 
+    !!    over [A,B].
+    !!
+    !!  Local Parameters:
+    !!
+    !!           centr  - mid point of the interval
+    !!           hlgth  - half-length of the interval
+    !!           absc   - abscissa
+    !!           fval*  - function value
+    !!           resg   - result of the 25-point Gauss formula
+    !!           resk   - result of the 51-point Kronrod formula
+    !!           reskh  - approximation to the mean value of f over (a,b),
+    !!                    i.e. to i/(b-a)
+    !!
     implicit none
 
     real ( kind = 8 ) a
@@ -7436,21 +7365,21 @@ contains
     real ( kind = 8 ) wg(13)
     real ( kind = 8 ) wgk(26)
     real ( kind = 8 ) xgk(26)
-    !
-    !           the abscissae and weights are given for the interval (-1,1).
-    !           because of symmetry only the positive abscissae and their
-    !           corresponding weights are given.
-    !
-    !           xgk    - abscissae of the 51-point Kronrod rule
-    !                    xgk(2), xgk(4), ...  abscissae of the 25-point
-    !                    Gauss rule
-    !                    xgk(1), xgk(3), ...  abscissae which are optimally
-    !                    added to the 25-point Gauss rule
-    !
-    !           wgk    - weights of the 51-point Kronrod rule
-    !
-    !           wg     - weights of the 25-point Gauss rule
-    !
+    !!
+    !!           the abscissae and weights are given for the interval (-1,1).
+    !!           because of symmetry only the positive abscissae and their
+    !!           corresponding weights are given.
+    !!
+    !!           xgk    - abscissae of the 51-point Kronrod rule
+    !!                    xgk(2), xgk(4), ...  abscissae of the 25-point
+    !!                    Gauss rule
+    !!                    xgk(1), xgk(3), ...  abscissae which are optimally
+    !!                    added to the 25-point Gauss rule
+    !!
+    !!           wgk    - weights of the 51-point Kronrod rule
+    !!
+    !!           wg     - weights of the 25-point Gauss rule
+    !!
     data xgk(1),xgk(2),xgk(3),xgk(4),xgk(5),xgk(6),xgk(7),xgk(8), &
          xgk(9),xgk(10),xgk(11),xgk(12),xgk(13),xgk(14)/ &
          9.992621049926098D-01,   9.955569697904981D-01, &
@@ -7494,14 +7423,14 @@ contains
          1.085196244742637D-01,   1.148582591457116D-01, &
          1.194557635357848D-01,   1.222424429903100D-01, &
          1.231760537267155D-01/
-    !
+    !!
     centr = 5.0D-01*(a+b)
     hlgth = 5.0D-01*(b-a)
     dhlgth = abs(hlgth)
-    !
-    !  Compute the 51-point Kronrod approximation to the integral,
-    !  and estimate the absolute error.
-    !
+    !!
+    !!  Compute the 51-point Kronrod approximation to the integral,
+    !!  and estimate the absolute error.
+    !!
     fc = f(centr)
     resg = wg(13)*fc
     resk = wgk(26)*fc
@@ -7555,64 +7484,61 @@ contains
     return
   end subroutine qk51
   subroutine qk61 ( f, a, b, result, abserr, resabs, resasc ) 
-
-    !*****************************************************************************80
-    !
     !! QK61 carries out a 61 point Gauss-Kronrod quadrature rule.
-    !
-    !  Discussion:
-    !
-    !    This routine approximates
-    !      I = integral ( A <= X <= B ) F(X) dx
-    !    with an error estimate, and
-    !      J = integral ( A <= X <= B ) | F(X) | dx
-    !
-    !  Author:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner
-    !
-    !  Reference:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner,
-    !    QUADPACK, a Subroutine Package for Automatic Integration,
-    !    Springer Verlag, 1983
-    !
-    !  Parameters:
-    !
-    !    Input, external real ( kind = 8 ) F, the name of the function routine, of the form
-    !      function f ( x )
-    !      real ( kind = 8 ) f
-    !      real ( kind = 8 ) x
-    !    which evaluates the integrand function.
-    !
-    !    Input, real ( kind = 8 ) A, B, the limits of integration.
-    !
-    !    Output, real ( kind = 8 ) RESULT, the estimated value of the integral.
-    !                    result is computed by applying the 61-point
-    !                    Kronrod rule (resk) obtained by optimal addition of
-    !                    abscissae to the 30-point Gauss rule (resg).
-    !
-    !    Output, real ( kind = 8 ) ABSERR, an estimate of | I - RESULT |.
-    !
-    !    Output, real ( kind = 8 ) RESABS, approximation to the integral of the absolute
-    !    value of F.
-    !
-    !    Output, real ( kind = 8 ) RESASC, approximation to the integral | F-I/(B-A) | 
-    !    over [A,B].
-    !
-    !  Local Parameters:
-    !
-    !           centr  - mid point of the interval
-    !           hlgth  - half-length of the interval
-    !           absc   - abscissa
-    !           fval*  - function value
-    !           resg   - result of the 30-point Gauss rule
-    !           resk   - result of the 61-point Kronrod rule
-    !           reskh  - approximation to the mean value of f
-    !                    over (a,b), i.e. to i/(b-a)
-    !
+    !!
+    !!  Discussion:
+    !!
+    !!    This routine approximates
+    !!      I = integral ( A <= X <= B ) F(X) dx
+    !!    with an error estimate, and
+    !!      J = integral ( A <= X <= B ) | F(X) | dx
+    !!
+    !!  Author:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner
+    !!
+    !!  Reference:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner,
+    !!    QUADPACK, a Subroutine Package for Automatic Integration,
+    !!    Springer Verlag, 1983
+    !!
+    !!  Parameters:
+    !!
+    !!    Input, external real ( kind = 8 ) F, the name of the function routine, of the form
+    !!      function f ( x )
+    !!      real ( kind = 8 ) f
+    !!      real ( kind = 8 ) x
+    !!    which evaluates the integrand function.
+    !!
+    !!    Input, real ( kind = 8 ) A, B, the limits of integration.
+    !!
+    !!    Output, real ( kind = 8 ) RESULT, the estimated value of the integral.
+    !!                    result is computed by applying the 61-point
+    !!                    Kronrod rule (resk) obtained by optimal addition of
+    !!                    abscissae to the 30-point Gauss rule (resg).
+    !!
+    !!    Output, real ( kind = 8 ) ABSERR, an estimate of | I - RESULT |.
+    !!
+    !!    Output, real ( kind = 8 ) RESABS, approximation to the integral of the absolute
+    !!    value of F.
+    !!
+    !!    Output, real ( kind = 8 ) RESASC, approximation to the integral | F-I/(B-A) | 
+    !!    over [A,B].
+    !!
+    !!  Local Parameters:
+    !!
+    !!           centr  - mid point of the interval
+    !!           hlgth  - half-length of the interval
+    !!           absc   - abscissa
+    !!           fval*  - function value
+    !!           resg   - result of the 30-point Gauss rule
+    !!           resk   - result of the 61-point Kronrod rule
+    !!           reskh  - approximation to the mean value of f
+    !!                    over (a,b), i.e. to i/(b-a)
+    !!
     implicit none
 
     real ( kind = 8 ) a
@@ -7641,21 +7567,21 @@ contains
     real ( kind = 8 ) wg(15)
     real ( kind = 8 ) wgk(31)
     real ( kind = 8 ) xgk(31)
-    !
-    !           the abscissae and weights are given for the
-    !           interval (-1,1). because of symmetry only the positive
-    !           abscissae and their corresponding weights are given.
-    !
-    !           xgk   - abscissae of the 61-point Kronrod rule
-    !                   xgk(2), xgk(4)  ... abscissae of the 30-point
-    !                   Gauss rule
-    !                   xgk(1), xgk(3)  ... optimally added abscissae
-    !                   to the 30-point Gauss rule
-    !
-    !           wgk   - weights of the 61-point Kronrod rule
-    !
-    !           wg    - weigths of the 30-point Gauss rule
-    !
+    !!
+    !!           the abscissae and weights are given for the
+    !!           interval (-1,1). because of symmetry only the positive
+    !!           abscissae and their corresponding weights are given.
+    !!
+    !!           xgk   - abscissae of the 61-point Kronrod rule
+    !!                   xgk(2), xgk(4)  ... abscissae of the 30-point
+    !!                   Gauss rule
+    !!                   xgk(1), xgk(3)  ... optimally added abscissae
+    !!                   to the 30-point Gauss rule
+    !!
+    !!           wgk   - weights of the 61-point Kronrod rule
+    !!
+    !!           wg    - weigths of the 30-point Gauss rule
+    !!
     data xgk(1),xgk(2),xgk(3),xgk(4),xgk(5),xgk(6),xgk(7),xgk(8), &
          xgk(9),xgk(10)/ &
          9.994844100504906D-01,     9.968934840746495D-01, &
@@ -7714,10 +7640,10 @@ contains
     centr = 5.0D-01*(b+a)
     hlgth = 5.0D-01*(b-a)
     dhlgth = abs(hlgth)
-    !
-    !  Compute the 61-point Kronrod approximation to the integral,
-    !  and estimate the absolute error.
-    !
+    !!
+    !!  Compute the 61-point Kronrod approximation to the integral,
+    !!  and estimate the absolute error.
+    !!
     resg = 0.0D+00
     fc = f(centr)
     resk = wgk(31)*fc
@@ -7770,65 +7696,63 @@ contains
 
     return
   end subroutine qk61
-  subroutine qmomo ( alfa, beta, ri, rj, rg, rh, integr )
 
-    !*****************************************************************************80
-    !
+  subroutine qmomo ( alfa, beta, ri, rj, rg, rh, integr )
     !! QMOMO computes modified Chebyshev moments.
-    !
-    !  Discussion:
-    !
-    !    This routine computes modified Chebyshev moments.
-    !    The K-th modified Chebyshev moment is defined as the
-    !    integral over (-1,1) of W(X)*T(K,X), where T(K,X) is the
-    !    Chebyshev polynomial of degree K.
-    !
-    !  Author:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner
-    !
-    !  Reference:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner,
-    !    QUADPACK, a Subroutine Package for Automatic Integration,
-    !    Springer Verlag, 1983
-    !
-    !  Parameters:
-    !
-    !    Input, real ( kind = 8 ) ALFA, a parameter in the weight function w(x), ALFA > -1.
-    !
-    !    Input, real ( kind = 8 ) BETA, a parameter in the weight function w(x), BETA > -1.
-    !
-    !           ri     - real
-    !                    vector of dimension 25
-    !                    ri(k) is the integral over (-1,1) of
-    !                    (1+x)**alfa*t(k-1,x), k = 1, ..., 25.
-    !
-    !           rj     - real
-    !                    vector of dimension 25
-    !                    rj(k) is the integral over (-1,1) of
-    !                    (1-x)**beta*t(k-1,x), k = 1, ..., 25.
-    !
-    !           rg     - real
-    !                    vector of dimension 25
-    !                    rg(k) is the integral over (-1,1) of
-    !                    (1+x)**alfa*log((1+x)/2)*t(k-1,x), k = 1, ...,25.
-    !
-    !           rh     - real
-    !                    vector of dimension 25
-    !                    rh(k) is the integral over (-1,1) of
-    !                    (1-x)**beta*log((1-x)/2)*t(k-1,x), k = 1, ..., 25.
-    !
-    !           integr - integer
-    !                    input parameter indicating the modified moments
-    !                    to be computed
-    !                    integr = 1 compute ri, rj
-    !                           = 2 compute ri, rj, rg
-    !                           = 3 compute ri, rj, rh
-    !                           = 4 compute ri, rj, rg, rh
-    !
+    !!
+    !!  Discussion:
+    !!
+    !!    This routine computes modified Chebyshev moments.
+    !!    The K-th modified Chebyshev moment is defined as the
+    !!    integral over (-1,1) of W(X)*T(K,X), where T(K,X) is the
+    !!    Chebyshev polynomial of degree K.
+    !!
+    !!  Author:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner
+    !!
+    !!  Reference:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner,
+    !!    QUADPACK, a Subroutine Package for Automatic Integration,
+    !!    Springer Verlag, 1983
+    !!
+    !!  Parameters:
+    !!
+    !!    Input, real ( kind = 8 ) ALFA, a parameter in the weight function w(x), ALFA > -1.
+    !!
+    !!    Input, real ( kind = 8 ) BETA, a parameter in the weight function w(x), BETA > -1.
+    !!
+    !!           ri     - real
+    !!                    vector of dimension 25
+    !!                    ri(k) is the integral over (-1,1) of
+    !!                    (1+x)**alfa*t(k-1,x), k = 1, ..., 25.
+    !!
+    !!           rj     - real
+    !!                    vector of dimension 25
+    !!                    rj(k) is the integral over (-1,1) of
+    !!                    (1-x)**beta*t(k-1,x), k = 1, ..., 25.
+    !!
+    !!           rg     - real
+    !!                    vector of dimension 25
+    !!                    rg(k) is the integral over (-1,1) of
+    !!                    (1+x)**alfa*log((1+x)/2)*t(k-1,x), k = 1, ...,25.
+    !!
+    !!           rh     - real
+    !!                    vector of dimension 25
+    !!                    rh(k) is the integral over (-1,1) of
+    !!                    (1-x)**beta*log((1-x)/2)*t(k-1,x), k = 1, ..., 25.
+    !!
+    !!           integr - integer
+    !!                    input parameter indicating the modified moments
+    !!                    to be computed
+    !!                    integr = 1 compute ri, rj
+    !!                           = 2 compute ri, rj, rg
+    !!                           = 3 compute ri, rj, rh
+    !!                           = 4 compute ri, rj, rg, rh
+    !!
     implicit none
 
     real ( kind = 8 ) alfa
@@ -7848,16 +7772,16 @@ contains
     real ( kind = 8 ) rh(25)
     real ( kind = 8 ) ri(25)
     real ( kind = 8 ) rj(25)
-    !
+    !!
     alfp1 = alfa+1.0D+00
     betp1 = beta+1.0D+00
     alfp2 = alfa+2.0D+00
     betp2 = beta+2.0D+00
     ralf = 2.0D+00**alfp1
     rbet = 2.0D+00**betp1
-    !
-    !  Compute RI, RJ using a forward recurrence relation.
-    !
+    !!
+    !!  Compute RI, RJ using a forward recurrence relation.
+    !!
     ri(1) = ralf/alfp1
     rj(1) = rbet/betp1
     ri(2) = ri(1)*alfa/alfp2
@@ -7874,9 +7798,9 @@ contains
 
     if ( integr == 1 ) go to 70
     if ( integr == 3 ) go to 40
-    !
-    !  Compute RG using a forward recurrence relation.
-    !
+    !!
+    !!  Compute RG using a forward recurrence relation.
+    !!
     rg(1) = -ri(1)/alfp1
     rg(2) = -(ralf+ralf)/(alfp2*alfp2)-rg(1)
     an = 2.0D+00
@@ -7892,9 +7816,9 @@ contains
     end do
 
     if ( integr == 2 ) go to 70
-    !
-    !  Compute RH using a forward recurrence relation.
-    !
+    !!
+    !!  Compute RH using a forward recurrence relation.
+    !!
 40  continue
 
     rh(1) = -rj(1) / betp1
@@ -7921,92 +7845,90 @@ contains
        rj(i) = -rj(i)
     end do
 
-    !  90 continue
+    !!  90 continue
 
     return
   end subroutine qmomo
-  subroutine qng ( f, a, b, epsabs, epsrel, result, abserr, neval, ier )
 
-    !*****************************************************************************80
-    !
+  subroutine qng ( f, a, b, epsabs, epsrel, result, abserr, neval, ier )
     !! QNG estimates an integral, using non-adaptive integration.
-    !
-    !  Discussion:
-    !
-    !    The routine calculates an approximation RESULT to a definite integral   
-    !      I = integral of F over (A,B),
-    !    hopefully satisfying
-    !      || I - RESULT || <= max ( EPSABS, EPSREL * ||I|| ).
-    !
-    !    The routine is a simple non-adaptive automatic integrator, based on
-    !    a sequence of rules with increasing degree of algebraic
-    !    precision (Patterson, 1968).
-    !
-    !  Author:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner
-    !
-    !  Reference:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner,
-    !    QUADPACK, a Subroutine Package for Automatic Integration,
-    !    Springer Verlag, 1983
-    !
-    !  Parameters:
-    !
-    !    Input, external real ( kind = 8 ) F, the name of the function routine, of the form
-    !      function f ( x )
-    !      real ( kind = 8 ) f
-    !      real ( kind = 8 ) x
-    !    which evaluates the integrand function.
-    !
-    !    Input, real ( kind = 8 ) A, B, the limits of integration.
-    !
-    !    Input, real ( kind = 8 ) EPSABS, EPSREL, the absolute and relative accuracy requested.
-    !
-    !    Output, real ( kind = 8 ) RESULT, the estimated value of the integral.
-    !    RESULT is obtained by applying the 21-point Gauss-Kronrod rule (RES21)
-    !    obtained  by optimal addition of abscissae to the 10-point Gauss rule
-    !    (RES10), or by applying the 43-point rule (RES43) obtained by optimal
-    !    addition of abscissae to the 21-point Gauss-Kronrod rule, or by 
-    !    applying the 87-point rule (RES87) obtained by optimal addition of
-    !    abscissae to the 43-point rule.
-    !
-    !    Output, real ( kind = 8 ) ABSERR, an estimate of || I - RESULT ||.
-    !
-    !    Output, integer NEVAL, the number of times the integral was evaluated.
-    !
-    !           ier    - ier = 0 normal and reliable termination of the
-    !                            routine. it is assumed that the requested
-    !                            accuracy has been achieved.
-    !                    ier > 0 abnormal termination of the routine. it is
-    !                            assumed that the requested accuracy has
-    !                            not been achieved.
-    !                    ier = 1 the maximum number of steps has been
-    !                            executed. the integral is probably too
-    !                            difficult to be calculated by qng.
-    !                        = 6 the input is invalid, because
-    !                            epsabs < 0 and epsrel < 0,
-    !                            result, abserr and neval are set to zero.
-    !
-    !  Local Parameters:
-    !
-    !           centr  - mid point of the integration interval
-    !           hlgth  - half-length of the integration interval
-    !           fcentr - function value at mid point
-    !           absc   - abscissa
-    !           fval   - function value
-    !           savfun - array of function values which have already
-    !                    been computed
-    !           res10  - 10-point Gauss result
-    !           res21  - 21-point Kronrod result
-    !           res43  - 43-point result
-    !           res87  - 87-point result
-    !           resabs - approximation to the integral of abs(f)
-    !           resasc - approximation to the integral of abs(f-i/(b-a))
-    !
+    !!
+    !!  Discussion:
+    !!
+    !!    The routine calculates an approximation RESULT to a definite integral   
+    !!      I = integral of F over (A,B),
+    !!    hopefully satisfying
+    !!      || I - RESULT || <= max ( EPSABS, EPSREL * ||I|| ).
+    !!
+    !!    The routine is a simple non-adaptive automatic integrator, based on
+    !!    a sequence of rules with increasing degree of algebraic
+    !!    precision (Patterson, 1968).
+    !!
+    !!  Author:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner
+    !!
+    !!  Reference:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner,
+    !!    QUADPACK, a Subroutine Package for Automatic Integration,
+    !!    Springer Verlag, 1983
+    !!
+    !!  Parameters:
+    !!
+    !!    Input, external real ( kind = 8 ) F, the name of the function routine, of the form
+    !!      function f ( x )
+    !!      real ( kind = 8 ) f
+    !!      real ( kind = 8 ) x
+    !!    which evaluates the integrand function.
+    !!
+    !!    Input, real ( kind = 8 ) A, B, the limits of integration.
+    !!
+    !!    Input, real ( kind = 8 ) EPSABS, EPSREL, the absolute and relative accuracy requested.
+    !!
+    !!    Output, real ( kind = 8 ) RESULT, the estimated value of the integral.
+    !!    RESULT is obtained by applying the 21-point Gauss-Kronrod rule (RES21)
+    !!    obtained  by optimal addition of abscissae to the 10-point Gauss rule
+    !!    (RES10), or by applying the 43-point rule (RES43) obtained by optimal
+    !!    addition of abscissae to the 21-point Gauss-Kronrod rule, or by 
+    !!    applying the 87-point rule (RES87) obtained by optimal addition of
+    !!    abscissae to the 43-point rule.
+    !!
+    !!    Output, real ( kind = 8 ) ABSERR, an estimate of || I - RESULT ||.
+    !!
+    !!    Output, integer NEVAL, the number of times the integral was evaluated.
+    !!
+    !!           ier    - ier = 0 normal and reliable termination of the
+    !!                            routine. it is assumed that the requested
+    !!                            accuracy has been achieved.
+    !!                    ier > 0 abnormal termination of the routine. it is
+    !!                            assumed that the requested accuracy has
+    !!                            not been achieved.
+    !!                    ier = 1 the maximum number of steps has been
+    !!                            executed. the integral is probably too
+    !!                            difficult to be calculated by qng.
+    !!                        = 6 the input is invalid, because
+    !!                            epsabs < 0 and epsrel < 0,
+    !!                            result, abserr and neval are set to zero.
+    !!
+    !!  Local Parameters:
+    !!
+    !!           centr  - mid point of the integration interval
+    !!           hlgth  - half-length of the integration interval
+    !!           fcentr - function value at mid point
+    !!           absc   - abscissa
+    !!           fval   - function value
+    !!           savfun - array of function values which have already
+    !!                    been computed
+    !!           res10  - 10-point Gauss result
+    !!           res21  - 21-point Kronrod result
+    !!           res43  - 43-point result
+    !!           res87  - 87-point result
+    !!           resabs - approximation to the integral of abs(f)
+    !!           resasc - approximation to the integral of abs(f-i/(b-a))
+    !!
     implicit none
 
     real ( kind = 8 ) a
@@ -8052,24 +7974,24 @@ contains
     real ( kind = 8 ) x2(5)
     real ( kind = 8 ) x3(11)
     real ( kind = 8 ) x4(22)
-    !
-    !           the following data statements contain the abscissae
-    !           and weights of the integration rules used.
-    !
-    !           x1      abscissae common to the 10-, 21-, 43- and 87-point
-    !                   rule
-    !           x2      abscissae common to the 21-, 43- and 87-point rule
-    !           x3      abscissae common to the 43- and 87-point rule
-    !           x4      abscissae of the 87-point rule
-    !           w10     weights of the 10-point formula
-    !           w21a    weights of the 21-point formula for abscissae x1
-    !           w21b    weights of the 21-point formula for abscissae x2
-    !           w43a    weights of the 43-point formula for absissae x1, x3
-    !           w43b    weights of the 43-point formula for abscissae x3
-    !           w87a    weights of the 87-point formula for abscissae x1,
-    !                   x2 and x3
-    !           w87b    weights of the 87-point formula for abscissae x4
-    !
+    !!
+    !!           the following data statements contain the abscissae
+    !!           and weights of the integration rules used.
+    !!
+    !!           x1      abscissae common to the 10-, 21-, 43- and 87-point
+    !!                   rule
+    !!           x2      abscissae common to the 21-, 43- and 87-point rule
+    !!           x3      abscissae common to the 43- and 87-point rule
+    !!           x4      abscissae of the 87-point rule
+    !!           w10     weights of the 10-point formula
+    !!           w21a    weights of the 21-point formula for abscissae x1
+    !!           w21b    weights of the 21-point formula for abscissae x2
+    !!           w43a    weights of the 43-point formula for absissae x1, x3
+    !!           w43b    weights of the 43-point formula for abscissae x3
+    !!           w87a    weights of the 87-point formula for abscissae x1,
+    !!                   x2 and x3
+    !!           w87b    weights of the 87-point formula for abscissae x4
+    !!
     data x1(1),x1(2),x1(3),x1(4),x1(5)/ &
          9.739065285171717D-01,     8.650633666889845D-01, &
          6.794095682990244D-01,     4.333953941292472D-01, &
@@ -8156,9 +8078,9 @@ contains
          3.526241266015668D-02,     3.607698962288870D-02, &
          3.669860449845609D-02,     3.712054926983258D-02, &
          3.733422875193504D-02,     3.736107376267902D-02/
-    !
-    !  Test on validity of parameters.
-    !
+    !!
+    !!  Test on validity of parameters.
+    !!
     result = 0.0D+00
     abserr = 0.0D+00
     neval = 0
@@ -8174,9 +8096,9 @@ contains
     fcentr = f(centr)
     neval = 21
     ier = 1
-    !
-    !  Compute the integral using the 10- and 21-point formula.
-    !
+    !!
+    !!  Compute the integral using the 10- and 21-point formula.
+    !!
     do l = 1, 3
 
        if ( l == 1 ) then
@@ -8212,9 +8134,9 @@ contains
              fv3(k) = fval1
              fv4(k) = fval2
           end do
-          !
-          !  Test for convergence.
-          !
+          !!
+          !!  Test for convergence.
+          !!
           result = res21 * hlgth
           resabs = resabs * dhlgth
           reskh = 5.0D-01 * res21
@@ -8227,9 +8149,9 @@ contains
 
           abserr = abs ( ( res21 - res10 ) * hlgth )
           resasc = resasc * dhlgth
-          !
-          !  Compute the integral using the 43-point formula.
-          !
+          !!
+          !!  Compute the integral using the 43-point formula.
+          !!
        else if ( l == 2 ) then
 
           res43 = w43b(12)*fcentr
@@ -8246,14 +8168,14 @@ contains
              res43 = res43 + fval * w43b(k)
              savfun(ipx) = fval
           end do
-          !
-          !  Test for convergence.
-          !
+          !!
+          !!  Test for convergence.
+          !!
           result = res43 * hlgth
           abserr = abs((res43-res21)*hlgth)
-          !
-          !  Compute the integral using the 87-point formula.
-          !
+          !!
+          !!  Compute the integral using the 87-point formula.
+          !!
        else if ( l == 3 ) then
 
           res87 = w87b(23) * fcentr
@@ -8294,56 +8216,53 @@ contains
     return
   end subroutine qng
   subroutine qsort ( limit, last, maxerr, ermax, elist, iord, nrmax )
-
-    !*****************************************************************************80
-    !
     !! QSORT maintains the order of a list of local error estimates.
-    !
-    !  Discussion:
-    !
-    !    This routine maintains the descending ordering in the list of the 
-    !    local error estimates resulting from the interval subdivision process. 
-    !    At each call two error estimates are inserted using the sequential 
-    !    search top-down for the largest error estimate and bottom-up for the
-    !    smallest error estimate.
-    !
-    !  Author:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner
-    !
-    !  Reference:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner,
-    !    QUADPACK, a Subroutine Package for Automatic Integration,
-    !    Springer Verlag, 1983
-    !
-    !  Parameters:
-    !
-    !    Input, integer LIMIT, the maximum number of error estimates the list can
-    !    contain.
-    !
-    !    Input, integer LAST, the current number of error estimates.
-    !
-    !    Input/output, integer MAXERR, the index in the list of the NRMAX-th 
-    !    largest error.
-    !
-    !    Output, real ( kind = 8 ) ERMAX, the NRMAX-th largest error = ELIST(MAXERR).
-    !
-    !    Input, real ( kind = 8 ) ELIST(LIMIT), contains the error estimates.
-    !
-    !    Input/output, integer IORD(LAST).  The first K elements contain 
-    !    pointers to the error estimates such that ELIST(IORD(1)) through
-    !    ELIST(IORD(K)) form a decreasing sequence, with
-    !      K = LAST 
-    !    if 
-    !      LAST <= (LIMIT/2+2), 
-    !    and otherwise
-    !      K = LIMIT+1-LAST.
-    !
-    !    Input/output, integer NRMAX.
-    !
+    !!
+    !!  Discussion:
+    !!
+    !!    This routine maintains the descending ordering in the list of the 
+    !!    local error estimates resulting from the interval subdivision process. 
+    !!    At each call two error estimates are inserted using the sequential 
+    !!    search top-down for the largest error estimate and bottom-up for the
+    !!    smallest error estimate.
+    !!
+    !!  Author:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner
+    !!
+    !!  Reference:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner,
+    !!    QUADPACK, a Subroutine Package for Automatic Integration,
+    !!    Springer Verlag, 1983
+    !!
+    !!  Parameters:
+    !!
+    !!    Input, integer LIMIT, the maximum number of error estimates the list can
+    !!    contain.
+    !!
+    !!    Input, integer LAST, the current number of error estimates.
+    !!
+    !!    Input/output, integer MAXERR, the index in the list of the NRMAX-th 
+    !!    largest error.
+    !!
+    !!    Output, real ( kind = 8 ) ERMAX, the NRMAX-th largest error = ELIST(MAXERR).
+    !!
+    !!    Input, real ( kind = 8 ) ELIST(LIMIT), contains the error estimates.
+    !!
+    !!    Input/output, integer IORD(LAST).  The first K elements contain 
+    !!    pointers to the error estimates such that ELIST(IORD(1)) through
+    !!    ELIST(IORD(K)) form a decreasing sequence, with
+    !!      K = LAST 
+    !!    if 
+    !!      LAST <= (LIMIT/2+2), 
+    !!    and otherwise
+    !!      K = LIMIT+1-LAST.
+    !!
+    !!    Input/output, integer NRMAX.
+    !!
     implicit none
 
     integer last
@@ -8363,20 +8282,20 @@ contains
     integer limit
     integer maxerr
     integer nrmax
-    !
-    !  Check whether the list contains more than two error estimates.
-    !
+    !!
+    !!  Check whether the list contains more than two error estimates.
+    !!
     if ( last <= 2 ) then
        iord(1) = 1
        iord(2) = 2
        go to 90
     end if
-    !
-    !  This part of the routine is only executed if, due to a
-    !  difficult integrand, subdivision increased the error
-    !  estimate. in the normal case the insert procedure should
-    !  start after the nrmax-th largest error estimate.
-    !
+    !!
+    !!  This part of the routine is only executed if, due to a
+    !!  difficult integrand, subdivision increased the error
+    !!  estimate. in the normal case the insert procedure should
+    !!  start after the nrmax-th largest error estimate.
+    !!
     errmax = elist(maxerr)
 
     do i = 1, nrmax-1
@@ -8391,11 +8310,11 @@ contains
        nrmax = nrmax-1
 
     end do
-    !
-    !  Compute the number of elements in the list to be maintained
-    !  in descending order.  This number depends on the number of
-    !  subdivisions still allowed.
-    !
+    !!
+    !!  Compute the number of elements in the list to be maintained
+    !!  in descending order.  This number depends on the number of
+    !!  subdivisions still allowed.
+    !!
     jupbn = last
 
     if ( (limit/2+2) < last ) then
@@ -8403,10 +8322,10 @@ contains
     end if
 
     errmin = elist(last)
-    !
-    !  Insert errmax by traversing the list top-down, starting
-    !  comparison from the element elist(iord(nrmax+1)).
-    !
+    !!
+    !!  Insert errmax by traversing the list top-down, starting
+    !!  comparison from the element elist(iord(nrmax+1)).
+    !!
     jbnd = jupbn-1
     ibeg = nrmax+1
 
@@ -8421,9 +8340,9 @@ contains
     iord(jbnd) = maxerr
     iord(jupbn) = last
     go to 90
-    !
-    !  Insert errmin by traversing the list bottom-up.
-    !
+    !!
+    !!  Insert errmin by traversing the list bottom-up.
+    !!
 60  continue
 
     iord(i-1) = maxerr
@@ -8444,9 +8363,9 @@ contains
 80  continue
 
     iord(k+1) = last
-    !
-    !  Set maxerr and ermax.
-    !
+    !!
+    !!  Set maxerr and ermax.
+    !!
 90  continue
 
     maxerr = iord(nrmax)
@@ -8455,122 +8374,41 @@ contains
     return
   end subroutine qsort
 
-  subroutine timestamp ( )
-
-    !*****************************************************************************80
-    !
-    !! TIMESTAMP prints the current YMDHMS date as a time stamp.
-    !
-    !  Example:
-    !
-    !    31 May 2001   9:45:54.872 AM
-    !
-    !  Licensing:
-    !
-    !    This code is distributed under the GNU LGPL license.
-    !
-    !  Modified:
-    !
-    !    18 May 2013
-    !
-    !  Author:
-    !
-    !    John Burkardt
-    !
-    !  Parameters:
-    !
-    !    None
-    !
-    implicit none
-
-    character ( len = 8 ) ampm
-    integer d
-    integer h
-    integer m
-    integer mm
-    character ( len = 9 ), parameter, dimension(12) :: month = (/ &
-         'January  ', 'February ', 'March    ', 'April    ', &
-         'May      ', 'June     ', 'July     ', 'August   ', &
-         'September', 'October  ', 'November ', 'December ' /)
-    integer n
-    integer s
-    integer values(8)
-    integer y
-
-    call date_and_time ( values = values )
-
-    y = values(1)
-    m = values(2)
-    d = values(3)
-    h = values(5)
-    n = values(6)
-    s = values(7)
-    mm = values(8)
-
-    if ( h < 12 ) then
-       ampm = 'AM'
-    else if ( h == 12 ) then
-       if ( n == 0 .and. s == 0 ) then
-          ampm = 'Noon'
-       else
-          ampm = 'PM'
-       end if
-    else
-       h = h - 12
-       if ( h < 12 ) then
-          ampm = 'PM'
-       else if ( h == 12 ) then
-          if ( n == 0 .and. s == 0 ) then
-             ampm = 'Midnight'
-          else
-             ampm = 'AM'
-          end if
-       end if
-    end if
-
-    write ( *, '(i2.2,1x,a,1x,i4,2x,i2,a1,i2.2,a1,i2.2,a1,i3.3,1x,a)' ) &
-         d, trim ( month(m) ), y, h, ':', n, ':', s, '.', mm, trim ( ampm )
-
-    return
-  end subroutine timestamp
 
 end module scitools_quadpack
 
 
   function qwgtc ( x, c, p2, p3, p4, kp )
-
-    !*****************************************************************************80
-    !
     !! QWGTC defines the weight function used by QC25C.
-    !
-    !  Discussion:
-    !
-    !    The weight function has the form 1 / ( X - C ).
-    !
-    !  Author:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner
-    !
-    !  Reference:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner,
-    !    QUADPACK, a Subroutine Package for Automatic Integration,
-    !    Springer Verlag, 1983
-    !
-    !  Parameters:
-    !
-    !    Input, real ( kind = 8 ) X, the point at which the weight function is evaluated.
-    !
-    !    Input, real ( kind = 8 ) C, the location of the singularity.
-    !
-    !    Input, real ( kind = 8 ) P2, P3, P4, parameters that are not used.
-    !
-    !    Input, integer KP, a parameter that is not used.
-    !
-    !    Output, real ( kind = 8 ) QWGTC, the value of the weight function at X.
-    !
+    !!
+    !!  Discussion:
+    !!
+    !!    The weight function has the form 1 / ( X - C ).
+    !!
+    !!  Author:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner
+    !!
+    !!  Reference:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner,
+    !!    QUADPACK, a Subroutine Package for Automatic Integration,
+    !!    Springer Verlag, 1983
+    !!
+    !!  Parameters:
+    !!
+    !!    Input, real ( kind = 8 ) X, the point at which the weight function is evaluated.
+    !!
+    !!    Input, real ( kind = 8 ) C, the location of the singularity.
+    !!
+    !!    Input, real ( kind = 8 ) P2, P3, P4, parameters that are not used.
+    !!
+    !!    Input, integer KP, a parameter that is not used.
+    !!
+    !!    Output, real ( kind = 8 ) QWGTC, the value of the weight function at X.
+    !!
     implicit none
 
     real ( kind = 8 ) c
@@ -8587,37 +8425,34 @@ end module scitools_quadpack
   end function qwgtc
   
   function qwgto ( x, omega, p2, p3, p4, integr )
-
-    !*****************************************************************************80
-    !
     !! QWGTO defines the weight functions used by QC25O.
-    !
-    !  Author:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner
-    !
-    !  Reference:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner,
-    !    QUADPACK, a Subroutine Package for Automatic Integration,
-    !    Springer Verlag, 1983
-    !
-    !  Parameters:
-    !
-    !    Input, real ( kind = 8 ) X, the point at which the weight function is evaluated.
-    !
-    !    Input, real ( kind = 8 ) OMEGA, the factor multiplying X.
-    !
-    !    Input, real ( kind = 8 ) P2, P3, P4, parameters that are not used.
-    !
-    !    Input, integer INTEGR, specifies which weight function is used:
-    !    1. W(X) = cos ( OMEGA * X )
-    !    2, W(X) = sin ( OMEGA * X )
-    !
-    !    Output, real ( kind = 8 ) QWGTO, the value of the weight function at X.
-    !
+    !!
+    !!  Author:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner
+    !!
+    !!  Reference:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner,
+    !!    QUADPACK, a Subroutine Package for Automatic Integration,
+    !!    Springer Verlag, 1983
+    !!
+    !!  Parameters:
+    !!
+    !!    Input, real ( kind = 8 ) X, the point at which the weight function is evaluated.
+    !!
+    !!    Input, real ( kind = 8 ) OMEGA, the factor multiplying X.
+    !!
+    !!    Input, real ( kind = 8 ) P2, P3, P4, parameters that are not used.
+    !!
+    !!    Input, integer INTEGR, specifies which weight function is used:
+    !!    1. W(X) = cos ( OMEGA * X )
+    !!    2, W(X) = sin ( OMEGA * X )
+    !!
+    !!    Output, real ( kind = 8 ) QWGTO, the value of the weight function at X.
+    !!
     implicit none
 
     integer integr
@@ -8637,39 +8472,36 @@ end module scitools_quadpack
     return
   end function qwgto
   function qwgts ( x, a, b, alfa, beta, integr )
-
-    !*****************************************************************************80
-    !
     !! QWGTS defines the weight functions used by QC25S.
-    !
-    !  Author:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner
-    !
-    !  Reference:
-    !
-    !    Robert Piessens, Elise de Doncker-Kapenger, 
-    !    Christian Ueberhuber, David Kahaner,
-    !    QUADPACK, a Subroutine Package for Automatic Integration,
-    !    Springer Verlag, 1983
-    !
-    !  Parameters:
-    !
-    !    Input, real ( kind = 8 ) X, the point at which the weight function is evaluated.
-    !
-    !    Input, real ( kind = 8 ) A, B, the endpoints of the integration interval.
-    !
-    !    Input, real ( kind = 8 ) ALFA, BETA, exponents that occur in the weight function.
-    !
-    !    Input, integer INTEGR, specifies which weight function is used:
-    !    1. W(X) = (X-A)**ALFA * (B-X)**BETA
-    !    2, W(X) = (X-A)**ALFA * (B-X)**BETA * log (X-A)
-    !    3, W(X) = (X-A)**ALFA * (B-X)**BETA * log (B-X)
-    !    4, W(X) = (X-A)**ALFA * (B-X)**BETA * log (X-A) * log(B-X)
-    !
-    !    Output, real ( kind = 8 ) QWGTS, the value of the weight function at X.
-    !
+    !!
+    !!  Author:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner
+    !!
+    !!  Reference:
+    !!
+    !!    Robert Piessens, Elise de Doncker-Kapenger, 
+    !!    Christian Ueberhuber, David Kahaner,
+    !!    QUADPACK, a Subroutine Package for Automatic Integration,
+    !!    Springer Verlag, 1983
+    !!
+    !!  Parameters:
+    !!
+    !!    Input, real ( kind = 8 ) X, the point at which the weight function is evaluated.
+    !!
+    !!    Input, real ( kind = 8 ) A, B, the endpoints of the integration interval.
+    !!
+    !!    Input, real ( kind = 8 ) ALFA, BETA, exponents that occur in the weight function.
+    !!
+    !!    Input, integer INTEGR, specifies which weight function is used:
+    !!    1. W(X) = (X-A)**ALFA * (B-X)**BETA
+    !!    2, W(X) = (X-A)**ALFA * (B-X)**BETA * log (X-A)
+    !!    3, W(X) = (X-A)**ALFA * (B-X)**BETA * log (B-X)
+    !!    4, W(X) = (X-A)**ALFA * (B-X)**BETA * log (X-A) * log(B-X)
+    !!
+    !!    Output, real ( kind = 8 ) QWGTS, the value of the weight function at X.
+    !!
     implicit none
 
     real ( kind = 8 ) a

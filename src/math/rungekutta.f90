@@ -148,6 +148,8 @@ contains
   end function ODE_step_RK5_zscalar
 !--------------------------------------------------------------------------------------  
   function ODE_step_RK5_dvector(size,n,dt,deriv_func,xn) result(xn1)
+    !! Runge-Kutta step \( x(n \Delta t) \rightarrow x((n+1)\Delta t)\) for a real vector-valued 
+    !! function and right-hand side \( \dot{x}(t) = f(t, x(t)) \).
     integer,intent(in)            :: size
     integer,intent(in)            :: n
     real(dp),intent(in)           :: dt
@@ -174,6 +176,8 @@ contains
   end function ODE_step_RK5_dvector
 !------------------------------------------------------------------------------------
   function ODE_step_RK5_zvector(size,n,dt,deriv_func,xn) result(xn1)
+    !! Runge-Kutta step \( x(n \Delta t) \rightarrow x((n+1)\Delta t)\) for a complex vector-valued 
+    !! function and right-hand side \( \dot{x}(t) = f(t, x(t)) \).
     integer,intent(in)            :: size
     integer,intent(in)            :: n
     real(dp),intent(in)           :: dt
@@ -200,6 +204,8 @@ contains
   end function ODE_step_RK5_zvector
 !------------------------------------------------------------------------------------
   function ODE_step_RK5_dmatrix(size,n,dt,deriv_func,xn) result(xn1)
+    !! Runge-Kutta step \( x(n \Delta t) \rightarrow x((n+1)\Delta t)\) for a real matrix-valued 
+    !! function and right-hand side \( \dot{x}(t) = f(t, x(t)) \).
     integer,intent(in)            :: size
     integer,intent(in)            :: n
     real(dp),intent(in)           :: dt
@@ -226,6 +232,8 @@ contains
   end function ODE_step_RK5_dmatrix
 !------------------------------------------------------------------------------------
    function ODE_step_RK5_zmatrix(size,n,dt,deriv_func,xn) result(xn1)
+    !! Runge-Kutta step \( x(n \Delta t) \rightarrow x((n+1)\Delta t)\) for a complex matrix-valued 
+    !! function and right-hand side \( \dot{x}(t) = f(t, x(t)) \).
     integer,intent(in)            :: size
     integer,intent(in)            :: n
     real(dp),intent(in)           :: dt

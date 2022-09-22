@@ -1,4 +1,5 @@
 module scitools_special
+!! Contains some special functions.
 !======================================================================================
     use scitools_debug
     use scitools_def,only: dp,iu
@@ -411,8 +412,8 @@ contains
         r = log10(6.28_dp*n)/2 - n*log10(1.36_dp*x/n)
     end function
 !--------------------------------------------------------------------------------------
-    ! rotate Hankel functions of negative order:
     function Hrotate(hkind, order) result(factor)
+    !! rotate Hankel functions of negative order:
         integer, intent(in) :: hkind
         real(dp), intent(in) :: order
         complex(dp) :: factor
@@ -432,8 +433,8 @@ contains
 
     end function Hrotate
 !--------------------------------------------------------------------------------------
-    ! 'reflect' negative integer order Bessel functions if needed
     function reflect(order) result(res)
+        !! 'reflect' negative integer order Bessel functions if needed
         integer, intent(in) :: order
         integer :: res
 

@@ -1,4 +1,6 @@
 module scitools_fornberg
+!! Contains routines for generation interpolation and differentation weights 
+!! by the Fornberg algorithm.
 !======================================================================================
   use scitools_def,only: dp
   implicit none

@@ -32,14 +32,18 @@ module scitools_utils
       check_file_ext
 !-------------------------------------------------------------------------------------- 
    interface str
+   !! interface for converting an integer or real number to a string
       module procedure str_int, str_real, str_real_n
    end interface str
 
    interface load_griddata
+   !! interface for reading grid data \( (x_i, y_i) \)  from plain text file
       module procedure load_griddata_real, load_griddata_complex
    end interface load_griddata
 
    interface save_griddata
+   !! interface for writing 1D grid data \( (x_i, y_i) \) to plain text file  
+   !! \(y_i\) can be scalar or vector-valued
       module procedure save_griddata_real_1d, save_griddata_complex_1d, &
          save_griddata_real_2d, save_griddata_complex_2d
    end interface save_griddata
@@ -129,7 +133,7 @@ contains
   end subroutine print_header
 !-------------------------------------------------------------------------------------- 
   function upcase(s) result(t)
-    !! Returns string 's' in uppercase
+    !! Returns string `s` in uppercase
     character(*), intent(in) :: s
     character(len(s)) :: t
     integer :: i, diff
@@ -143,7 +147,7 @@ contains
   end function upcase
 !-------------------------------------------------------------------------------------- 
   function lowcase(s) result(t)
-    !! Returns string 's' in lowercase
+    !! Returns string `s` in lowercase
     character(*), intent(in) :: s
     character(len(s)) :: t
     integer :: i, diff
@@ -157,7 +161,7 @@ contains
   end function lowcase
 !-------------------------------------------------------------------------------------- 
   logical function checkoption(s,sopt)
-  !! checks if string 's' is equivalent to string 'sopt' after converting to lower case
+  !! checks if string `s` is equivalent to string 'sopt' after converting to lower case
     character(*), intent(in) :: s,sopt
 
     checkoption = trim(lowcase(s)) == trim(lowcase(sopt))
@@ -165,7 +169,7 @@ contains
   end function checkoption
 !--------------------------------------------------------------------------------------  
   logical function whitechar(char) 
-    !! returns .true. if char is space (32) or tab (9), .false. otherwise
+    !! returns `.true.` if `char` is space (32) or tab (9), `.false.` otherwise
     character, intent(in) :: char
     if (iachar(char) == 32 .or. iachar(char) == 9) then
        whitechar = .true.
@@ -185,7 +189,7 @@ contains
   end function blank
 !-------------------------------------------------------------------------------------- 
   integer function numstrings(s) result(n)
-    !! Returns number of substrings contained in input string 's' delimited
+    !! Returns number of substrings contained in input string `s` delimited
     !! by white space.
     character(*), intent(in) :: s    !! input string
     character(len(s)+2) :: t         !! temporary string to facilitate analysis
