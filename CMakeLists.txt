@@ -48,9 +48,9 @@ endif (hdf5)
 if(lapackblas_libraries)
    list(APPEND COMMON_LIBS ${lapackblas_libraries})
    message(STATUS LAPACK/BLAS: ${lapackblas_libraries})
-else()
+else(lapackblas_libraries)
    message("Warning: LAPACK/BLAS not specified!")
-endif()
+endif(lapackblas_libraries)
 
 # ~~ Add modern quadrature ~~
 if (modernquad)

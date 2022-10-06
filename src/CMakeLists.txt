@@ -45,6 +45,8 @@ else (enable_static)
 	install(TARGETS scitools LIBRARY DESTINATION lib)
 endif (enable_static)
 
+target_link_libraries(scitools ${COMMON_LIBS})
+
 
 # ~~ Installation targets ~~
 set (MODS
