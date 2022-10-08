@@ -40,7 +40,7 @@ We use the [cmake](https://cmake.org) build system to generate Makefiles. We rec
 with all options:
 
 ```
-# From the root directory .../libcntr/
+# From the root directory .../scitools/
 # Create configure script
 vim configure.sh
 ```
