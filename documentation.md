@@ -32,12 +32,12 @@ file for more details.
 Official Releases
 -----------------
 
-The **current stable release** is **{!.VERSION!}** and can be [downloaded
-on GitHub](https://github.com/michaelschueler/scitools/releases/latest). The
-documentation for the current version, **{!.VERSION!}**, can be
-found [here](https://jacobwilliams.github.io/json-fortran/prev/{!.VERSION!}/index.html)[^1], and a
-list of changes from the previous version are
-[here](https://jacobwilliams.github.io/json-fortran/page/releases/index.html#change-log).
+<!-- The **current stable release** is **{!.VERSION!}** and can be [downloaded -->
+<!-- on GitHub](https://github.com/michaelschueler/scitools/releases/latest). The -->
+<!-- documentation for the current version, **{!.VERSION!}**, can be -->
+<!-- found [here](https://jacobwilliams.github.io/json-fortran/prev/{!.VERSION!}/index.html)[^1], and a -->
+<!-- list of changes from the previous version are -->
+<!-- [here](https://jacobwilliams.github.io/json-fortran/page/releases/index.html#change-log). -->
 
 A list of all past releases, links to their documentation, and the
 change log can be found on the
