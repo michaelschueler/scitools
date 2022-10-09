@@ -86,8 +86,7 @@ and install via
 ```
 make install
 ```
-BLAS/LAPACK
-===========
+#### BLAS/LAPACK ####
 
 A version of BLAS / LAPACK is required. In addition to specify the location of BLAS/LAPACK in the `CMAKE_LIBRARY_PATH`, the user should specify their version of BLAS/LAPACK via the `lapackblas_libraries` variable in the configure script. This is required in most cases (exception: compiler wrappers that automatically link against BLAS/LAPACK). 
 
@@ -101,8 +100,7 @@ or similar (refer to the MKL link advisor). For the OpenBLAS library, specify
 
 Other implementations of BLAS/LAPACK work similarly.
 
-HDF5
-====
+#### HDF5 ####
 
 To enable hdf5 support use the `hdf5` option in cmake
 
@@ -110,8 +108,7 @@ To enable hdf5 support use the `hdf5` option in cmake
 
 Make sure that the HDF5 library, including the Fortran interface library, is installed on your systems and the library path is included in `CMAKE_LIBRARY_PATH`. Also add the include path where `hdf5.mod` is located to `CMAKE_INCLUDE_PATH`.
 
-MPI
-===
+#### MPI ####
 
 To enable MPI support use the `mpi` option in cmake
 
