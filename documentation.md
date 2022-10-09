@@ -9,7 +9,9 @@ author_description: The SciTools library: A collection of mathematical and numer
 project_github: https://github.com/michaelschueler/scitools
 project_download: https://github.com/michaelschueler/scitools/releases/latest
 github: https://github.com/michaelschueler
-
+display: public
+         protected
+         private
 
 Description
 -----------------
@@ -19,7 +21,7 @@ Description
 
 It includes tools for:
 
-* interpolation ([[scitools_bsplines]]), finite difference ([[scitools_fornberb]]) schemes for differentiation, Gregory quadrature ([[scitools_gregory]]), Runge-Kutta integration ([[scitools_rungekutta]]).
+* interpolation ([[scitools_bsplines]]), finite difference ([[scitools_fornberg]]) schemes for differentiation, Gregory quadrature ([[scitools_gregory]]), Runge-Kutta integration ([[scitools_rungekutta]]).
 
 * Gauss-Legendre quadrature ([[scitools_gausslegendre]]), Filon quadrature ([[scitools_filon]]), Lebedev quadrature for integrals over the unit sphere ([[scitools_lebedev_quad]]).
 
