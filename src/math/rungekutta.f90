@@ -45,6 +45,7 @@ module scitools_rungekutta
 !--------------------------------------------------------------------------------------
   abstract interface
      function deriv_func_dscalar(t,y) result(dydt)
+     !! right-hand side \(f(t,y)\) of ODE \(\dot{y}(t) = f(t,y(t))\); \(y\) is real scalar.
        import :: dp
        real(dp),intent(in) :: t
        real(dp),intent(in) :: y
@@ -52,6 +53,7 @@ module scitools_rungekutta
      end function deriv_func_dscalar
 
      function deriv_func_zscalar(t,y) result(dydt)
+    !! right-hand side \(f(t,y)\) of ODE \(\dot{y}(t) = f(t,y(t))\); \(y\) is complex scalar.
        import :: dp
        real(dp),intent(in)    :: t
        complex(dp),intent(in) :: y
@@ -59,6 +61,7 @@ module scitools_rungekutta
      end function deriv_func_zscalar
 
      function deriv_func_dvector(size,t,y) result(dydt)
+    !! right-hand side \(f(t,y)\) of ODE \(\dot{y}(t) = f(t,y(t))\); \(y\) is real vector.
        import :: dp
        integer,intent(in)  :: size
        real(dp),intent(in) :: t
@@ -67,6 +70,7 @@ module scitools_rungekutta
      end function deriv_func_dvector
 
      function deriv_func_zvector(size,t,y) result(dydt)
+    !! right-hand side \(f(t,y)\) of ODE \(\dot{y}(t) = f(t,y(t))\); \(y\) is complex vector.
        import :: dp
        integer,intent(in)     :: size
        real(dp),intent(in)    :: t
@@ -75,6 +79,7 @@ module scitools_rungekutta
      end function deriv_func_zvector
 
      function deriv_func_dmatrix(size,t,y) result(dydt)
+    !! right-hand side \(f(t,y)\) of ODE \(\dot{y}(t) = f(t,y(t))\); \(y\) is real square matrix.
        import :: dp
        integer,intent(in)     :: size
        real(dp),intent(in)    :: t
@@ -83,6 +88,7 @@ module scitools_rungekutta
      end function deriv_func_dmatrix
      
      function deriv_func_zmatrix(size,t,y) result(dydt)
+    !! right-hand side \(f(t,y)\) of ODE \(\dot{y}(t) = f(t,y(t))\); \(y\) is complex square matrix.
        import :: dp
        integer,intent(in)     :: size
        real(dp),intent(in)    :: t

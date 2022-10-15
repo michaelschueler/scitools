@@ -210,9 +210,6 @@ contains
 
   subroutine hdf_open_file(file_id, filename, STATUS, ACTION)
    !! Opens file and return identifier
-   !! TODO:
-   !!   - case insentive STATUS and ACTION
-   !!   - delete file for REPLACE case
    !!  | STATUS  | ACTION    | Description                          |
    !!  | :-----: | :-------: | :----------------------------------- |
    !!  | NEW     | na        | calls h5fcreate with H5F_ACC_TRUNC_F |
@@ -255,7 +252,6 @@ contains
     elseif (status2 == 'NEW') then
        call h5fcreate_f(filename, H5F_ACC_TRUNC_F, file_id, hdferror)
     elseif (status2 == 'REPLACE') then
-!!$       call system("rm -f " // filename)
        call EXECUTE_COMMAND_LINE("rm -f " // filename)
        call h5fcreate_f(filename, H5F_ACC_EXCL_F, file_id, hdferror)
     else

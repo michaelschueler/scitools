@@ -4,6 +4,7 @@ module scitools_quadrature
    use,intrinsic::iso_fortran_env,only: output_unit, error_unit
    use scitools_debug
    use scitools_def,only: dp
+   use scitools_utils,only: stop_error
    use scitools_quadpack,only: dqags,dqagi
    use scitools_gausslegendre,only: integration_class_1d
    implicit none
@@ -69,7 +70,7 @@ contains
    end subroutine integral_1d
 !--------------------------------------------------------------------------------------
    subroutine integral_inf_1d(f,bound,inf,tol,res,neval,abserr)
-   !! Simple interface to QUADPACK's [[dqagi]] function with some error checks
+   !! Simple interface to QUADPACK [[dqagi]] function with some error checks
       real(dp),intent(in)           :: bound
       integer,intent(in)            :: inf
       real(dp),intent(in)           :: tol
@@ -87,7 +88,6 @@ contains
           end function
       end interface
 
-
       call dqagi(f,bound,inf,tol,tol,res,abserr_,neval_,ier)
       call quadpack_err("dqagi", ier)
 
@@ -97,18 +97,20 @@ contains
    end subroutine integral_inf_1d
 !--------------------------------------------------------------------------------------
    subroutine quadpack_err(tag,ier)   
+   !! Checks the output flag of a QUADPACK call and stops the program 
       use scitools_utils,only: str
       character(len=*),intent(in) :: tag
       integer,intent(in) :: ier
 
       if(ier /= 0) then
-         write(error_unit,fmt901) trim(tag) // " exit code = "//str(ier)
-         stop
+         call stop_error(trim(tag) // " exit code = "//str(ier))
       end if
 
    end subroutine quadpack_err
 !--------------------------------------------------------------------------------------
    subroutine quadpack_info(tag,abserr,neval)   
+   !! Prints the absolute error and number of function evaluations after
+   !! a QUADPACK call
       use scitools_utils,only: str
       character(len=*),intent(in) :: tag
       real(dp),intent(in) :: abserr
@@ -120,14 +122,15 @@ contains
    end subroutine quadpack_info
 !--------------------------------------------------------------------------------------
    subroutine quadrature_err(tag,ier,tol,err)   
+   !! Checks if an error occured in calling quadrature functions and stops in that case.
+   !! Prints a warning of the requested tolerance has not been met.
       use scitools_utils,only: str
       character(len=*),intent(in) :: tag
       integer,intent(in) :: ier
       real(dp),intent(in) :: tol,err
 
       if(ier == -1) then
-         write(error_unit,fmt901) trim(tag) // " exit code = -1"
-         stop
+         call stop_error(trim(tag) // " exit code = -1")
       end if
 
       if((ier == 2) .and. (abs(err) > tol)) then

@@ -107,8 +107,8 @@ module scitools_linalg
 
 
   interface blas_zgemm
+    !! Interfrace to BLAS routine ZGEMM
      pure subroutine zgemm(TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
-     !! Interfrace to BLAS routine ZGEMM
        import :: dp
        character,intent(in)      :: TRANSA
        character,intent(in)      :: TRANSB
@@ -127,8 +127,8 @@ module scitools_linalg
   end interface blas_zgemm
 
   interface blas_dgemm
+    !! Interfrace to BLAS routine DGEMM
      pure subroutine dgemm(TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
-     !! Interfrace to BLAS routine DGEMM
        import :: dp
        character,intent(in)      :: TRANSA
        character,intent(in)      :: TRANSB

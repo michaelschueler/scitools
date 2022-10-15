@@ -73,12 +73,13 @@ module scitools_vector_bsplines
 !-------------------------------------------------------------------------------------- 
 contains
 !--------------------------------------------------------------------------------------   
-   subroutine real_vector_init(me,x,y,nc,kx)
+   subroutine real_vector_init(me,x,y,nc,kx) 
+   !! initializes a real vector-valued B-spline from sampled values \( (x_i, y_i) \)
       class(real_vector_spline_t) :: me
-      real(dp),intent(in) :: x(:)
-      real(dp),intent(in) :: y(:,:)
-      integer,intent(in)  :: nc
-      integer,intent(in),optional :: kx
+      real(dp),intent(in) :: x(:) !! sample points \(x_i\), `nx` values
+      real(dp),intent(in) :: y(:,:) !! sampled values \(y_i\), dimension `(nx,nc)` 
+      integer,intent(in)  :: nc !! vector size of \(y(x)\)
+      integer,intent(in),optional :: kx !! order of B-spline interpolant
       integer :: i,iflag
 
       if(present(kx)) me%kx = kx
@@ -109,10 +110,11 @@ contains
    end subroutine real_vector_clean
 !--------------------------------------------------------------------------------------
    function real_vector_Eval(me,x,idx,iflag) result(y)
+   !! Evaluates the B-spline interpolant \(y(x)\) or a derivative. Returns the whole vector.
       class(real_vector_spline_t) :: me
-      real(dp),intent(in) :: x
-      integer,intent(in),optional  :: idx
-      integer,intent(out),optional :: iflag
+      real(dp),intent(in) :: x !! point where the interpolant is evaluated
+      integer,intent(in),optional  :: idx !! order of derivative
+      integer,intent(out),optional :: iflag !! info flag
       real(dp) :: y(me%nc)
       integer :: idx_,iflag_
       integer :: i
@@ -137,12 +139,15 @@ contains
    end function real_vector_Eval
 !--------------------------------------------------------------------------------------
    function real_vector_Eval_comp(me,x,ic,idx,iflag,inbvx) result(y)
+   !! evaluates a component of the vector \(y(x)\) or a derivative
       class(real_vector_spline_t) :: me
-      real(dp),intent(in) :: x
-      integer,intent(in)  :: ic
-      integer,intent(in),optional  :: idx
-      integer,intent(out),optional :: iflag
-      integer,intent(inout),optional :: inbvx
+      real(dp),intent(in) :: x !! point where the interpolant is evaluated
+      integer,intent(in)  :: ic !! index of vector component
+      integer,intent(in),optional  :: idx !! order of derivative
+      integer,intent(out),optional :: iflag !! info flag
+      integer,intent(inout),optional :: inbvx !! initialization parameter which must be set to 
+                                              !! 1 the first time this routine is called, and 
+                                              !! must not be changed by the user.
       real(dp) :: y
       integer :: idx_,iflag_
       integer :: inbvx_
@@ -166,11 +171,12 @@ contains
    end function real_vector_Eval_comp
 !--------------------------------------------------------------------------------------
    subroutine real_matrix_init(me,x,y,nc,mc,kx)
+   !! initializes a real matrix-valued B-spline from sampled values \( (x_i, y_i) \)
       class(real_matrix_spline_t) :: me
-      real(dp),intent(in) :: x(:)
-      real(dp),intent(in) :: y(:,:,:)
-      integer,intent(in)  :: nc,mc
-      integer,intent(in),optional :: kx
+      real(dp),intent(in) :: x(:) !! sample points \(x_i\), dimension `nx`
+      real(dp),intent(in) :: y(:,:,:) !! sampled values \(y_i\), dimension `(nx,nc,mc)` 
+      integer,intent(in)  :: nc,mc !! matrix ranks 
+      integer,intent(in),optional :: kx !! order of B-spline interpolant
       integer :: i,j,iflag
 
       if(present(kx)) me%kx = kx
@@ -204,10 +210,11 @@ contains
    end subroutine real_matrix_clean
 !--------------------------------------------------------------------------------------
    function real_matrix_Eval(me,x,idx,iflag) result(y)
+   !! Evaluates the B-spline interpolant \(y(x)\) or a derivative. Returns the whole matrix.
       class(real_matrix_spline_t) :: me
-      real(dp),intent(in) :: x
-      integer,intent(in),optional  :: idx
-      integer,intent(out),optional :: iflag
+      real(dp),intent(in) :: x !! point where the interpolant is evaluated
+      integer,intent(in),optional  :: idx !! order of derivative
+      integer,intent(out),optional :: iflag !! info flag
       real(dp) :: y(me%nc,me%mc)
       integer :: idx_,iflag_
       integer :: i,j
@@ -234,12 +241,15 @@ contains
    end function real_matrix_Eval
 !--------------------------------------------------------------------------------------
    function real_matrix_Eval_comp(me,x,ic,jc,idx,iflag,inbvx) result(y)
+   !! evaluates an element of the matrix \(y(x)\) or a derivative
       class(real_matrix_spline_t) :: me
-      real(dp),intent(in) :: x
-      integer,intent(in)  :: ic,jc
-      integer,intent(in),optional  :: idx
-      integer,intent(out),optional :: iflag
-      integer,intent(inout),optional :: inbvx
+      real(dp),intent(in) :: x !! point where the interpolant is evaluated
+      integer,intent(in)  :: ic,jc !! indices of matrix elements
+      integer,intent(in),optional  :: idx !! order of derivative
+      integer,intent(out),optional :: iflag !! info flag
+      integer,intent(inout),optional :: inbvx !! initialization parameter which must be set to 
+                                              !! 1 the first time this routine is called, and 
+                                              !! must not be changed by the user.
       real(dp) :: y
       integer :: idx_,iflag_
       integer :: inbvx_
@@ -266,11 +276,12 @@ contains
 
 !--------------------------------------------------------------------------------------   
    subroutine cplx_vector_init(me,x,y,nc,kx)
+   !! initializes a complex vector-valued B-spline from sampled values \( (x_i, y_i) \)
       class(cplx_vector_spline_t) :: me
-      real(dp),intent(in) :: x(:)
-      complex(dp),intent(in) :: y(:,:)
-      integer,intent(in)  :: nc
-      integer,intent(in),optional :: kx
+      real(dp),intent(in) :: x(:) !! sample points \(x_i\), dimension `nx`
+      complex(dp),intent(in) :: y(:,:) !! sampled values \(y_i\), dimension `(nx,nc)` 
+      integer,intent(in)  :: nc !! vector size of \(y(x)\)
+      integer,intent(in),optional :: kx !! order of B-spline interpolant
       integer :: i,iflag
 
       if(present(kx)) me%kx = kx
@@ -304,10 +315,11 @@ contains
    end subroutine cplx_vector_clean
 !--------------------------------------------------------------------------------------
    function cplx_vector_Eval(me,x,idx,iflag) result(y)
+   !! Evaluates the B-spline interpolant \(y(x)\) or a derivative. Returns the whole vector.
       class(cplx_vector_spline_t) :: me
-      real(dp),intent(in) :: x
-      integer,intent(in),optional  :: idx
-      integer,intent(out),optional :: iflag
+      real(dp),intent(in) :: x !! point where the interpolant is evaluated
+      integer,intent(in),optional  :: idx !! order of derivative
+      integer,intent(out),optional :: iflag !! info flag
       complex(dp) :: y(me%nc)
       integer :: idx_,iflag_
       integer :: i
@@ -336,12 +348,15 @@ contains
    end function cplx_vector_Eval
 !--------------------------------------------------------------------------------------
    function cplx_vector_Eval_comp(me,x,ic,idx,iflag,inbvx) result(y)
+   !! evaluates a component of the vector \(y(x)\) or a derivative
       class(cplx_vector_spline_t) :: me
-      real(dp),intent(in) :: x
-      integer,intent(in)  :: ic
-      integer,intent(in),optional  :: idx
-      integer,intent(out),optional :: iflag
-      integer,intent(inout),optional :: inbvx(2)
+      real(dp),intent(in) :: x !! point where the interpolant is evaluated
+      integer,intent(in)  :: ic !! index of vector component
+      integer,intent(in),optional  :: idx !! order of derivative
+      integer,intent(out),optional :: iflag !! info flag
+      integer,intent(inout),optional :: inbvx(2) !! initialization parameter which must be set to 
+                                              !! 1 the first time this routine is called, and 
+                                              !! must not be changed by the user.
       complex(dp) :: y
       integer :: idx_,iflag_
       integer :: inbvx_(2)
@@ -368,11 +383,12 @@ contains
    end function cplx_vector_Eval_comp
 !--------------------------------------------------------------------------------------
    subroutine cplx_matrix_init(me,x,y,nc,mc,kx)
+   !! initializes a complex matrix-valued B-spline from sampled values \( (x_i, y_i) \)
       class(cplx_matrix_spline_t) :: me
-      real(dp),intent(in) :: x(:)
-      complex(dp),intent(in) :: y(:,:,:)
-      integer,intent(in)  :: nc,mc
-      integer,intent(in),optional :: kx
+      real(dp),intent(in) :: x(:) !! sample points \(x_i\), dimension `nx`
+      complex(dp),intent(in) :: y(:,:,:) !! sampled values \(y_i\), dimension `(nx,nc,mc)` 
+      integer,intent(in)  :: nc,mc !! matrix ranks 
+      integer,intent(in),optional :: kx !! order of B-spline interpolant
       integer :: i,j,iflag
 
       if(present(kx)) me%kx = kx
@@ -410,10 +426,11 @@ contains
    end subroutine cplx_matrix_clean
 !--------------------------------------------------------------------------------------
    function cplx_matrix_Eval(me,x,idx,iflag) result(y)
+   !! Evaluates the B-spline interpolant \(y(x)\) or a derivative. Returns the whole matrix.
       class(cplx_matrix_spline_t) :: me
-      real(dp),intent(in) :: x
-      integer,intent(in),optional  :: idx
-      integer,intent(out),optional :: iflag
+      real(dp),intent(in) :: x !! point where the interpolant is evaluated
+      integer,intent(in),optional  :: idx !! order of derivative
+      integer,intent(out),optional :: iflag !! info flag
       complex(dp) :: y(me%nc,me%mc)
       integer :: idx_,iflag_
       integer :: i,j
@@ -444,12 +461,15 @@ contains
    end function cplx_matrix_Eval
 !--------------------------------------------------------------------------------------
    function cplx_matrix_Eval_comp(me,x,ic,jc,idx,iflag,inbvx) result(y)
+   !! evaluates an element of the matrix \(y(x)\) or a derivative
       class(cplx_matrix_spline_t) :: me
-      real(dp),intent(in) :: x
-      integer,intent(in)  :: ic,jc
-      integer,intent(in),optional  :: idx
-      integer,intent(out),optional :: iflag
-      integer,intent(inout),optional :: inbvx(2)
+      real(dp),intent(in) :: x !! point where the interpolant is evaluated
+      integer,intent(in)  :: ic,jc !! indices of matrix elements
+      integer,intent(in),optional  :: idx !! order of derivative
+      integer,intent(out),optional :: iflag !! info flag
+      integer,intent(inout),optional :: inbvx(2) !! initialization parameter which must be set to 
+                                              !! 1 the first time this routine is called, and 
+                                              !! must not be changed by the user.
       complex(dp) :: y
       integer :: idx_,iflag_
       integer :: inbvx_(2)

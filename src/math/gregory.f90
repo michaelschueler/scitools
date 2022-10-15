@@ -15,10 +15,14 @@ module scitools_gregory
       GetGregoryWeights
 
    interface GregoryIntegral
+   !! Gregory quadrature  for real or complex function \(f(x)\)
       module procedure DGregoryIntegral,ZGregoryIntegral
    end interface GregoryIntegral
 
    interface GregoryDot
+   !! Inner product of two 1D functions, defined as 
+   !! \( (f|g) = \int^b_a dx\, f^*(x) g(x) \) for real or complex functions \(f(x), g(x)\).
+   !! The integral is evaluated with fixed-order Gregory quadrature. 
       module procedure GregoryDot_re_re,GregoryDot_c_re,GregoryDot_re_c,GregoryDot_c_c
    end interface GregoryDot
 !--------------------------------------------------------------------------------------
@@ -36,6 +40,7 @@ module scitools_gregory
 contains
 !--------------------------------------------------------------------------------------
    pure function GetStartW() result(w)
+   !! Returns the starting weights for polynomial integration; see [[GetGregoryWeights]]
       real(dp) :: w(0:p-1,0:p-1)
 
       w = 0.0_dp

@@ -11,16 +11,20 @@ public sort, sortpairs, argsort, rargsort
 
 ! overload argsort
 interface argsort
+!! generic interface for argsort for integers or real numbers
     module procedure iargsort, rargsort
 end interface
 
 ! overload sort
 interface sort
+!! generic interface for sort for integers, real numbers, or vectors
     module procedure sortNums, sortINums, sortVecs
 end interface
 
 ! overload sortpairs
 interface sortpairs
+!! sorts arrays of numbers and numbers/vectors/matrices according to increasing 
+!! numbers
     module procedure sortNumNumPairs, sortINumCNumPairs, &
                      sortNumVecPairs, sortINumVecPairs, sortNumCVecPairs, &
                      sortNumMatPairs, sortINumMatPairs

@@ -278,7 +278,7 @@ contains
       if(root_) write(error_unit,fmt900) msg
 
 #ifdef MPI
-      call MPI_Finalize(ierr)
+      if(present(root_flag)) call MPI_Finalize(ierr)
 #endif
 
       stop 1

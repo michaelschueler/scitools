@@ -1,5 +1,5 @@
 module scitools_root
-  !! Optimization algorithms
+  !! This module contains algorithms for finding roots of one-dimensional functions.
 
   use scitools_def, only: dp
   use scitools_utils, only: stop_error
@@ -8,6 +8,7 @@ module scitools_root
   public bisect,secant,newton,brent
 
   interface
+  !! interface for a one-dimensional real-valued function \(f(x)\)
      real(dp) function func(x)
        import :: dp
        implicit none
