@@ -78,7 +78,9 @@ contains
       if(serial) then
          me%ntasks = 1
          allocate(me%I_glob(0:me%ntasks-1,me%N))
-         forall(ik=1:me%N) me%I_glob(0,ik) = ik
+         do ik=1,me%N
+            me%I_glob(0,ik) = ik
+         end do
          allocate(me%N_loc(0:me%ntasks-1))
          me%N_loc(0) = me%N
          return

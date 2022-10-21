@@ -66,7 +66,9 @@ contains
     
     self%Tmin=Tmin
     self%Tmax=Tmax
-    forall(it=1:Npts) self%tpts(it)=Tmin+(Tmax-Tmin)*(it-1)/dble(Npts-1)
+    do it=1,Npts
+      self%tpts(it)=Tmin+(Tmax-Tmin)*(it-1)/dble(Npts-1)
+    end do
     
   end subroutine scalarfunc_Init
 !--------------------------------------------------------------------------------------
@@ -128,8 +130,10 @@ contains
     
     self%Tmin=Tmin
     self%Tmax=Tmax
-    forall(it=1:Npts) self%tpts(it)=Tmin+(Tmax-Tmin)*(it-1)/dble(Npts-1)
-    
+    do i=1,Npts
+      self%tpts(it)=Tmin+(Tmax-Tmin)*(it-1)/dble(Npts-1)
+    end do
+
   end subroutine Laserpulse_Init
 !--------------------------------------------------------------------------------------   
   real(dp) function Laserpulse_Afield(self,t)

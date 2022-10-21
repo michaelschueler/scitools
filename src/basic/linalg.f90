@@ -985,7 +985,9 @@ contains
     n = size(x)
     allocate(A(n,n))
     A(:,:) = 0.0_dp
-    forall(i=1:n) A(i,i) = x(i)
+    do i=1,n
+      A(i,i) = x(i)
+    end do
   end function ddiag
 
   function zdiag(x) result(A)
@@ -997,7 +999,9 @@ contains
     n = size(x)
     allocate(A(n,n))
     A(:,:) = 0*iu
-    forall(i=1:n) A(i,i) = x(i)
+    do i=1,n
+      A(i,i) = x(i)
+    end do
   end function zdiag
 
   ! TODO: add optional axis parameter in both xtrace() functions
