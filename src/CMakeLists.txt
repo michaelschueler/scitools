@@ -82,8 +82,6 @@ if(mpi)
 	list(APPEND MODS array1d_dist)
 endif(mpi)
 
-install(TARGETS scitools LIBRARY DESTINATION lib)
-
 foreach( mod ${MODS} )
 	install(FILES ${CMAKE_Fortran_MODULE_DIRECTORY}/scitools_${mod}.mod DESTINATION include/scitools)
 endforeach()
