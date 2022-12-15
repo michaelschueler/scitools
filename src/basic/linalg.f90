@@ -30,7 +30,10 @@ module scitools_linalg
       blas_dgemm, &
       util_zgemm, &
       util_matmul, &
-      get_large_size
+      get_large_size, &
+      util_axpy, &
+      util_copy, &
+      util_scal
 !-------------------------------------------------------------------------------------- 
   interface eig
      !! eigenvalue/-vector problem for general matrices:
@@ -105,6 +108,18 @@ module scitools_linalg
     module procedure dutil_matmul, zutil_matmul
   end interface util_matmul
 
+  interface util_copy
+    module procedure dutil_copy, zutil_copy
+  end interface util_copy
+
+  interface util_scal
+    module procedure dutil_scal, zutil_scal
+  end interface util_scal
+
+  interface util_axpy
+    module procedure dutil_axpy, zutil_axpy
+  end interface util_axpy
+
 
   interface blas_zgemm
     !! Interfrace to BLAS routine ZGEMM
@@ -145,7 +160,7 @@ module scitools_linalg
        integer,intent(in)        :: LDC
      end subroutine dgemm
   end interface blas_dgemm
-
+!--------------------------------------------------------------------------------------
 contains
 !--------------------------------------------------------------------------------------
    pure logical function get_large_size(n)
@@ -157,6 +172,75 @@ contains
       get_large_size = n >= large_int
 
    end function get_large_size
+
+!-------------------------------------------------------------------------------------
+   subroutine dutil_axpy(n,alpha,x,y)
+   !! Simple wrapper of `DAXPY` from BLAS
+   !! compues \(\alpha x + y\) with real vectors \(x,y\)
+      integer,intent(in)     :: n !! vector dimension
+      real(dp),intent(in)    :: alpha !! scalar \(\alpha\)
+      real(dp),intent(in)    :: x(:) !! vector \(x\)
+      real(dp),intent(inout) :: y(:) !! vector \(y\)
+
+      call daxpy(n, alpha, x, 1, y, 1)
+
+   end subroutine dutil_axpy
+!-------------------------------------------------------------------------------------
+   subroutine zutil_axpy(n,alpha,x,y)
+   !! Simple wrapper of `ZAXPY` from BLAS
+   !! compues \(\alpha x + y\) with complex vectors \(x,y\)
+      integer,intent(in)        :: n !! vector dimension
+      complex(dp),intent(in)    :: alpha !! scalar \(\alpha\)
+      complex(dp),intent(in)    :: x(:) !! vector \(x\)
+      complex(dp),intent(inout) :: y(:) !! vector \(y\)
+
+      call zaxpy(n, alpha, x, 1, y, 1)
+
+   end subroutine zutil_axpy
+!-------------------------------------------------------------------------------------
+   subroutine dutil_copy(n,x,y)
+   !! Simple wrapper of `DCOPY` from BLAS
+   !! copies the entries of vector \(x\) to \(y\)
+      integer,intent(in)     :: n  !! vector dimension
+      real(dp),intent(in)    :: x(:) !! vector \(x\)
+      real(dp),intent(inout) :: y(:) !! vector \(y\)
+
+      call dcopy(n, x, 1, y, 1)
+
+   end subroutine dutil_copy
+!-------------------------------------------------------------------------------------
+   subroutine zutil_copy(n,x,y)
+   !! Simple wrapper of `ZCOPY` from BLAS
+   !! copies the entries of vector \(x\) to \(y\)
+      integer,intent(in)        :: n !! vector dimension
+      complex(dp),intent(in)    :: x(:) !! vector \(x\)
+      complex(dp),intent(inout) :: y(:) !! vector \(y\)
+
+      call zcopy(n, x, 1, y, 1)
+
+   end subroutine zutil_copy
+!-------------------------------------------------------------------------------------
+   subroutine dutil_scal(n,alpha,x)
+   !! Simple wrapper of `DSCAL` from BLAS
+   !! scales the vector \(x\) by scalar \(\alpha\): \(x \rightarrow \alpha x\)
+      integer,intent(in)     :: n !! vector dimension
+      real(dp),intent(in)    :: alpha !! scalar scale factor
+      real(dp),intent(inout) :: x(:) !! vector \(x\)
+     
+      call dscal(n, alpha, x, 1)
+
+   end subroutine dutil_scal
+!-------------------------------------------------------------------------------------
+   subroutine zutil_scal(n,alpha,x)
+   !! Simple wrapper of `ZSCAL` from BLAS
+   !! scales the vector \(x\) by scalar \(\alpha\): \(x \rightarrow \alpha x\)  
+      integer,intent(in)        :: n !! vector dimension
+      complex(dp),intent(in)    :: alpha !! scalar scale factor
+      complex(dp),intent(inout) :: x(:) !! vector \(x\)
+      
+      call zscal(n, alpha, x, 1)
+
+   end subroutine zutil_scal
 !--------------------------------------------------------------------------------------
    subroutine util_zgemm(a, b, c, transa_opt, transb_opt)
    !! Simplilfied interface for BLAS ZGEMM
