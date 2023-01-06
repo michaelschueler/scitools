@@ -14,7 +14,7 @@ module scitools_array1d_dist
       !! We try to split the array into pieces of equal length if possible;
       !! otherwise, we try to distribute as evenly as possible
       integer :: ntasks,N
-      integer,dimension(:),allocatable :: N_loc
+      integer,dimension(:),allocatable :: N_loc,offset
       integer,dimension(:,:),allocatable :: I_glob
    contains
       procedure,public  :: Init
@@ -83,6 +83,8 @@ contains
          end do
          allocate(me%N_loc(0:me%ntasks-1))
          me%N_loc(0) = me%N
+         allocate(me%offset(0:ntasks-1))
+         me%offset = 0
          return
       end if
 
@@ -133,6 +135,9 @@ contains
             me%I_glob(itask,ik) = ik + offset(itask)
          end do
       end do
+
+      allocate(me%offset(0:ntasks-1))
+      me%offset = offset
 
    end subroutine Init
 !-------------------------------------------------------------------------------------- 
