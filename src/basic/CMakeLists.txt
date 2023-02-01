@@ -10,6 +10,7 @@ set(OBJECT_FILES
 		time.f90
 		utils.F90
 		sorting.f90
+		random.F90
 )
 
 if(hdf5)
@@ -22,6 +23,6 @@ endif(mpi)
 
 
 # ~~ Installation targets ~~
-add_library(basic OBJECT ${OBJECT_FILES})
+add_library(basic STATIC ${OBJECT_FILES})
 target_link_libraries(basic ${COMMON_LIBS})
 # install(TARGETS basic ARCHIVE DESTINATION lib)

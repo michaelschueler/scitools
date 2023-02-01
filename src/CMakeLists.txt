@@ -7,6 +7,7 @@ set(OBJECT_FILES
 	basic/sorting.f90
 	basic/time.f90
 	basic/utils.F90
+	basic/random.F90
 	math/bsplines.f90
 	math/fornberg.f90
 	math/filon.F90

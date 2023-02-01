@@ -21,7 +21,7 @@ set(OBJECT_FILES
 
 
 # ~~ Installation targets ~~
-add_library(math OBJECT ${OBJECT_FILES})
+add_library(math STATIC ${OBJECT_FILES})
 target_link_libraries(math basic ${COMMON_LIBS})
 add_dependencies(math basic)
 # install(TARGETS math ARCHIVE DESTINATION lib)
