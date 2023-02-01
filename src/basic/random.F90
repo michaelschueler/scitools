@@ -6,11 +6,11 @@ module scitools_random
    implicit none
 !-------------------------------------------------------------------------------------- 
    private
-   public :: InitRandom, RandomUnitVecor
+   public :: InitRandom, RandomUnitVector
 !-------------------------------------------------------------------------------------- 
-   interface RandomUnitVecor
-      module procedure DRandomUnitVecor, ZRandomUnitVecor
-   end interface RandomUnitVecor
+   interface RandomUnitVector
+      module procedure DRandomUnitVector, ZRandomUnitVector
+   end interface RandomUnitVector
 !-------------------------------------------------------------------------------------- 
 contains
 !-------------------------------------------------------------------------------------- 
@@ -29,7 +29,7 @@ contains
 
    end subroutine InitRandom
 !-------------------------------------------------------------------------------------- 
-   subroutine DRandomUnitVecor(n,v)
+   subroutine DRandomUnitVector(n,v)
       integer,intent(in) :: n
       real(dp),allocatable,intent(inout) :: v(:)
       real(dp) :: cn
@@ -44,9 +44,9 @@ contains
 
       v(1:n) = v(1:n) / cn
 
-   end subroutine DRandomUnitVecor
+   end subroutine DRandomUnitVector
 !-------------------------------------------------------------------------------------- 
-   subroutine ZRandomUnitVecor(n,v)
+   subroutine ZRandomUnitVector(n,v)
       integer,intent(in) :: n
       complex(dp),allocatable,intent(inout) :: v(:)
       real(dp) :: cn
@@ -69,7 +69,7 @@ contains
 
       v(1:n) = v(1:n) / cn
 
-   end subroutine ZRandomUnitVecor
+   end subroutine ZRandomUnitVector
 !-------------------------------------------------------------------------------------- 
 
 !======================================================================================

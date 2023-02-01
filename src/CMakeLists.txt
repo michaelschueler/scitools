@@ -56,6 +56,7 @@ set (MODS
 	def
 	linalg
 	sorting
+	random
 	time
 	utils
 	bsplines
