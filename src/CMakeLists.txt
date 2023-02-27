@@ -64,6 +64,7 @@ set (MODS
 	filon
 	gausslegendre
 	gregory
+	lebedev_weights
 	lebedev_quad
 	matrixexp
 	quadpack
