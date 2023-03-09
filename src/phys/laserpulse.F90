@@ -284,8 +284,6 @@ contains
 
     calcafield_ = .true.
     if(present(CalcAfield)) calcafield_ = CalcAfield
-       
-    stop
 
     call loadtxt(filename,Edata)
     call self%Init(size(Edata,1),minval(Edata(:,1)),maxval(Edata(:,1)))
