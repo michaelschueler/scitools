@@ -398,6 +398,8 @@ contains
        if(calcafield_) then
           dt = me%tpts(2)-me%tpts(1)
 
+          Tmin_ = self%Tmin
+
           do icol=1,me%ncomp
             iflag = 0
             col = usecols_(icol)
