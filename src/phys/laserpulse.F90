@@ -398,7 +398,7 @@ contains
        if(calcafield_) then
           dt = me%tpts(2)-me%tpts(1)
 
-          Tmin_ = self%Tmin
+          Tmin_ = me%Tmin
 
           do icol=1,me%ncomp
             iflag = 0
