@@ -298,6 +298,7 @@ contains
     
        if(calcafield_) then
           dt = self%tpts(2)-self%tpts(1)
+
           do it=1,self%Npts-1
              Adata(it+1) = ODE_step_RK5(it-1,dt,deriv_func,Adata(it))
           end do          
@@ -323,6 +324,18 @@ contains
     end function deriv_func
   !===================================  
   end subroutine Load_ElectricField
+!--------------------------------------------------------------------------------------
+  ! function Avec_deriv_wrapper(self,t,y) result(dydt)
+  !     class(LaserPulse_spline_t),intent(in) :: self
+  !     real(dp),intent(in) :: t
+  !     real(dp),intent(in) :: y
+  !     real(dp) :: dydt
+  !     integer :: iflag,inbvx    
+
+  !     inbvx = 1
+  !     dydt = -self%Espl%Eval(t+self%Tmin,0,iflag,inbvx)
+
+  ! end function Avec_deriv_wrapper
 !--------------------------------------------------------------------------------------
   subroutine Pulse3D_Init(self,Npts,Tmin,Tmax)
   !! Initializes the laser pulse class and allocates internal storage.
@@ -413,12 +426,10 @@ contains
       integer :: iflag,inbvx
       integer :: i
 
-      dydt = 0.0_dp
-
-      ! do i=1,n
-      !   inbvx = 1
-      !   dydt(i) = -me%Espl(i)%Eval(t+me%Tmin,0,iflag,inbvx)
-      ! end do
+      do i=1,n
+        inbvx = 1
+        dydt(i) = -me%Espl(i)%Eval(t+me%Tmin,0,iflag,inbvx)
+      end do
       
     end function deriv_func
   !=================================== 
