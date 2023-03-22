@@ -384,42 +384,44 @@ contains
 
     me%ncomp = ncol
 
-  !   if(.not.me%A_set) then
-  !      allocate(Adata(me%Npts,ncol)); Adata = 0.0_dp
+    if(.not.me%A_set) then
+       allocate(Adata(me%Npts,ncol)); Adata = 0.0_dp
     
-  !      if(calcafield_) then
-  !         dt = me%tpts(2)-me%tpts(1)
-  !         do it=1,me%Npts-1
-  !            Adata(it+1,:) = ODE_step_RK5(ncol,it-1,dt,deriv_func,Adata(it,:))
-  !         end do          
-  !      end if
+       if(calcafield_) then
+          dt = me%tpts(2)-me%tpts(1)
+          do it=1,me%Npts-1
+             Adata(it+1,:) = ODE_step_RK5(ncol,it-1,dt,deriv_func,Adata(it,:))
+          end do          
+       end if
        
-  !      allocate(me%Aspl(ncol))
-  !      do icol=1,ncol
-  !        iflag = 0
-  !        call me%Aspl(icol)%Init(me%tpts,Adata(:,icol),kx,iflag)
-  !      end do
-  !      me%A_set = .true.
-  !      deallocate(Adata)
-  !   end if
-  ! !===================================
-  ! contains
-  ! !===================================  
-  !   function deriv_func(n,t,y) result(dydt)
-  !     integer,intent(in)  :: n
-  !     real(dp),intent(in) :: t
-  !     real(dp),intent(in) :: y(:)
-  !     real(dp) :: dydt(n)
-  !     integer :: iflag,inbvx
-  !     integer :: i
+       allocate(me%Aspl(ncol))
+       do icol=1,ncol
+         iflag = 0
+         call me%Aspl(icol)%Init(me%tpts,Adata(:,icol),kx,iflag)
+       end do
+       me%A_set = .true.
+       deallocate(Adata)
+    end if
+  !===================================
+  contains
+  !===================================  
+    function deriv_func(n,t,y) result(dydt)
+      integer,intent(in)  :: n
+      real(dp),intent(in) :: t
+      real(dp),intent(in) :: y(:)
+      real(dp) :: dydt(n)
+      integer :: iflag,inbvx
+      integer :: i
 
-  !     do i=1,n
-  !       inbvx = 1
-  !       dydt(i) = -me%Espl(i)%Eval(t+me%Tmin,0,iflag,inbvx)
-  !     end do
+      dydt = 0.0_dp
+
+      ! do i=1,n
+      !   inbvx = 1
+      !   dydt(i) = -me%Espl(i)%Eval(t+me%Tmin,0,iflag,inbvx)
+      ! end do
       
-  !   end function deriv_func
-  ! !=================================== 
+    end function deriv_func
+  !=================================== 
   end subroutine Pulse3D_Load_electricfield
 !--------------------------------------------------------------------------------------
   subroutine Pulse3D_Load_vectorpotential(me,fname,usecols,CalcEfield)
