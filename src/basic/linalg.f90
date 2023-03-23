@@ -122,7 +122,7 @@ module scitools_linalg
   end interface util_axpy
 
   interface util_dotp
-    module private dutil_dotp, zutil_dotp
+    module procedure dutil_dotp, zutil_dotp
   end interface util_dotp
 
   interface blas_zgemm
