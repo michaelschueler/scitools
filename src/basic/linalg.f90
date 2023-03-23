@@ -164,6 +164,30 @@ module scitools_linalg
        integer,intent(in)        :: LDC
      end subroutine dgemm
   end interface blas_dgemm
+
+  interface blas_zdotcsub
+    pure subroutine zdotcsub(n, x, incx, y, incy, dotc)
+      import :: dp
+      integer,intent(in)     :: n
+      complex(dp),intent(in) :: x(*)
+      integer,intent(in)     :: incx
+      complex(dp),intent(in) :: y(*)
+      integer,intent(in)     :: incy
+      complex(dp),intent(out):: dotc
+    end subroutine zdotcsub
+  end interface blas_zdotcsub
+
+  interface blas_ddotsub
+    pure subroutine ddotsub(n, x, incx, y, incy, dot)
+      import :: dp
+      integer,intent(in)  :: n
+      real(dp),intent(in) :: x(*)
+      integer,intent(in)  :: incx
+      real(dp),intent(in) :: y(*)
+      integer,intent(in)  :: incy
+      real(dp),intent(out):: dot
+    end subroutine ddotsub
+  end interface blas_ddotsub
 !--------------------------------------------------------------------------------------
 contains
 !--------------------------------------------------------------------------------------
@@ -400,24 +424,45 @@ contains
 
    end function util_rotate_cc
 !--------------------------------------------------------------------------------------
-   function dutil_dotp(np, x, y) result(d)
+   pure function dutil_dotp(np, x, y) result(d)
    !! Comptutes the dot product \(x^T y\)
       integer,intent(in)  :: np
       real(dp),intent(in) :: x(:),y(:)
       real(dp) :: d
-      real(dp),external :: ddot
+      ! real(dp),external :: ddot
+      interface 
+         pure real(dp) function ddot(n,x,incx,y,incy)
+            import :: dp
+            integer,intent(in)  :: n
+            real(dp),intent(in) :: x(*)
+            integer,intent(in)  :: incx
+            real(dp),intent(in) :: y(*)
+            integer,intent(in)  :: incy
+         end function ddot
+      end interface
 
+      ! call blas_ddotsub(np, x, 1, y, 1, d)
       d = ddot(np, x, 1, y, 1)
 
    end function dutil_dotp
 !--------------------------------------------------------------------------------------
-   function zutil_dotp(np, x, y) result(d)
+   pure function zutil_dotp(np, x, y) result(d)
    !! Comptutes the dot product \(x^\dagger y\)
       integer,intent(in)     :: np
       complex(dp),intent(in) :: x(:),y(:)
       complex(dp) :: d
-      complex(dp),external :: zdotc
+      interface 
+         pure complex(dp) function zdotc(n,x,incx,y,incy)
+            import :: dp
+            integer,intent(in)     :: n
+            complex(dp),intent(in) :: x(*)
+            integer,intent(in)     :: incx
+            complex(dp),intent(in) :: y(*)
+            integer,intent(in)     :: incy
+         end function zdotc
+      end interface
 
+      ! call blas_zdotcsub(np, x, 1, y, 1, d)
       d = zdotc(np, x, 1, y, 1)
 
    end function zutil_dotp
