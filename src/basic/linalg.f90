@@ -33,7 +33,8 @@ module scitools_linalg
       get_large_size, &
       util_axpy, &
       util_copy, &
-      util_scal
+      util_scal, &
+      util_dotp
 !-------------------------------------------------------------------------------------- 
   interface eig
      !! eigenvalue/-vector problem for general matrices:
@@ -120,6 +121,9 @@ module scitools_linalg
     module procedure dutil_axpy, zutil_axpy
   end interface util_axpy
 
+  interface util_dotp
+    module private dutil_dotp, zutil_dotp
+  end interface util_dotp
 
   interface blas_zgemm
     !! Interfrace to BLAS routine ZGEMM
@@ -395,6 +399,28 @@ contains
       end if
 
    end function util_rotate_cc
+!--------------------------------------------------------------------------------------
+   function dutil_dotp(np, x, y) result(d)
+   !! Comptutes the dot product \(x^T y\)
+      integer,intent(in)  :: np
+      real(dp),intent(in) :: x(:),y(:)
+      real(dp) :: d
+      real(dp),external :: ddot
+
+      d = ddot(np, x, 1, y, 1)
+
+   end function dutil_dotp
+!--------------------------------------------------------------------------------------
+   function zutil_dotp(np, x, y) result(d)
+   !! Comptutes the dot product \(x^\dagger y\)
+      integer,intent(in)     :: np
+      complex(dp),intent(in) :: x(:),y(:)
+      complex(dp) :: d
+      complex(dp),external :: zdotc
+
+      d = zdotc(np, x, 1, y, 1)
+
+   end function zutil_dotp
 !--------------------------------------------------------------------------------------
   ! TODO: add optional switch for left or right eigenvectors in deig() and zeig()?
   subroutine deig(A, lam, c)
