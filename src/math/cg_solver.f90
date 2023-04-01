@@ -28,7 +28,7 @@ contains
          use scitools_def,only: dp
          implicit none
          real(dp), intent(in)    :: x(:)
-         real(dp), intent(out)   :: y(:)
+         real(dp), intent(inout) :: y(:)
       end subroutine op
       real(dp) function dotp(x, y)
          use scitools_def,only: dp
