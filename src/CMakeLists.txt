@@ -9,6 +9,7 @@ set(OBJECT_FILES
 	basic/utils.F90
 	basic/random.F90
 	math/bsplines.f90
+	math/cg_solver.f90
 	math/fornberg.f90
 	math/filon.F90
 	math/gausslegendre.F90
@@ -60,6 +61,7 @@ set (MODS
 	time
 	utils
 	bsplines
+	cg_solver
 	fornberg
 	filon
 	gausslegendre

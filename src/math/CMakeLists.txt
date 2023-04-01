@@ -4,6 +4,7 @@ include_directories(
 
 set(OBJECT_FILES
 	bsplines.f90
+	cg_solver.f90
 	fornberg.f90
 	filon.F90
 	gausslegendre.F90
