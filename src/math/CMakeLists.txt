@@ -11,6 +11,7 @@ set(OBJECT_FILES
 	gregory.f90
 	lebedev_quad.F90
 	lebedev_weights.F90
+	legendre.f90
 	matrixexp.F90
 	quadpack.f90
 	quadrature.F90
