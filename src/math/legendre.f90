@@ -39,8 +39,9 @@ contains
       integer, intent(in) :: n
       real(dp), dimension(n) :: roots
       real(dp), dimension(n,n) :: mat, tau
-      integer, dimension(1) :: info
-      integer :: i, j, k
+      integer :: lwork, info
+      integer :: i, j
+      real(dp),allocatable :: work(:)
 
       ! Initialize the matrix
       do i = 1, n
@@ -58,7 +59,14 @@ contains
       end do
 
       ! Compute the QR factorization using LAPACK
-      call dgeqrf(n, n, mat, n, tau, roots, n, info)
+      ! call dgeqrf(n, n, mat, n, tau, roots, n, info)
+      allocate(work(1))
+      lwork = -1
+      call DGEQRF(n, n, mat, n, tau, work, lwork, info)
+      lwork = int(work(1))
+      deallocate(work); allocate(work(lwork))
+      call DGEQRF(n, n, mat, n, tau, work, lwork, info)
+      deallocate(work)
 
       ! Extract the roots from the diagonal of the upper triangular matrix
       do i = 1, n
