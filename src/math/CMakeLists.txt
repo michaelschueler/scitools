@@ -8,6 +8,7 @@ set(OBJECT_FILES
 	fornberg.f90
 	filon.F90
 	gausslegendre.F90
+	gmresm.f90
 	gregory.f90
 	lebedev_quad.F90
 	lebedev_weights.F90
