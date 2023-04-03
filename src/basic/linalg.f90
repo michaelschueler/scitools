@@ -927,9 +927,9 @@ contains
     if(info /= 0) then
        write(error_unit,fmt900) "dgesv returned info =", info
        if (info < 0) then
-          write(error_unit,fmt900) "the", -info, "-th argument had an illegal value"
+          write(error_unit,fmt900) "the"// str(-info)// "-th argument had an illegal value"
        else
-          write(error_unit,fmt900) "U(", info, ",", info, ") is exactly zero; The factorization"
+          write(error_unit,fmt900) "U("// str(info)// ","// str(info)// ") is exactly zero; The factorization"
           write(error_unit,fmt900) "has been completed, but the factor U is exactly"
           write(error_unit,fmt900) "singular, so the solution could not be computed."
        end if
@@ -948,19 +948,20 @@ contains
     integer :: n, info, lda
     integer, allocatable :: ipiv(:)
 
-    n = size(A(1,:))
-    lda = size(A(:, 1))  ! TODO: remove lda here, too
+    n = size(A, dim=2)
+    lda = size(A, dim=1)  ! TODO: remove lda here, too
     call assert_shape(A, [n, n], "solve", "A")
     allocate(At(lda,n), bt(n,1), ipiv(n), x(n))
+
     At = A
     bt(:,1) = b(:)
     call zgesv(n, 1, At, lda, ipiv, bt, n, info)
     if(info /= 0) then
        write(error_unit,fmt900) "zgesv returned info =", info
        if (info < 0) then
-          write(error_unit,fmt900) "the", -info, "-th argument had an illegal value"
+          write(error_unit,fmt900) "the"//str(-info)// "-th argument had an illegal value"
        else
-          write(error_unit,fmt900) "U(", info, ",", info, ") is exactly zero; The factorization"
+          write(error_unit,fmt900) "U("//str(info)//","//str(info)//") is exactly zero; The factorization"
           write(error_unit,fmt900) "has been completed, but the factor U is exactly"
           write(error_unit,fmt900) "singular, so the solution could not be computed."
        end if
