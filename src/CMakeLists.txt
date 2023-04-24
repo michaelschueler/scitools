@@ -8,6 +8,7 @@ set(OBJECT_FILES
 	basic/time.f90
 	basic/utils.F90
 	basic/random.F90
+	math/bicgstab.F90
 	math/bsplines.f90
 	math/cg_solver.f90
 	math/fornberg.f90
@@ -62,6 +63,7 @@ set (MODS
 	random
 	time
 	utils
+	bicgstab
 	bsplines
 	cg_solver
 	fornberg

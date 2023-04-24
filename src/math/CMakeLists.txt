@@ -3,6 +3,7 @@ include_directories(
  )
 
 set(OBJECT_FILES
+	bicgstab.F90
 	bsplines.f90
 	cg_solver.f90
 	fornberg.f90

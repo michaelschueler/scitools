@@ -1,5 +1,5 @@
 module scitools_cg_solver
-!! Contains utilities to perform Gregory integration on uniform grids.
+!! Contains conjugate-gradient linear solvers
 !======================================================================================
    use scitools_debug
    use scitools_def,only: dp,iu,one,zero
