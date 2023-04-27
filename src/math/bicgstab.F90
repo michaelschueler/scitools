@@ -364,7 +364,7 @@ contains
 
          res_ = sqrt(abs(dotp(rr, rr)))
 
-         if (res_ <= tol) exit
+         if (res_ <= tol_) exit
 
          ! call util_copy(ndim, s, r_new)
          ! call util_axpy(ndim, -omega_new*one, t, r_new)
