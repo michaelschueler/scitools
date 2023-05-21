@@ -408,7 +408,7 @@ contains
             call Espl_%Init(me%tpts,Edata(:,col),kx,iflag)
 
             do it=1,me%Npts-1
-               Adata(it+1,icol) = ODE_step_RK5(it-1,dt,Avec_deriv_wrapper,Adata(it,col))
+               Adata(it+1,icol) = ODE_step_RK5(it-1,dt,Avec_deriv_wrapper,Adata(it,icol))
             end do   
 
             call Espl_%Clean()       
