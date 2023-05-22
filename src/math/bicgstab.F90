@@ -111,12 +111,8 @@ contains
       alpha = 1.0d0
       omega = 1.0d0
 
-      !$omp parallel
-      !$omp workshare
       v = 0.0d0
       p = 0.0d0
-      !$omp end workshare
-      !$omp end parallel
 
       do iter = 1, iter_max
          rho_new = dotp(r0, r)
