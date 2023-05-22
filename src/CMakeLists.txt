@@ -11,6 +11,7 @@ set(OBJECT_FILES
 	math/bicgstab.F90
 	math/bsplines.f90
 	math/cg_solver.f90
+	math/idrs.f90
 	math/fornberg.f90
 	math/filon.F90
 	math/gausslegendre.F90
@@ -66,6 +67,7 @@ set (MODS
 	bicgstab
 	bsplines
 	cg_solver
+	idrs
 	fornberg
 	filon
 	gausslegendre

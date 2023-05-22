@@ -6,6 +6,7 @@ set(OBJECT_FILES
 	bicgstab.F90
 	bsplines.f90
 	cg_solver.f90
+	idrs.f90
 	fornberg.f90
 	filon.F90
 	gausslegendre.F90
