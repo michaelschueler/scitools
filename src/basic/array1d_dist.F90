@@ -51,23 +51,28 @@ contains
 
    end subroutine GetDisplSize1D
 !-------------------------------------------------------------------------------------- 
-   subroutine Init(me,ntasks,taskid,N,PrintInfo,serial_mode)
+   subroutine Init(me,ntasks,taskid,N,dist_scheme,blocksize,serial_mode)
       !! Creates layout scheme to distribute N elements over ntasks MPI ranks.
       !! The binning algorithm distributes the elements as evenly as possible.
       class(dist_array1d_t)  :: me
       integer,intent(in)  :: ntasks !! number of MPI ranks
       integer,intent(in)  :: taskid !! MPI rank index
       integer,intent(in)  :: N !! number of elements
-      logical,intent(in),optional :: PrintInfo !! if .true., the distribution scheme will be printed
+      integer,intent(in),optional :: dist_scheme !! distribution scheme: 0 --> evenly, 1 --> larger blocks
+      integer,intent(in),optional :: blocksize !! block size (usually 1)
       logical,intent(in),optional :: serial_mode !! if .true. ntasks=1 is assumed
-      logical :: info,serial
+      integer :: dist_scheme_, blocksize_
+      logical :: serial
       integer :: itask
       integer :: ik,binmax
       integer :: nralloc,remainder,buckets
       integer :: bins(0:ntasks-1),offset(0:ntasks-1)
 
-      info = .false.
-      if(present(PrintInfo)) info = PrintInfo
+      dist_scheme_ = 0
+      if(present(dist_scheme)) dist_scheme_ = dist_scheme
+
+      blocksize_ = 1
+      if(present(blocksize)) blocksize_ = blocksize
 
       serial = .false.
       if(present(serial_mode)) serial = serial_mode
@@ -88,44 +93,35 @@ contains
          return
       end if
 
-      nralloc = 0
-      do itask=0,ntasks-1
-         remainder = me%N - nralloc
-         buckets = ntasks - itask
-         bins(itask) = ceiling(remainder/dble(buckets))
-         nralloc = nralloc + bins(itask)
-      end do
+      if(dist_scheme_ == 0) then
+         nralloc = 0
+         do itask=0,ntasks-1
+            remainder = me%N - nralloc
+            buckets = ntasks - itask
+            bins(itask) = ceiling(remainder/dble(buckets))
+            nralloc = nralloc + bins(itask)
+         end do
+      else
+
+         do itask=0,ntasks-2
+            bins(itask) = ceiling(N/dble(ntasks))
+         end do
+
+         bins(ntasks-1) = N - sum(bins(0:ntasks-2))
+
+      end if
+
+      bins = blocksize_ * bins
 
       offset = 0
       do itask=1,ntasks-1
          offset(itask) = sum(bins(0:itask-1))
       end do
 
-      if(taskid == master.and. info) then
-         write(output_unit,'(50("-"))')
-         write(output_unit,*) 'offset'
-         write(output_unit,'(50("-"))')
-         do itask=0,ntasks-1
-            print*,itask,offset(itask)
-         end do
-         write(output_unit,'(50("-"))')
-      end if
-
       allocate(me%N_loc(0:me%ntasks-1))
       do itask=0,ntasks-1
          me%N_loc(itask) = bins(itask)
       end do
-
-      if(taskid == master.and. info) then
-         write(output_unit,'(50("-"))')
-         write(output_unit,*) 'Nk(loc)'
-         write(output_unit,'(50("-"))')
-         do itask=0,ntasks-1
-            print*,itask,me%N_loc(itask)
-         end do
-         write(output_unit,'(50("-"))')
-         write(output_unit,*)
-      end if
 
       binmax = maxval(bins)
 
