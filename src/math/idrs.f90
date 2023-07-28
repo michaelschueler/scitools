@@ -292,8 +292,10 @@ function didrs( b, s, &
           alpha(i) = alpha(i) - M(i,j) * alpha(j)
         end do
         alpha(i) = alpha(i) / M(i,i)
-        G(:,:,k) = G(:,:,k) - G(:,:,i) * alpha(i)
-        U(:,:,k) = U(:,:,k) - U(:,:,i) * alpha(i)
+        call DAXPY(n*nrhs, -alpha(i), G(1,1,i), 1, G(1,1,k),1)
+        call DAXPY(n*nrhs, -alpha(i), U(1,1,i), 1, U(1,1,k), 1)
+        ! G(:,:,k) = G(:,:,k) - G(:,:,i) * alpha(i)
+        ! U(:,:,k) = U(:,:,k) - U(:,:,i) * alpha(i)
         mu(k:s)  = mu(k:s)  - M(k:s,i) * alpha(i)
       end do
       M(k:s,k) = mu(k:s)
@@ -311,8 +313,10 @@ function didrs( b, s, &
 
       ! Make r orthogonal to p_i, i = 1..k, update solution and residual
       beta(k) = f(k) / M(k,k)
-      r = r - beta(k) * G(:,:,k)
-      x = x + beta(k) * U(:,:,k)
+      call DAXPY(n*nrhs, -beta(k), G(1,1,k), 1, r(1,1), 1)
+      call DAXPY(n*nrhs, beta(k), U(1,1,k), 1, x(1,1), 1)
+      ! r = r - beta(k) * G(:,:,k)
+      ! x = x + beta(k) * U(:,:,k)
 
       ! New f = P(prime) *r (first k  components are zero)
       if (k < s) then
@@ -558,6 +562,7 @@ function zidrs( b, s, &
   real(dp), allocatable           :: P(:,:,:)
   complex(dp), allocatable          :: R0(:,:)
   complex(dp)                       :: x(size(b,1),size(b,2))
+  complex(dp)                       :: y(size(b,1),size(b,2))
   complex(dp)                       :: G(size(b,1),size(b,2),s)
   complex(dp)                       :: U(size(b,1),size(b,2),s)
   complex(dp)                       :: r(size(b,1),size(b,2))
@@ -590,7 +595,8 @@ function zidrs( b, s, &
   integer               :: iter               !< number of iterations
   integer               :: ii                 !< inner iterations index
   integer               :: jj                 !< G-space index
-  real(dp)                 :: normb, normr, tolb !< for tolerance check
+  real(dp)              :: rdot 
+  real(dp)              :: normb, normr, tolb !< for tolerance check
   integer               :: i,j,k,l            !< loop counters
 
   ! Problem size:
@@ -667,7 +673,10 @@ function zidrs( b, s, &
   ! we remove this feature
   !tolb = tol * normb
   tolb = tol
-  r = b - matrixvector(x)
+  ! r = b - matrixvector(x)
+  y = matrixvector(x)
+  call ZCOPY(n*nrhs, b(1,1), 1, r(1,1), 1)
+  call ZAXPY(n*nrhs, -one, y(1,1), 1, r(1,1), 1)
   normr = zfrob_norm(r)
   if (out_resvec) resvec(1) = normr
 
@@ -690,9 +699,13 @@ function zidrs( b, s, &
     call RANDOM_NUMBER(P)
     do j = 1,s
       do k = 1,j-1
-        P(:,:,j) = P(:,:,j) - dtrace_dot( P(:,:,k),P(:,:,j)) * P(:,:,k)
+        rdot = dtrace_dot( P(:,:,k),P(:,:,j)) 
+        ! P(:,:,j) = P(:,:,j) - dtrace_dot( P(:,:,k),P(:,:,j)) * P(:,:,k)
+        call DAXPY(n*nrhs, -rdot, P(1,1,k), 1, P(1,1,j),1)
       end do
-      P(:,:,j) = P(:,:,j)/dfrob_norm(P(:,:,j))
+      rdot = 1.0_dp/dfrob_norm(P(:,:,j))
+      ! P(:,:,j) = P(:,:,j)/dfrob_norm(P(:,:,j))
+      call DSCAL(n*nrhs, rdot, P(1,1,j), 1)
     end do
     kappa = 0.7_dp
   else if (method == 2) then
@@ -743,13 +756,15 @@ function zidrs( b, s, &
             gamma(i) = gamma(i) - M(i,j)*gamma(j)
           end do
           gamma(i) = gamma(i)/M(i,i)
-          v = v - gamma(i)*G(:,:,i)
+          ! v = v - gamma(i)*G(:,:,i)
+          call ZAXPY(n*nrhs, -gamma(i)*one, G(1,1,i), 1, v(1,1), 1)
         end do
 
         ! Compute new U(:,:,k)
         t = om * preconditioner(v)
         do i = k,s
-          t = t + gamma(i)*U(:,:,i)
+          ! t = t + gamma(i)*U(:,:,i)
+          call ZAXPY(n*nrhs, gamma(i)*one, U(1,1,i), 1, t(1,1), 1)
         end do
         U(:,:,k) = t
 
@@ -776,8 +791,10 @@ function zidrs( b, s, &
           alpha(i) = alpha(i) - M(i,j) * alpha(j)
         end do
         alpha(i) = alpha(i) / M(i,i)
-        G(:,:,k) = G(:,:,k) - G(:,:,i) * alpha(i)
-        U(:,:,k) = U(:,:,k) - U(:,:,i) * alpha(i)
+        ! G(:,:,k) = G(:,:,k) - G(:,:,i) * alpha(i)
+        ! U(:,:,k) = U(:,:,k) - U(:,:,i) * alpha(i)
+        call ZAXPY(n*nrhs, -alpha(i)*one, G(1,1,i), 1, G(1,1,k), 1)
+        call ZAXPY(n*nrhs, -alpha(i)*one, U(1,1,i), 1, U(1,1,k), 1)
         mu(k:s)  = mu(k:s)  - M(k:s,i) * alpha(i)
       end do
       M(k:s,k) = mu(k:s)
@@ -795,8 +812,10 @@ function zidrs( b, s, &
 
       ! Make r orthogonal to p_i, i = 1..k, update solution and residual
       beta(k) = f(k) / M(k,k)
-      r = r - beta(k) * G(:,:,k)
-      x = x + beta(k) * U(:,:,k)
+      ! r = r - beta(k) * G(:,:,k)
+      ! x = x + beta(k) * U(:,:,k)
+      call ZAXPY(n*nrhs, -beta(k)*one, G(1,1,k), 1, r(1,1), 1)
+      call ZAXPY(n*nrhs, beta(k)*one, U(1,1,k), 1, x(1,1), 1)
 
       ! New f = P(prime) *r (first k  components are zero)
       if (k < s) then
@@ -870,8 +889,10 @@ function zidrs( b, s, &
     end if
 
     ! Update solution and residual
-    r = r - om*t
-    x = x + om*v
+    ! r = r - om*t
+    ! x = x + om*v
+    call ZAXPY(n*nrhs, -om*one, t(1,1), 1, r(1,1), 1)
+    call ZAXPY(n*nrhs, om*one, v(1,1), 1, x(1,1), 1)
 
     ! Check for convergence
     normr = zfrob_norm(r)
@@ -902,7 +923,8 @@ function zidrs( b, s, &
   if (out_relres)     relres=normr
   if (out_flag)       flag = info
 
-  zidrs = x
+  ! zidrs = x
+  call ZCOPY(n*nrhs, x(1,1), 1, zidrs(1,1), 1)
 
 contains
 
