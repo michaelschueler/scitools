@@ -845,6 +845,8 @@ function zidrs( b, s, &
       ! Check for convergence
       normr = zfrob_norm(r)
       iter = iter + 1
+      print*, "normr = ", normr, tolb
+      print*, "iter = ", iter
       if (out_resvec) resvec(iter + 1) = normr
       if (normr < tolb) then
         info = 0
