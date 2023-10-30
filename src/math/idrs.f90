@@ -9,6 +9,7 @@ module scitools_idrs
    use scitools_def,only: dp,iu,one,zero
    use scitools_utils,only: stop_error
    use scitools_linalg,only: util_axpy, util_copy
+   use scitools_random,only: InitRandom
    implicit none
 !--------------------------------------------------------------------------------------
    private
@@ -702,7 +703,8 @@ function zidrs( b, s, &
   ! Define P and kappa (depending on the method)
   if (method == 1) then
     allocate( P(n,nrhs,s))
-    call RANDOM_SEED
+    ! call RANDOM_SEED
+    call InitRandom()
     call RANDOM_NUMBER(P)
     do j = 1,s
       do k = 1,j-1
