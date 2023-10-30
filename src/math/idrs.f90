@@ -628,6 +628,9 @@ function zidrs( b, s, &
   print_flag = .false.
   if(present(print_eachstep)) print_flag = print_eachstep
 
+  print*, "---> ZIDRS, maxit = ", maxit
+  print*, "---> ZIDRS, print_flag = ", print_flag
+
   ! Initialize the output variables
   out_flag       = present(flag)
   if (out_flag)       flag = -1
