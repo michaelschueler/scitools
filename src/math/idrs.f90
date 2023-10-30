@@ -686,8 +686,9 @@ function zidrs( b, s, &
   tolb = tol
   ! r = b - matrixvector(x)
   y = matrixvector(x)
-  call ZCOPY(nxnrhs, b(1,1), 1, r(1,1), 1)
-  call ZAXPY(nxnrhs, -one, y(1,1), 1, r(1,1), 1)
+  r = b - y
+  ! call ZCOPY(nxnrhs, b(1,1), 1, r(1,1), 1)
+  ! call ZAXPY(nxnrhs, -one, y(1,1), 1, r(1,1), 1)
   normr = zfrob_norm(r)
   if (out_resvec) resvec(1) = normr
 
