@@ -79,7 +79,7 @@ function didrs( b, s, &
   real(dp)                       :: v(size(b,1),size(b,2))
   real(dp)                       :: t(size(b,1),size(b,2))
   real(dp)                       :: M(s,s), f(s), mu(s)
-  real(dp)                       :: alpha(s), beta(s), gamma(s)
+  real(dp)                       :: alpha(s), beta(s), gam(s)
 
   real(dp)                       :: om, tr
   real(dp)                        :: nr, nt, rho, kappa
@@ -254,24 +254,24 @@ function didrs( b, s, &
 
         ! Solve small system (Note: M is lower triangular) and make v orthogonal to P:
         do i = k,s
-          gamma(i) = f(i)
+          gam(i) = f(i)
           do j = k, i-1
-            gamma(i) = gamma(i) - M(i,j)*gamma(j)
+            gam(i) = gam(i) - M(i,j)*gam(j)
           end do
-          gamma(i) = gamma(i)/M(i,i)
-          v = v - gamma(i)*G(:,:,i)
+          gam(i) = gam(i)/M(i,i)
+          v = v - gam(i)*G(:,:,i)
         end do
 
         ! Compute new U(:,:,k)
         t = om * preconditioner(v)
         do i = k,s
-          t = t + gamma(i)*U(:,:,i)
+          t = t + gam(i)*U(:,:,i)
         end do
         U(:,:,k) = t
 
         ! Compute Hessenberg matrix?
         if (out_H .and. ii <= nritz) then
-          H(ii-s:ii-k,ii)   = -gamma(k:s)/beta(k:s)
+          H(ii-s:ii-k,ii)   = -gam(k:s)/beta(k:s)
         end if
 
       else if (.not. inispace) then
@@ -532,8 +532,8 @@ function zidrs( b, s, &
   complex(dp), optional, intent(in) :: U0(:, :, :)
   complex(dp), optional, intent(in) :: omega(:)
   ! Optional output arrays:
-  real(dp), optional, intent(out) :: resvec(:)
-  complex(dp), optional, intent(out) :: H(:, :)
+  real(dp), optional, intent(inout) :: resvec(:)
+  complex(dp), optional, intent(inout) :: H(:, :)
 
   interface
     function preconditioner(v)
@@ -549,22 +549,22 @@ function zidrs( b, s, &
     real(dp) function ddotprod(a, b)
     import :: dp
       real(dp), intent(in) :: a(:), b(:)
-      real(dp), allocatable :: apsi(:, :), bpsi(:, :)
+      !real(dp), allocatable :: apsi(:, :), bpsi(:, :)
     end function ddotprod
     complex(dp) function zdotprod(a, b)
        import :: dp
       complex(dp), intent(in) :: a(:), b(:)
-      complex(dp), allocatable :: apsi(:, :), bpsi(:, :)
+      !complex(dp), allocatable :: apsi(:, :), bpsi(:, :)
     end function zdotprod
   end interface
 
   ! Local arrays:
-  real(dp),allocatable,dimension(:,:,:)    :: P(:,:,:)
+  real(dp),allocatable,dimension(:,:,:)    :: P
   complex(dp),allocatable,dimension(:,:)   :: R0
   complex(dp),allocatable,dimension(:,:)   :: x,y,r,v,t
   complex(dp),allocatable,dimension(:,:,:) :: G,U
   complex(dp)                              :: M(s,s), f(s), mu(s)
-  complex(dp)                              :: alpha(s), beta(s), gamma(s)
+  complex(dp)                              :: alpha(s), beta(s), gam(s)
 
   complex(dp)                       :: om, tr
   real(dp)                        :: nr, nt, rho, kappa
@@ -758,26 +758,26 @@ function zidrs( b, s, &
 
         ! Solve small system (Note: M is lower triangular) and make v orthogonal to P:
         do i = k,s
-          gamma(i) = f(i)
+          gam(i) = f(i)
           do j = k, i-1
-            gamma(i) = gamma(i) - M(i,j)*gamma(j)
+            gam(i) = gam(i) - M(i,j)*gam(j)
           end do
-          gamma(i) = gamma(i)/M(i,i)
-          ! v = v - gamma(i)*G(:,:,i)
-          call ZAXPY(nxnrhs, -gamma(i)*one, G(1,1,i), 1, v(1,1), 1)
+          gam(i) = gam(i)/M(i,i)
+          ! v = v - gam(i)*G(:,:,i)
+          call ZAXPY(nxnrhs, -gam(i)*one, G(1,1,i), 1, v(1,1), 1)
         end do
 
         ! Compute new U(:,:,k)
         t = om * preconditioner(v)
         do i = k,s
-          ! t = t + gamma(i)*U(:,:,i)
-          call ZAXPY(nxnrhs, gamma(i)*one, U(1,1,i), 1, t(1,1), 1)
+          ! t = t + gam(i)*U(:,:,i)
+          call ZAXPY(nxnrhs, gam(i)*one, U(1,1,i), 1, t(1,1), 1)
         end do
         U(:,:,k) = t
 
         ! Compute Hessenberg matrix?
         if (out_H .and. ii <= nritz) then
-          H(ii-s:ii-k,ii)   = -gamma(k:s)/beta(k:s)
+          H(ii-s:ii-k,ii)   = -gam(k:s)/beta(k:s)
         end if
 
       else if (.not. inispace) then
