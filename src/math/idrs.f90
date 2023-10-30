@@ -628,9 +628,6 @@ function zidrs( b, s, &
   print_flag = .false.
   if(present(print_eachstep)) print_flag = print_eachstep
 
-  print*, "---> ZIDRS, maxit = ", maxit
-  print*, "---> ZIDRS, print_flag = ", print_flag
-
   ! Initialize the output variables
   out_flag       = present(flag)
   if (out_flag)       flag = -1
@@ -686,9 +683,8 @@ function zidrs( b, s, &
   tolb = tol
   ! r = b - matrixvector(x)
   y = matrixvector(x)
-  r = b - y
-  ! call ZCOPY(nxnrhs, b(1,1), 1, r(1,1), 1)
-  ! call ZAXPY(nxnrhs, -one, y(1,1), 1, r(1,1), 1)
+  call ZCOPY(nxnrhs, b(1,1), 1, r(1,1), 1)
+  call ZAXPY(nxnrhs, -one, y(1,1), 1, r(1,1), 1)
   normr = zfrob_norm(r)
   if (out_resvec) resvec(1) = normr
 
@@ -846,8 +842,6 @@ function zidrs( b, s, &
       ! Check for convergence
       normr = zfrob_norm(r)
       iter = iter + 1
-      print*, "normr = ", normr, tolb
-      print*, "iter = ", iter
       if (out_resvec) resvec(iter + 1) = normr
       if (normr < tolb) then
         info = 0
