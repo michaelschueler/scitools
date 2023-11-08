@@ -3,10 +3,10 @@ module scitools_time
    !! This module provides various tools for measuring and printing 
    !! the execution time of parts of a source code.
 
-  type NM
+  type Timer_tag_t
      character(40)::Name
-  end type Nm
-  type (nm),private,dimension(100)::Tmnm
+  end type Timer_tag_t
+  type (Timer_tag_t),private,dimension(100)::Tmnm
   logical,private,dimension(100)::TmSt
   integer,private,dimension(8,100)::TmStart,TmStop,DT
   integer,private,dimension(100)::DTms
@@ -16,6 +16,7 @@ module scitools_time
 
   private
   public &
+       Timer_tag_t,&
        Timer_act,&
        Timer_Run,&
        Timer_Get,&
@@ -81,11 +82,11 @@ end subroutine Timer_Run
 
 function Timer_Get(N)
 !! Gives the time measured by timer N.
-integer,dimension(5)::TGet
+integer,dimension(5)::Timer_Get
 integer::N
   if (TmSt(N)) then
      call Date_And_Time(Values=TmStop(:,N))
-     TGet=Diff(TmStart(:,N),TmStop(:,N))
+     Timer_Get=Diff(TmStart(:,N),TmStop(:,N))
   else
      print*,'Timer Thread #',N,' is not running'
   end if   
@@ -145,19 +146,26 @@ integer::N
 Tmnm(N)%Name=A
 end subroutine Timer_SetName
 
-subroutine DTPrint(N,FlUnt)
+subroutine DTPrint(N,dT,FlUnt)
 !! Printe the full time of timer N.
-integer::N,dT(5),LN
-integer,optional::FlUnt
+integer,intent(in) :: N
+integer,intent(in),optional :: dT(5)
+integer,intent(in),optional :: FlUnt
+integer :: dT_(5)
 character(100)::FM
 character(61)::FM2=',''] = '',I5,'' d; '',I2,'' hr; '',I2,'' mn; '',I2,'' sc; '',I3,'' msc'')'
-dT=TGet(N)
+
+if(present(dT)) then
+   dT_ = dT
+else
+   dT_=Timer_Get(N)
+end if
 LN=Len_Trim(Tmnm(N)%Name)
 FM='(''Time ['',A'//Int2Char(LN,2)//FM2
 if (Present(FlUnt)) then
-   write(UNIT=FlUnt,FMT=FM) Tmnm(N)%Name(1:LN),dT
+   write(UNIT=FlUnt,FMT=FM) Tmnm(N)%Name(1:LN),dT_
 else
-   write(UNIT=6,FMT=FM) Tmnm(N)%Name(1:LN),dT
+   write(UNIT=6,FMT=FM) Tmnm(N)%Name(1:LN),dT_
 end if
 end subroutine DtPrint
 
