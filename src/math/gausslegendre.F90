@@ -809,7 +809,7 @@
     real(dp),parameter  :: sq2      = sqrt(two)
     real(dp),parameter  :: ln2      = log(two)
     integer,parameter   :: nlmn     = 1                   !! ??
-    integer,parameter   :: kmx      = 5000                !! ??
+    integer,parameter   :: kmx      = 10000                !! ??
     integer,parameter   :: kml      = 6                   !! ??
     real(dp),parameter  :: magic    = 0.30102000_dp       !! ??
     integer,parameter   :: iwork    = 100                 !! size of the work arrays. ?? Why 60 ??

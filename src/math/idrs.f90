@@ -9,6 +9,7 @@ module scitools_idrs
    use scitools_def,only: dp,iu,one,zero
    use scitools_utils,only: stop_error
    use scitools_linalg,only: util_axpy, util_copy
+   use scitools_random,only: InitRandom
    implicit none
 !--------------------------------------------------------------------------------------
    private
@@ -79,7 +80,7 @@ function didrs( b, s, &
   real(dp)                       :: v(size(b,1),size(b,2))
   real(dp)                       :: t(size(b,1),size(b,2))
   real(dp)                       :: M(s,s), f(s), mu(s)
-  real(dp)                       :: alpha(s), beta(s), gamma(s)
+  real(dp)                       :: alpha(s), beta(s), gam(s)
 
   real(dp)                       :: om, tr
   real(dp)                        :: nr, nt, rho, kappa
@@ -254,24 +255,24 @@ function didrs( b, s, &
 
         ! Solve small system (Note: M is lower triangular) and make v orthogonal to P:
         do i = k,s
-          gamma(i) = f(i)
+          gam(i) = f(i)
           do j = k, i-1
-            gamma(i) = gamma(i) - M(i,j)*gamma(j)
+            gam(i) = gam(i) - M(i,j)*gam(j)
           end do
-          gamma(i) = gamma(i)/M(i,i)
-          v = v - gamma(i)*G(:,:,i)
+          gam(i) = gam(i)/M(i,i)
+          v = v - gam(i)*G(:,:,i)
         end do
 
         ! Compute new U(:,:,k)
         t = om * preconditioner(v)
         do i = k,s
-          t = t + gamma(i)*U(:,:,i)
+          t = t + gam(i)*U(:,:,i)
         end do
         U(:,:,k) = t
 
         ! Compute Hessenberg matrix?
         if (out_H .and. ii <= nritz) then
-          H(ii-s:ii-k,ii)   = -gamma(k:s)/beta(k:s)
+          H(ii-s:ii-k,ii)   = -gam(k:s)/beta(k:s)
         end if
 
       else if (.not. inispace) then
@@ -532,8 +533,8 @@ function zidrs( b, s, &
   complex(dp), optional, intent(in) :: U0(:, :, :)
   complex(dp), optional, intent(in) :: omega(:)
   ! Optional output arrays:
-  real(dp), optional, intent(out) :: resvec(:)
-  complex(dp), optional, intent(out) :: H(:, :)
+  real(dp), optional, intent(inout) :: resvec(:)
+  complex(dp), optional, intent(inout) :: H(:, :)
 
   interface
     function preconditioner(v)
@@ -549,27 +550,22 @@ function zidrs( b, s, &
     real(dp) function ddotprod(a, b)
     import :: dp
       real(dp), intent(in) :: a(:), b(:)
-      real(dp), allocatable :: apsi(:, :), bpsi(:, :)
+      !real(dp), allocatable :: apsi(:, :), bpsi(:, :)
     end function ddotprod
     complex(dp) function zdotprod(a, b)
        import :: dp
       complex(dp), intent(in) :: a(:), b(:)
-      complex(dp), allocatable :: apsi(:, :), bpsi(:, :)
+      !complex(dp), allocatable :: apsi(:, :), bpsi(:, :)
     end function zdotprod
   end interface
 
   ! Local arrays:
-  real(dp), allocatable           :: P(:,:,:)
-  complex(dp), allocatable          :: R0(:,:)
-  complex(dp)                       :: x(size(b,1),size(b,2))
-  complex(dp)                       :: y(size(b,1),size(b,2))
-  complex(dp)                       :: G(size(b,1),size(b,2),s)
-  complex(dp)                       :: U(size(b,1),size(b,2),s)
-  complex(dp)                       :: r(size(b,1),size(b,2))
-  complex(dp)                       :: v(size(b,1),size(b,2))
-  complex(dp)                       :: t(size(b,1),size(b,2))
-  complex(dp)                       :: M(s,s), f(s), mu(s)
-  complex(dp)                       :: alpha(s), beta(s), gamma(s)
+  real(dp),allocatable,dimension(:,:,:)    :: P
+  complex(dp),allocatable,dimension(:,:)   :: R0
+  complex(dp),allocatable,dimension(:,:)   :: x,y,r,v,t
+  complex(dp),allocatable,dimension(:,:,:) :: G,U
+  complex(dp)                              :: M(s,s), f(s), mu(s)
+  complex(dp)                              :: alpha(s), beta(s), gam(s)
 
   complex(dp)                       :: om, tr
   real(dp)                        :: nr, nt, rho, kappa
@@ -579,7 +575,7 @@ function zidrs( b, s, &
   integer               :: nrhs               !< Number of RHS-vectors
   integer               :: maxit              !< maximum number of iterations
   integer               :: method             !< which IDR(s) variant?
-  real(dp)                 :: tol                !< actual tolerance
+  real(dp)              :: tol                !< actual tolerance
   integer               :: info               !< convergence indicator
   logical               :: print_flag         !< print each iteration
   logical               :: out_flag           !< store flag
@@ -598,11 +594,14 @@ function zidrs( b, s, &
   real(dp)              :: rdot 
   real(dp)              :: normb, normr, tolb !< for tolerance check
   integer               :: i,j,k,l            !< loop counters
+  integer               :: nxnrhs
 
   ! Problem size:
   n    = size(b,1)
   ! Number of right-hand-side vectors:
   nrhs = size(b,2)
+
+  nxnrhs = n * nrhs
 
   ! Check optional input parameters:
   if (present(tolerance)) then
@@ -636,6 +635,15 @@ function zidrs( b, s, &
   if (out_relres)      relres = one
   out_iterations = present(iterations)
   if (out_iterations) iterations = 0
+
+  ! initialize work arrays 
+  allocate(x(n,nrhs))
+  allocate(y(n,nrhs))
+  allocate(r(n,nrhs))
+  allocate(v(n,nrhs))
+  allocate(t(n,nrhs))
+  allocate(G(n,nrhs,s))
+  allocate(U(n,nrhs,s))
 
   ! Check optional input arrays:
   x = zero
@@ -675,8 +683,8 @@ function zidrs( b, s, &
   tolb = tol
   ! r = b - matrixvector(x)
   y = matrixvector(x)
-  call ZCOPY(n*nrhs, b(1,1), 1, r(1,1), 1)
-  call ZAXPY(n*nrhs, -one, y(1,1), 1, r(1,1), 1)
+  call ZCOPY(nxnrhs, b(1,1), 1, r(1,1), 1)
+  call ZAXPY(nxnrhs, -one, y(1,1), 1, r(1,1), 1)
   normr = zfrob_norm(r)
   if (out_resvec) resvec(1) = normr
 
@@ -695,17 +703,18 @@ function zidrs( b, s, &
   ! Define P and kappa (depending on the method)
   if (method == 1) then
     allocate( P(n,nrhs,s))
-    call RANDOM_SEED
+    ! call RANDOM_SEED
+    call InitRandom()
     call RANDOM_NUMBER(P)
     do j = 1,s
       do k = 1,j-1
         rdot = dtrace_dot( P(:,:,k),P(:,:,j)) 
         ! P(:,:,j) = P(:,:,j) - dtrace_dot( P(:,:,k),P(:,:,j)) * P(:,:,k)
-        call DAXPY(n*nrhs, -rdot, P(1,1,k), 1, P(1,1,j),1)
+        call DAXPY(nxnrhs, -rdot, P(1,1,k), 1, P(1,1,j),1)
       end do
       rdot = 1.0_dp/dfrob_norm(P(:,:,j))
       ! P(:,:,j) = P(:,:,j)/dfrob_norm(P(:,:,j))
-      call DSCAL(n*nrhs, rdot, P(1,1,j), 1)
+      call DSCAL(nxnrhs, rdot, P(1,1,j), 1)
     end do
     kappa = 0.7_dp
   else if (method == 2) then
@@ -751,26 +760,26 @@ function zidrs( b, s, &
 
         ! Solve small system (Note: M is lower triangular) and make v orthogonal to P:
         do i = k,s
-          gamma(i) = f(i)
+          gam(i) = f(i)
           do j = k, i-1
-            gamma(i) = gamma(i) - M(i,j)*gamma(j)
+            gam(i) = gam(i) - M(i,j)*gam(j)
           end do
-          gamma(i) = gamma(i)/M(i,i)
-          ! v = v - gamma(i)*G(:,:,i)
-          call ZAXPY(n*nrhs, -gamma(i)*one, G(1,1,i), 1, v(1,1), 1)
+          gam(i) = gam(i)/M(i,i)
+          ! v = v - gam(i)*G(:,:,i)
+          call ZAXPY(nxnrhs, -gam(i)*one, G(1,1,i), 1, v(1,1), 1)
         end do
 
         ! Compute new U(:,:,k)
         t = om * preconditioner(v)
         do i = k,s
-          ! t = t + gamma(i)*U(:,:,i)
-          call ZAXPY(n*nrhs, gamma(i)*one, U(1,1,i), 1, t(1,1), 1)
+          ! t = t + gam(i)*U(:,:,i)
+          call ZAXPY(nxnrhs, gam(i)*one, U(1,1,i), 1, t(1,1), 1)
         end do
         U(:,:,k) = t
 
         ! Compute Hessenberg matrix?
         if (out_H .and. ii <= nritz) then
-          H(ii-s:ii-k,ii)   = -gamma(k:s)/beta(k:s)
+          H(ii-s:ii-k,ii)   = -gam(k:s)/beta(k:s)
         end if
 
       else if (.not. inispace) then
@@ -793,8 +802,8 @@ function zidrs( b, s, &
         alpha(i) = alpha(i) / M(i,i)
         ! G(:,:,k) = G(:,:,k) - G(:,:,i) * alpha(i)
         ! U(:,:,k) = U(:,:,k) - U(:,:,i) * alpha(i)
-        call ZAXPY(n*nrhs, -alpha(i)*one, G(1,1,i), 1, G(1,1,k), 1)
-        call ZAXPY(n*nrhs, -alpha(i)*one, U(1,1,i), 1, U(1,1,k), 1)
+        call ZAXPY(nxnrhs, -alpha(i)*one, G(1,1,i), 1, G(1,1,k), 1)
+        call ZAXPY(nxnrhs, -alpha(i)*one, U(1,1,i), 1, U(1,1,k), 1)
         mu(k:s)  = mu(k:s)  - M(k:s,i) * alpha(i)
       end do
       M(k:s,k) = mu(k:s)
@@ -814,8 +823,8 @@ function zidrs( b, s, &
       beta(k) = f(k) / M(k,k)
       ! r = r - beta(k) * G(:,:,k)
       ! x = x + beta(k) * U(:,:,k)
-      call ZAXPY(n*nrhs, -beta(k)*one, G(1,1,k), 1, r(1,1), 1)
-      call ZAXPY(n*nrhs, beta(k)*one, U(1,1,k), 1, x(1,1), 1)
+      call ZAXPY(nxnrhs, -beta(k)*one, G(1,1,k), 1, r(1,1), 1)
+      call ZAXPY(nxnrhs, beta(k)*one, U(1,1,k), 1, x(1,1), 1)
 
       ! New f = P(prime) *r (first k  components are zero)
       if (k < s) then
@@ -891,8 +900,8 @@ function zidrs( b, s, &
     ! Update solution and residual
     ! r = r - om*t
     ! x = x + om*v
-    call ZAXPY(n*nrhs, -om*one, t(1,1), 1, r(1,1), 1)
-    call ZAXPY(n*nrhs, om*one, v(1,1), 1, x(1,1), 1)
+    call ZAXPY(nxnrhs, -om*one, t(1,1), 1, r(1,1), 1)
+    call ZAXPY(nxnrhs, om*one, v(1,1), 1, x(1,1), 1)
 
     ! Check for convergence
     normr = zfrob_norm(r)
@@ -912,7 +921,10 @@ function zidrs( b, s, &
   end do ! end of while loop
 
   ! Set output parameters
-  r = b - matrixvector(x)
+  ! r = b - matrixvector(x)
+  y = matrixvector(x)
+  call ZCOPY(nxnrhs, b(1,1), 1, r(1,1), 1)
+  call ZAXPY(nxnrhs, -one, y(1,1), 1, r(1,1), 1)
   normr = zfrob_norm(r)
 
   if (info == 0 .and. normr > tolb) info = 2
@@ -924,7 +936,16 @@ function zidrs( b, s, &
   if (out_flag)       flag = info
 
   ! zidrs = x
-  call ZCOPY(n*nrhs, x(1,1), 1, zidrs(1,1), 1)
+  call ZCOPY(nxnrhs, x(1,1), 1, zidrs(1,1), 1)
+
+  ! clean up
+  deallocate(x)
+  deallocate(y)
+  deallocate(r)
+  deallocate(t)
+  deallocate(v)
+  deallocate(G)
+  deallocate(U)
 
 contains
 
