@@ -13,11 +13,12 @@ module scitools_time
   integer,private,dimension(12),parameter::NDinM=[31,28,31,30,31,30,31,31,30,31,30,31]
   integer,private,dimension(8),parameter::C=[1,12,0,0,24,60,60,1000]
 
+
   private
   public &
        Timer_act,&
        Timer_Run,&
-       TGet,&
+       Timer_Get,&
        TmsGet,&
        Diff,&
        Diffms,&
@@ -78,7 +79,7 @@ if (Present(N)) then
 end if
 end subroutine Timer_Run
 
-function TGet(N)
+function Timer_Get(N)
 !! Gives the time measured by timer N.
 integer,dimension(5)::TGet
 integer::N
@@ -88,7 +89,7 @@ integer::N
   else
      print*,'Timer Thread #',N,' is not running'
   end if   
-end function TGet
+end function Timer_Get
 
 function TmsGet(N)
 !!  Gives the time measured by timer N in milliseconds.
