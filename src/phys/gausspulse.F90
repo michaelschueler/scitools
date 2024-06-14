@@ -10,6 +10,7 @@ module scitools_gausspulse
    type GaussPulse_t
       !..............................................
       real(dp)    :: Tdur,E0,omega,s0,t0,phi
+      real(dp)    :: tmin, tmax
       complex(dp) :: pol(3)
       !..............................................
       contains
@@ -40,6 +41,9 @@ contains
       me%pol = pol
 
       me%t0 = me%s0 * me%Tdur
+
+      me%tmin = me%t0 - 8.0_dp * me%Tdur
+      me%tmax = me%t0 + 8.0_dp * me%Tdur
 
    end subroutine Init
 !--------------------------------------------------------------------------------------
