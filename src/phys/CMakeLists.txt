@@ -4,6 +4,7 @@ include_directories(
 
 set(OBJECT_FILES
 	evol.F90
+	gausspulse.F90
 	laserpulse.F90
 )
 

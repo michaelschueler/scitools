@@ -28,6 +28,7 @@ set(OBJECT_FILES
 	math/special.F90
 	math/vector_bsplines.F90
 	phys/evol.F90
+	phys/gausspulse.F90
 	phys/laserpulse.F90
 )
 
@@ -83,6 +84,7 @@ set (MODS
 	special
 	vector_bsplines
 	evol
+	gausspulse
 	laserpulse
 )
 
