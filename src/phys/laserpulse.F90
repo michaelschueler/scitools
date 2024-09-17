@@ -505,7 +505,7 @@ contains
         inbvx=1
         AF(i) = me%Aspl(i)%eval(t,0,iflag,inbvx) 
       end do
-    elseif(t > me%Tmax) then
+    elseif(t >= me%Tmax) then
       do i=1,me%ncomp
         inbvx=1
         AF(i) = me%Aspl(i)%eval(me%Tmax - small,0,iflag,inbvx) 
