@@ -492,6 +492,7 @@ contains
   end subroutine Pulse3D_Load_vectorpotential
 !--------------------------------------------------------------------------------------
   function Pulse3D_Afield(me,t) result(AF)
+    real(dp),parameter :: small=1.0e-12_dp
     class(LaserPulse_3D_t) :: me
     real(dp),intent(in) :: t
     real(dp) :: AF(3)
@@ -504,6 +505,11 @@ contains
         inbvx=1
         AF(i) = me%Aspl(i)%eval(t,0,iflag,inbvx) 
       end do
+    elseif(t > me%Tmax) then
+      do i=1,me%ncomp
+        inbvx=1
+        AF(i) = me%Aspl(i)%eval(me%Tmax - small,0,iflag,inbvx) 
+      end do      
     end if
 
   end function Pulse3D_Afield
