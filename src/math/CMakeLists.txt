@@ -9,6 +9,7 @@ set(OBJECT_FILES
 	idrs.f90
 	fornberg.f90
 	filon.F90
+	gauss_lobatto.F90
 	gausslegendre.F90
 	gmresm.f90
 	gregory.f90
