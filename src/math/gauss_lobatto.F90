@@ -13,17 +13,19 @@ module scitools_gauss_lobatto
 !--------------------------------------------------------------------------------------
 contains
 !--------------------------------------------------------------------------------------
-   subroutine get_gauss_lobatto(n, x, w, L_in, S_ni)
-      integer, intent(in) :: n !! The number of points
+   subroutine get_gauss_lobatto(order, x, w, L_in, S_ni)
+      integer, intent(in) :: order !! Gauss-Lobatto order -> n + 1 points
       real(dp), allocatable, intent(out) :: x(:) !! The points
       real(dp), allocatable, intent(out) :: w(:) !! The weights
       real(dp), allocatable, intent(out), optional :: L_in(:,:) !! Vandermonde matrix
       real(dp), allocatable, intent(out), optional :: S_ni(:,:) !! inverse Vandermonde matrix
-      integer :: i, j
-      real(dp) :: Wn(n), L_in_tmp(n,n)
+      integer :: n, i, j
+      real(dp) :: Wn(order+1), L_in_tmp(order+1,order+1)
+
+      n = order + 1
 
       if(n < 2 .or. n > 32) then
-         call stop_error("get_gauss_lobatto: n must be in the range 2-32")
+         call stop_error("get_gauss_lobatto: order must be in the range 1-31")
       end if 
 
       allocate(x(n), w(n))
