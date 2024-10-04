@@ -45,20 +45,22 @@ module scitools_gauss_lobatto
 !--------------------------------------------------------------------------------------
 contains
 !--------------------------------------------------------------------------------------
-   subroutine get_gauss_lobatto(n, x, w, L_in, S_ni)
-      integer, intent(in) :: n !! Gauss-Lobatto order
+   subroutine get_gauss_lobatto(order, x, w, L_in, S_ni)
+      integer, intent(in) :: order !! Gauss-Lobatto order -> order + 1 points
       real(dp), allocatable, intent(out) :: x(:) !! The points
       real(dp), allocatable, intent(out) :: w(:) !! The weights
       real(dp), allocatable, intent(out), optional :: L_in(:,:) !! Vandermonde matrix
       real(dp), allocatable, intent(out), optional :: S_ni(:,:) !! inverse Vandermonde matrix
-      integer :: i, j
-      real(dp) :: Wn(n+1), L_in_tmp(n+1,n+1)
+      integer  :: n, i, j
+      real(dp) :: Wn(order+1), L_in_tmp(order+1,order+1)
 
-      if(n < 2 .or. n > 32) then
-         call stop_error("get_gauss_lobatto: n must be in the range 2-32")
+      if(order < 2 .or. order > 32) then
+         call stop_error("get_gauss_lobatto: order must be in the range 2-32")
       end if 
+      
+      n = order + 1
 
-      allocate(x(n+1), w(n+1))
+      allocate(x(n), w(n))
 
       select case(n)
       case(2)
@@ -157,26 +159,26 @@ contains
       end select
 
       if(present(L_in) .or. present(S_ni)) then
-         do i = 1, n+1
+         do i = 1, n
             L_in_tmp(:,i) = legendre(i-1, x)
          end do
       end if
 
       if(present(L_in)) then
-         allocate(L_in(n+1,n+1))
+         allocate(L_in(n,n))
          L_in = L_in_tmp
       end if
 
       if(present(S_ni)) then
-         allocate(S_ni(n+1,n+1))
+         allocate(S_ni(n,n))
 
-         do i = 1, n+1
+         do i = 1, n
             Wn(i) = 2.0_dp / (2.0_dp * i - 1.0_dp)
          end do
-         Wn(n+1) = 2.0_dp / n
+         Wn(n) = 2.0_dp / (n - 1.0_dp)
 
-         do i = 1, n+1
-            do j = 1, n+1
+         do i = 1, n
+            do j = 1, n
                S_ni(j, i) = L_in_tmp(i, j) * w(i) / Wn(j)
             end do
          end do
