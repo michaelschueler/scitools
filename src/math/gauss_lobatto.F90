@@ -6,7 +6,39 @@ module scitools_gauss_lobatto
    use scitools_utils,only: stop_error
    use scitools_legendre,only: legendre
    implicit none
-   include "lobatto_inc.f90"
+   include "lobatto/lobatto_inc.f90"
+!--------------------------------------------------------------------------------------
+   include "lobatto/lobatto2_inc.f90"
+   include "lobatto/lobatto3_inc.f90"
+   include "lobatto/lobatto4_inc.f90"
+   include "lobatto/lobatto5_inc.f90"
+   include "lobatto/lobatto6_inc.f90"
+   include "lobatto/lobatto7_inc.f90"
+   include "lobatto/lobatto8_inc.f90"
+   include "lobatto/lobatto9_inc.f90"
+   include "lobatto/lobatto10_inc.f90"
+   include "lobatto/lobatto11_inc.f90"
+   include "lobatto/lobatto12_inc.f90"
+   include "lobatto/lobatto13_inc.f90"
+   include "lobatto/lobatto14_inc.f90"
+   include "lobatto/lobatto15_inc.f90"
+   include "lobatto/lobatto16_inc.f90"
+   include "lobatto/lobatto17_inc.f90"
+   include "lobatto/lobatto18_inc.f90"
+   include "lobatto/lobatto19_inc.f90"
+   include "lobatto/lobatto20_inc.f90"
+   include "lobatto/lobatto21_inc.f90"
+   include "lobatto/lobatto22_inc.f90"
+   include "lobatto/lobatto23_inc.f90"
+   include "lobatto/lobatto24_inc.f90"
+   include "lobatto/lobatto25_inc.f90"
+   include "lobatto/lobatto26_inc.f90"
+   include "lobatto/lobatto27_inc.f90"
+   include "lobatto/lobatto28_inc.f90"
+   include "lobatto/lobatto29_inc.f90"
+   include "lobatto/lobatto30_inc.f90"
+   include "lobatto/lobatto31_inc.f90"
+   include "lobatto/lobatto32_inc.f90"
 !--------------------------------------------------------------------------------------
    private
    public :: get_gauss_lobatto
@@ -14,19 +46,19 @@ module scitools_gauss_lobatto
 contains
 !--------------------------------------------------------------------------------------
    subroutine get_gauss_lobatto(order, x, w, L_in, S_ni)
-      integer, intent(in) :: order !! Gauss-Lobatto order -> n + 1 points
+      integer, intent(in) :: order !! Gauss-Lobatto order -> order + 1 points
       real(dp), allocatable, intent(out) :: x(:) !! The points
       real(dp), allocatable, intent(out) :: w(:) !! The weights
       real(dp), allocatable, intent(out), optional :: L_in(:,:) !! Vandermonde matrix
       real(dp), allocatable, intent(out), optional :: S_ni(:,:) !! inverse Vandermonde matrix
-      integer :: n, i, j
+      integer  :: n, i, j
       real(dp) :: Wn(order+1), L_in_tmp(order+1,order+1)
 
-      n = order + 1
-
-      if(n < 2 .or. n > 32) then
-         call stop_error("get_gauss_lobatto: order must be in the range 1-31")
+      if(order < 2 .or. order > 32) then
+         call stop_error("get_gauss_lobatto: order must be in the range 2-32")
       end if 
+      
+      n = order + 1
 
       allocate(x(n), w(n))
 
