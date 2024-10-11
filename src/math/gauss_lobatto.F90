@@ -62,7 +62,7 @@ contains
 
       allocate(x(n), w(n))
 
-      select case(n)
+      select case(order)
       case(2)
          x = x2(:)
          w = w2(:)
