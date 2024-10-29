@@ -15,6 +15,7 @@ set(OBJECT_FILES
 	math/fornberg.f90
 	math/filon.F90
 	math/gausslegendre.F90
+	math/gauss_lobatto.F90
 	math/gmresm.f90
 	math/gregory.f90
 	math/lebedev_weights.F90
@@ -72,6 +73,7 @@ set (MODS
 	fornberg
 	filon
 	gausslegendre
+	gauss_lobatto
 	gmresm
 	gregory
 	lebedev_weights
