@@ -78,6 +78,7 @@ set (MODS
 	gregory
 	lebedev_weights
 	lebedev_quad
+	legendre
 	matrixexp
 	quadpack
 	quadrature
