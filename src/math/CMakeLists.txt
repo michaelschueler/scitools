@@ -11,6 +11,7 @@ set(OBJECT_FILES
 	filon.F90
 	gauss_lobatto.F90
 	gausslegendre.F90
+	gauss_lobatto.F90
 	gmresm.f90
 	gregory.f90
 	lebedev_quad.F90
