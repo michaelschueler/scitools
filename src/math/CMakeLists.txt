@@ -14,6 +14,7 @@ set(OBJECT_FILES
 	gauss_lobatto.F90
 	gmresm.f90
 	gregory.f90
+	hermite.f90
 	lebedev_quad.F90
 	lebedev_weights.F90
 	legendre.f90

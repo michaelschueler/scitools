@@ -18,6 +18,7 @@ set(OBJECT_FILES
 	math/gauss_lobatto.F90
 	math/gmresm.f90
 	math/gregory.f90
+	math/hermite.f90
 	math/lebedev_weights.F90
 	math/lebedev_quad.F90
 	math/legendre.f90
@@ -76,6 +77,7 @@ set (MODS
 	gauss_lobatto
 	gmresm
 	gregory
+	hermite
 	lebedev_weights
 	lebedev_quad
 	legendre
