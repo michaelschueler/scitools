@@ -71,8 +71,8 @@ contains
       integer  :: n, i, j
       real(dp) :: Wn(order+1), L_in_tmp(order+1,order+1)
 
-      if(order < 2 .or. order > 32) then
-         call stop_error("get_gauss_lobatto: order must be in the range 2-32")
+      if(order < 2 .or. order > 49) then
+         call stop_error("get_gauss_lobatto: order must be in the range 2-48")
       end if 
       
       n = order + 1
