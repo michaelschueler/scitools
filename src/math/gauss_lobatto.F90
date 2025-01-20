@@ -39,6 +39,23 @@ module scitools_gauss_lobatto
    include "lobatto/lobatto30_inc.f90"
    include "lobatto/lobatto31_inc.f90"
    include "lobatto/lobatto32_inc.f90"
+
+   include "lobatto/lobatto33_inc.f90"
+   include "lobatto/lobatto34_inc.f90"
+   include "lobatto/lobatto35_inc.f90"
+   include "lobatto/lobatto36_inc.f90"
+   include "lobatto/lobatto37_inc.f90"
+   include "lobatto/lobatto38_inc.f90"
+   include "lobatto/lobatto39_inc.f90"
+   include "lobatto/lobatto40_inc.f90"
+   include "lobatto/lobatto41_inc.f90"
+   include "lobatto/lobatto42_inc.f90"
+   include "lobatto/lobatto43_inc.f90"
+   include "lobatto/lobatto44_inc.f90"
+   include "lobatto/lobatto45_inc.f90"
+   include "lobatto/lobatto46_inc.f90"
+   include "lobatto/lobatto47_inc.f90"
+   include "lobatto/lobatto48_inc.f90"
 !--------------------------------------------------------------------------------------
    private
    public :: get_gauss_lobatto
@@ -156,6 +173,55 @@ contains
       case(32)
          x = x32(:)
          w = w32(:)
+
+      case(33)
+         x = x33(:)
+         w = w33(:)
+      case(34)
+         x = x34(:)
+         w = w34(:)
+      case(35)
+         x = x35(:)
+         w = w35(:)
+      case(36)
+         x = x36(:)
+         w = w36(:)
+      case(37)
+         x = x37(:)
+         w = w37(:)
+      case(38)
+         x = x38(:)
+         w = w38(:)
+      case(39)
+         x = x39(:)
+         w = w39(:)
+      case(40)
+         x = x40(:)
+         w = w40(:)
+      case(41)
+         x = x41(:)
+         w = w41(:)
+      case(42)
+         x = x42(:)
+         w = w42(:)
+      case(43)
+         x = x43(:)
+         w = w43(:)
+      case(44)
+         x = x44(:)
+         w = w44(:)   
+      case(45)
+         x = x45(:)
+         w = w45(:)   
+      case(46)
+         x = x46(:)
+         w = w46(:)   
+      case(47)
+         x = x47(:)
+         w = w47(:)   
+      case(48)
+         x = x48(:)
+         w = w48(:)   
       end select
 
       if(present(L_in) .or. present(S_ni)) then
