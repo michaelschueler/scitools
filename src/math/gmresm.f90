@@ -223,7 +223,8 @@ contains
          res = sqrt(abs(dot_product(p(1:j+1),p(1:j+1))))
          if(info==1) print*, 'gmresm: it=', its,' res=', real(res,dp)
 
-         done = (res<=tol .or. its==imx .or. res>res_)
+         ! done = (res<=tol .or. its==imx .or. res>res_)
+         done = (res<=tol .or. its==imx)
          if(done .or. j==m) then
             ! z = matmul(v(:,1:j),y(1:j))
             call ZGEMV('N',n,j,one,v,n,y,1,zero,z,1)
@@ -235,6 +236,7 @@ contains
             if(done)     return
             goto 1       ! (j==m) restart
          end if
+
          res_ = res*stgn
 
       end do   
