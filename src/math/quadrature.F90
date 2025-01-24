@@ -102,7 +102,7 @@ contains
       character(len=*),intent(in) :: tag
       integer,intent(in) :: ier
 
-      if(ier /= 0) then
+      if(ier >= 3) then
          call stop_error(trim(tag) // " exit code = "//str(ier))
       end if
 
