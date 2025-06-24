@@ -34,6 +34,19 @@ contains
 
    end function legendre
 !--------------------------------------------------------------------------------------
+   elemental real(dp) function legendre_inbox(n, x)
+      implicit none
+      integer, intent(in) :: n
+      real(dp), intent(in) :: x
+
+      if (abs(x) <= 1.0_dp) then
+         legendre_inbox = legendre(n, x)
+      else
+         legendre_inbox = 0.0_dp
+      end if
+
+   end function legendre_inbox
+!--------------------------------------------------------------------------------------
    function legendre_roots(n) result(roots)
       implicit none
       integer, intent(in) :: n
