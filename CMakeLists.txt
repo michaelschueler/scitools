@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.10)
 project("SCITOOLS" Fortran)
 enable_language (Fortran)
 
@@ -37,11 +37,10 @@ endif(mpi)
 # ~~ Add HDF5 ~~
 if (hdf5)
   message(STATUS "Building with HDF5")
-  find_library(HDF5_LIB hdf5 hdf5_fortran)
-  find_library(HDF5FOR_LIB hdf5_fortran)
+  find_package(HDF5 REQUIRED COMPONENTS Fortran)
   set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -DWITHHDF5")
-  list(APPEND COMMON_LIBS ${HDF5_LIB})
-  list(APPEND COMMON_LIBS ${HDF5FOR_LIB})
+  include_directories(${HDF5_INCLUDE_DIRS})
+  list(APPEND COMMON_LIBS ${HDF5_Fortran_LIBRARIES} ${HDF5_LIBRARIES})
 endif (hdf5)
 
 # ~~ Add BLAS/LAPACK ~~
