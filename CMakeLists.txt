@@ -13,9 +13,7 @@ endif (NOT CMAKE_BUILD_TYPE)
 get_filename_component (Fortran_COMPILER_NAME ${CMAKE_Fortran_COMPILER} NAME)
 
 
-SET(CMAKE_Fortran_MODULE_DIRECTORY
-    ${CMAKE_BINARY_DIR}/include CACHE PATH "Single Directory for all fortran modules."
-)
+set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include)
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
