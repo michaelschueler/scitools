@@ -24,11 +24,8 @@ set(COMMON_LIBS "")
 # Require MPI for this project:
 if(mpi)
    message(STATUS "Building with MPI")
-   find_package(MPI REQUIRED)
-   set(CMAKE_Fortran_COMPILE_FLAGS ${CMAKE_Fortran_COMPILE_FLAGS} ${MPI_COMPILE_FLAGS})
-   set(CMAKE_Fortran_LINK_FLAGS ${CMAKE_Fortran_LINK_FLAGS} ${MPI_LINK_FLAGS})
-   include_directories(${MPI_INCLUDE_PATH})
-   list(APPEND COMMON_LIBS ${MPI_LIBRARIES})
+   find_package(MPI REQUIRED COMPONENTS Fortran)
+   list(APPEND COMMON_LIBS MPI::MPI_Fortran)
    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -DMPI")
 endif(mpi)
 
