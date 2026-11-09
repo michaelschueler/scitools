@@ -1,8 +1,10 @@
 module scitools_idrs
 !! This is the "Induced Dimension Reduction", IDR(s) (for s=4). IDR(s) is a robust and efficient short recurrence
 !! Krylov subspace method for solving large nonsymmetric systems of linear equations. It is described in
-!! [Peter Sonneveld and Martin B. van Gijzen, SIAM J. Sci. Comput. 31, 1035 (2008)]. We have adapted the code
-!! released by M. B. van Gizjen [http://ta.twi.tudelft.nl/nw/users/gijzen/IDR.html].
+!! [Peter Sonneveld and Martin B. van Gijzen, SIAM J. Sci. Comput. 31, 1035 (2008)].
+!!
+!! Simplified version of the IDRS-package by M. B. van Gijzen
+!! (<https://github.com/mbvangijzen/IDRS-package>, MIT license); see THIRD_PARTY_NOTICES.md.
 !======================================================================================
    use,intrinsic::iso_fortran_env,only: output_unit,error_unit
    use scitools_debug

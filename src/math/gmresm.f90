@@ -1,9 +1,21 @@
 module scitools_gmresm
-!! Contains real and complex versions of the GMRESM algorithm for iteratively 
-!! solving linear equations
+!! Contains real and complex versions of the restarted GMRES(m) algorithm for
+!! iteratively solving linear systems \(A x = b\).
+!!
+!! The implementation follows the standard algorithm with right preconditioning,
+!! \(A M^{-1} u = b\), \(x = M^{-1} u\): the Arnoldi basis is built by modified
+!! Gram-Schmidt orthogonalization and the least-squares problem is solved
+!! progressively with Givens rotations. The residual norm \(\|b - A x\|\) is
+!! therefore available in every iteration without extra matrix-vector products.
+!!
+!! References:
+!!
+!! * Y. Saad and M. H. Schultz, SIAM J. Sci. Stat. Comput. 7, 856 (1986).
+!! * Y. Saad, *Iterative Methods for Sparse Linear Systems*, 2nd ed., SIAM (2003),
+!!   Algorithms 6.9 and 9.5.
 !======================================================================================
-   use scitools_debug
-   use scitools_def,only: dp,iu,one,zero
+   use,intrinsic::iso_fortran_env,only: output_unit
+   use scitools_def,only: dp,zero
    implicit none
 !--------------------------------------------------------------------------------------
    private
@@ -11,19 +23,19 @@ module scitools_gmresm
 !--------------------------------------------------------------------------------------
    interface gmresm
       !! Restarted GMRES(m) solver for real or complex linear systems \(A x = b\).
-      !! The real version optionally computes a hookstep (trust-region) solution for Newton-Krylov methods.
+      !! The matrix and the preconditioner are only accessed through user-supplied
+      !! routines.
       module procedure dgmresm, zgmresm
    end interface gmresm
 !--------------------------------------------------------------------------------------
 contains
 !--------------------------------------------------------------------------------------
-   subroutine dgmresm(m,n,x,b,matvec,psolve,dotprd,res,del,its,info)
-      !! GMRES(m) for real systems, with optional hookstep.
-      implicit none
-      integer,          intent(in)    :: m !! dimension of the Krylov subspace (restart length)
-      integer,          intent(in)    :: n !! dimension of the linear system
-      real(dp), intent(inout)         :: x(:) !! on input: initial guess; on output: solution
-      real(dp), intent(in)            :: b(:) !! right-hand side \(b\)
+   subroutine dgmresm(m,n,x,b,matvec,psolve,dotprd,res,its,info)
+      !! GMRES(m) for real systems.
+      integer,  intent(in)    :: m !! dimension of the Krylov subspace (restart length)
+      integer,  intent(in)    :: n !! dimension of the linear system
+      real(dp), intent(inout) :: x(:) !! on input: initial guess; on output: solution
+      real(dp), intent(in)    :: b(:) !! right-hand side \(b\)
       interface
       subroutine matvec(x,y)
          !! user-supplied matrix-vector product \(y = A x\)
@@ -41,106 +53,102 @@ contains
       function dotprd(x,y) result(d)
          !! user-supplied inner product \((x|y)\)
          import :: dp
-         real(dp),intent(in)    :: x(:),y(:) !! first and second vector
+         real(dp),intent(in) :: x(:),y(:) !! first and second vector
          real(dp) :: d
       end function dotprd
-      end interface 
-      real(dp), intent(inout) :: res !! on input: requested tolerance; on output: achieved residual
-      real(dp), intent(inout) :: del !! trust-region size for the hookstep; no hookstep if `del <= 0`
-      integer,          intent(inout) :: its !! on input: maximum number of iterations; on output: number of iterations performed
-      integer,          intent(inout) :: info !! on input: 1 = print residuals, 2 = only recompute hookstep from the previous call; on output: 0 = converged, 1 = residual stagnated, 2 = maximum number of iterations reached
-      real(dp) :: tol,res_,stgn
-      real(dp) :: h_(m+1,m), y(m+1), p(m+1), work(4*m+1)
-      real(dp),allocatable :: w(:), z(:)
-      real(dp),allocatable :: h(:,:),v(:,:)
-      integer :: imx, piv(m), rank, i
-      real(dp), save :: beta
-      integer, save :: j
-      logical :: done   
-
-      allocate(h(m+1,m)); h = 0.0d0
-      allocate(v(n,m+1)); v = 0.0d0
-      allocate(w(n)); w = 0.0d0
-      allocate(z(n)); z = 0.0d0
-
-      if(info==2) then
-         call hookstep(j,h,m,beta,del, y)
-         ! z = matmul(v(:,1:j),y(1:j))
-         call DGEMV('N',n,j,1.0_dp,v,n,y,1,0.0_dp,z,1)
-         call psolve(z)
-         x = z
-         info = 0
-         return
-      end if  
+      end interface
+      real(dp), intent(inout) :: res !! on input: tolerance for \(\|b - A x\|\); on output: residual \(\|b - A x\|\) of the returned solution
+      integer,  intent(inout) :: its !! on input: maximum number of iterations; on output: number of iterations performed
+      integer,  intent(inout) :: info !! on input: 1 = print the residual in each iteration; on output: 0 = converged, 2 = maximum number of iterations reached
+      real(dp), allocatable :: V(:,:), H(:,:), w(:), z(:)
+      real(dp) :: c(m), s(m), g(m+1), y(m)
+      real(dp) :: tol, beta, hnorm, r, temp
+      integer :: imx, i, j, jlast
+      logical :: verbose
 
       tol = res
       imx = its
       its = 0
-      v   = 0d0
+      verbose = (info == 1)
 
-      1 continue
-      res_ = 1d99
-      stgn = 1d0 - 1d-14
+      allocate(V(n,m+1), H(m+1,m), w(n), z(n))
 
-      beta = sqrt(dotprd(x,x)) 
-      if(beta==0d0)  w = 0d0
-      if(beta/=0d0)  call matvec(x, w)
-      w = b - w
-      beta = sqrt(dotprd(w,w)) 
-      v(:,1) = w / beta
-
-      h = 0d0
-      do j = 1, m
-         its = its + 1
-         z = v(:,j)      
-         call psolve(z)
-         call matvec(z, w)
-         do i = 1, j
-            h(i,j) = dotprd(w,v(:,i))
-            w = w - h(i,j)*v(:,i)
-         end do
-         h(j+1,j) = sqrt(dotprd(w,w))
-         v(:,j+1) = w / h(j+1,j)
-
-         p(1) = beta
-         p(2:j+1) = 0d0
-         h_(1:j+1,1:j) = h(1:j+1,1:j)
-         call dgelsy(j+1,j,1,h_,m+1,p,m+1,piv,m,rank,work,4*m+1,i)
-         if(i/=0) stop 'gmresm: dgelsy'
-         y = p
-
-         ! p(1:j+1) = - matmul(h(1:j+1,1:j),y(1:j))
-         call DGEMV('N',j+1,j,-1.0_dp,h,m+1,y,1,0.0_dp,p,1)
-         p(1) = p(1) + beta
-         res = sqrt(dot_product(p(1:j+1),p(1:j+1)))
-         if(info==1) print*, 'gmresm: it=', its,' res=', real(res,dp)
-
-         done = (res<=tol .or. its==imx .or. res>res_)
-         if(done .or. j==m) then
-            if(del>0d0)  call hookstep(j,h,m,beta,del, y)
-            ! z = matmul(v(:,1:j),y(1:j))
-            call DGEMV('N',n,j,1.0_dp,v,n,y,1,0.0_dp,z,1)
-            call psolve(z)
-            x = x + z
-            if(its==imx) info = 2
-            if(res>res_) info = 1
-            if(res<=tol) info = 0
-            if(done)     return
-            if(del>0d0)  print*, 'gmres: warning! restart affects hookstep'
-            goto 1       ! (j==m) restart
+      do ! restart cycles
+         ! true residual of the current iterate
+         call matvec(x, w)
+         w = b - w
+         beta = sqrt(abs(dotprd(w, w)))
+         res = beta
+         if(beta <= tol) then
+            info = 0; exit
          end if
-         res_ = res*stgn
+         if(its >= imx) then
+            info = 2; exit
+         end if
 
-      end do   
+         V(:,1) = w / beta
+         H = 0.0_dp
+         g = 0.0_dp
+         g(1) = beta
+         jlast = 0
 
-      deallocate(h,v)
+         do j = 1, m
+            its = its + 1
+            jlast = j
+
+            ! Arnoldi step with modified Gram-Schmidt: w = A M^{-1} v_j
+            z = V(:,j)
+            call psolve(z)
+            call matvec(z, w)
+            do i = 1, j
+               H(i,j) = dotprd(V(:,i), w)
+               w = w - H(i,j) * V(:,i)
+            end do
+            hnorm = sqrt(abs(dotprd(w, w)))
+            if(hnorm > 0.0_dp) V(:,j+1) = w / hnorm
+
+            ! apply the previous Givens rotations to the new column
+            do i = 1, j-1
+               temp     =  c(i) * H(i,j) + s(i) * H(i+1,j)
+               H(i+1,j) = -s(i) * H(i,j) + c(i) * H(i+1,j)
+               H(i,j)   = temp
+            end do
+
+            ! new rotation eliminating H(j+1,j) = hnorm
+            r = hypot(H(j,j), hnorm)
+            if(r > 0.0_dp) then
+               c(j) = H(j,j) / r
+               s(j) = hnorm / r
+            else
+               c(j) = 1.0_dp
+               s(j) = 0.0_dp
+            end if
+            H(j,j) = r
+            g(j+1) = -s(j) * g(j)
+            g(j)   =  c(j) * g(j)
+
+            res = abs(g(j+1))
+            if(verbose) write(output_unit,'("gmresm: it = ",i6," res = ",E12.5)') its, res
+
+            if(res <= tol .or. its >= imx .or. hnorm == 0.0_dp) exit
+         end do
+
+         ! solve the triangular system H y = g and update x = x + M^{-1} V y
+         do i = jlast, 1, -1
+            y(i) = (g(i) - sum(H(i,i+1:jlast) * y(i+1:jlast))) / H(i,i)
+         end do
+         z = matmul(V(:,1:jlast), y(1:jlast))
+         call psolve(z)
+         x = x + z
+      end do
+
+      deallocate(V, H, w, z)
 
    end subroutine dgmresm
 !--------------------------------------------------------------------------------------
    subroutine zgmresm(m,n,x,b,matvec,psolve,dotprd,res,its,info)
       !! GMRES(m) for complex systems.
-      implicit none
-      complex(dp),parameter :: mone=-one
+      !! The inner product must be conjugate-linear in its first argument, \((x|y) = x^\dagger y\).
       integer,     intent(in)    :: m !! dimension of the Krylov subspace (restart length)
       integer,     intent(in)    :: n !! dimension of the linear system
       complex(dp), intent(inout) :: x(:) !! on input: initial guess; on output: solution
@@ -162,138 +170,106 @@ contains
       function dotprd(x,y) result(d)
          !! user-supplied inner product \((x|y)\)
          import :: dp
-         complex(dp),intent(in)    :: x(:),y(:) !! first and second vector
+         complex(dp),intent(in) :: x(:),y(:) !! first and second vector
          complex(dp) :: d
       end function dotprd
-      end interface  
-      real(dp),         intent(inout) :: res !! on input: requested tolerance; on output: achieved residual
-      integer,          intent(inout) :: its !! on input: maximum number of iterations; on output: number of iterations performed
-      integer,          intent(inout) :: info !! on input: 1 = print residuals; on output: 0 = converged, 1 = residual stagnated, 2 = maximum number of iterations reached
-      real(dp) :: tol,res_,stgn
-      complex(dp) :: h_(m+1,m), y(m+1), p(m+1)
-      real(dp),allocatable :: rwork(:)
-      complex(dp),allocatable :: w(:), z(:)
-      complex(dp),allocatable :: h(:,:),v(:,:),work(:)
-      integer :: imx, piv(m), rank, i, lwork
-      real(dp), save :: beta
-      integer, save :: j
-      logical :: done   
-
-      allocate(h(m+1,m)); h = (0.0d0,0.0d0)
-      allocate(v(n,m+1)); v = (0.0d0,0.0d0)
-      allocate(w(n)); w = (0.0d0,0.0d0)
-      allocate(z(n)); z = (0.0d0,0.0d0)
-
-      lwork = -1
-      allocate(work(4*m+1),rwork(2*(m+1)))
-      call zgelsy(m+1,m,1,h_,m+1,p,m+1,piv,m,rank,work,lwork,rwork,i)
-
-      lwork = int(dble(work(1)))
-
-      deallocate(work)
-      allocate(work(lwork))
+      end interface
+      real(dp),    intent(inout) :: res !! on input: tolerance for \(\|b - A x\|\); on output: residual \(\|b - A x\|\) of the returned solution
+      integer,     intent(inout) :: its !! on input: maximum number of iterations; on output: number of iterations performed
+      integer,     intent(inout) :: info !! on input: 1 = print the residual in each iteration; on output: 0 = converged, 2 = maximum number of iterations reached
+      complex(dp), allocatable :: V(:,:), H(:,:), w(:), z(:)
+      complex(dp) :: s(m), g(m+1), y(m), temp, phase
+      real(dp) :: c(m)
+      real(dp) :: tol, beta, hnorm, r, habs
+      integer :: imx, i, j, jlast
+      logical :: verbose
 
       tol = res
       imx = its
       its = 0
+      verbose = (info == 1)
 
-      1 continue
-      res_ = 1d99
-      stgn = 1d0 - 1d-14
+      allocate(V(n,m+1), H(m+1,m), w(n), z(n))
 
-      beta = sqrt((dotprd(x,x)))
-      if(beta==0d0)  w = (0d0,0d0)
-      if(beta/=0d0)  call matvec(x, w)
-      w = b - w
-      beta = sqrt(abs(dotprd(w,w)) )
-      v(:,1) = w / beta
-
-      do j = 1, m
-         its = its + 1
-         z = v(:,j)      
-         call psolve(z)
-         call matvec(z, w)
-         do i = 1, j
-            h(i,j) = dotprd(w,v(:,i))
-            w = w - h(i,j)*v(:,i)
-         end do
-         h(j+1,j) = sqrt(abs(dotprd(w,w)))
-         v(:,j+1) = w / h(j+1,j)
-
-         p(1) = beta
-         p(2:j+1) = (0d0,0d0)
-         h_(1:j+1,1:j) = h(1:j+1,1:j)
-         call zgelsy(j+1,j,1,h_,m+1,p,m+1,piv,m,rank,work,lwork,rwork,i)
-         if(i/=0) stop 'gmresm: zgelsy'
-         y = p
-
-         ! p(1:j+1) = - matmul(h(1:j+1,1:j),y(1:j))
-         call ZGEMV('N',j+1,j,mone,h,m+1,y,1,zero,p,1)
-         p(1) = p(1) + beta
-         res = sqrt(abs(dot_product(p(1:j+1),p(1:j+1))))
-         if(info==1) print*, 'gmresm: it=', its,' res=', real(res,dp)
-
-         ! done = (res<=tol .or. its==imx .or. res>res_)
-         done = (res<=tol .or. its==imx)
-         if(done .or. j==m) then
-            ! z = matmul(v(:,1:j),y(1:j))
-            call ZGEMV('N',n,j,one,v,n,y,1,zero,z,1)
-            call psolve(z)
-            x = x + z
-            if(its==imx) info = 2
-            if(res>res_) info = 1
-            if(res<=tol) info = 0
-            if(done)     return
-            goto 1       ! (j==m) restart
+      do ! restart cycles
+         ! true residual of the current iterate
+         call matvec(x, w)
+         w = b - w
+         beta = sqrt(abs(dotprd(w, w)))
+         res = beta
+         if(beta <= tol) then
+            info = 0; exit
+         end if
+         if(its >= imx) then
+            info = 2; exit
          end if
 
-         res_ = res*stgn
+         V(:,1) = w / beta
+         H = zero
+         g = zero
+         g(1) = beta
+         jlast = 0
 
-      end do   
+         do j = 1, m
+            its = its + 1
+            jlast = j
 
-      deallocate(h,v,w,z)
+            ! Arnoldi step with modified Gram-Schmidt: w = A M^{-1} v_j
+            z = V(:,j)
+            call psolve(z)
+            call matvec(z, w)
+            do i = 1, j
+               H(i,j) = dotprd(V(:,i), w)
+               w = w - H(i,j) * V(:,i)
+            end do
+            hnorm = sqrt(abs(dotprd(w, w)))
+            if(hnorm > 0.0_dp) V(:,j+1) = w / hnorm
 
-      deallocate(work,rwork)
+            ! apply the previous Givens rotations to the new column
+            do i = 1, j-1
+               temp     =  c(i) * H(i,j) + s(i) * H(i+1,j)
+               H(i+1,j) = -conjg(s(i)) * H(i,j) + c(i) * H(i+1,j)
+               H(i,j)   = temp
+            end do
+
+            ! new rotation eliminating H(j+1,j) = hnorm (real)
+            habs = abs(H(j,j))
+            r = hypot(habs, hnorm)
+            if(r == 0.0_dp) then
+               c(j) = 1.0_dp
+               s(j) = zero
+            else if(habs == 0.0_dp) then
+               c(j) = 0.0_dp
+               s(j) = (1.0_dp, 0.0_dp)
+               H(j,j) = r
+            else
+               phase = H(j,j) / habs
+               c(j) = habs / r
+               s(j) = phase * hnorm / r
+               H(j,j) = phase * r
+            end if
+            g(j+1) = -conjg(s(j)) * g(j)
+            g(j)   =  c(j) * g(j)
+
+            res = abs(g(j+1))
+            if(verbose) write(output_unit,'("gmresm: it = ",i6," res = ",E12.5)') its, res
+
+            if(res <= tol .or. its >= imx .or. hnorm == 0.0_dp) exit
+         end do
+
+         ! solve the triangular system H y = g and update x = x + M^{-1} V y
+         do i = jlast, 1, -1
+            y(i) = (g(i) - sum(H(i,i+1:jlast) * y(i+1:jlast))) / H(i,i)
+         end do
+         z = matmul(V(:,1:jlast), y(1:jlast))
+         call psolve(z)
+         x = x + z
+      end do
+
+      deallocate(V, H, w, z)
 
    end subroutine zgmresm
 !--------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------
-! replace y with a vector that generates a hookstep
-! c.f. Viswanath (2008) arXiv:0809.1498
-!-----------------------------------------------------------------
- subroutine hookstep(j,h,m,beta,del, y)
-   implicit none
-   integer,          intent(in)    :: j, m
-   double precision, intent(in)    :: h(:,:)
-   double precision, intent(in)    :: beta
-   double precision, intent(inout) :: del
-   double precision, intent(out)   :: y(j)
-   double precision :: a(j+1,j), s(j), u(j+1,j+1), vt(j,j), work(5*(j+1))
-   double precision :: p(j+1), q(j), mu, qn
-   integer :: info
-   
-   a = h(1:j+1,1:j)
-   
-   call dgesvd('A','A',j+1,j,a,j+1,s,u,j+1,vt,j,work,5*(j+1),info)
-   if(info/=0) stop 'hookstep: dgesvd'
-   
-   p(1:j) = beta * u(1,1:j)   
-
-   mu = max(s(j)*s(j)*1d-6,1d-99)
-   qn = 1d99
-   do while(qn>del)
-      mu = mu * 1.1d0
-      q = p(1:j)*s/(mu+s*s)
-      qn = sqrt(dot_product(q,q))
-   end do
-
-   y = matmul(q,vt)
-
-   p = - matmul(h(1:j+1,1:j),y(1:j))
-   p(1) = p(1) + beta
-   del = sqrt(dot_product(p,p))
- 
- end subroutine hookstep
-!--------------------------------------------------------------------------------------
+!======================================================================================
 end module scitools_gmresm
