@@ -78,11 +78,11 @@ contains
    end subroutine dassert_shape_1
 !--------------------------------------------------------------------------------------
   subroutine zassert_shape_1(A, shap, routine, matname)
-      !! Checks if given real vector has a given shape; otherwise an error is returned
+      !! Checks if given complex vector has a given shape; otherwise an error is returned
       !! Only active if compiled in debug mode.
-    complex(dp), intent(in) :: A(:)
-    integer, intent(in) :: shap(:)
-    character(len=*) :: routine, matname
+    complex(dp), intent(in) :: A(:) !! the array to be checked
+    integer, intent(in) :: shap(:) !! the shape the array should have
+    character(len=*) :: routine, matname !! name of the calling routine and of the array (for the error message)
 
     if(debug_mode) then
        if(any(shape(A) /= shap)) then
@@ -95,11 +95,11 @@ contains
   end subroutine zassert_shape_1
 !--------------------------------------------------------------------------------------
   subroutine dassert_shape_2(A, shap, routine, matname)
-      !! Checks if given real vector has a given shape; otherwise an error is returned
+      !! Checks if the given array has a given shape; otherwise an error is returned
       !! Only active if compiled in debug mode.
-    real(dp), intent(in) :: A(:,:)
-    integer, intent(in) :: shap(:)
-    character(len=*) :: routine, matname
+    real(dp), intent(in) :: A(:,:) !! the array to be checked
+    integer, intent(in) :: shap(:) !! the shape the array should have
+    character(len=*) :: routine, matname !! name of the calling routine and of the array (for the error message)
 
     if(debug_mode)then
     
@@ -114,11 +114,11 @@ contains
   end subroutine dassert_shape_2
 !--------------------------------------------------------------------------------------
   subroutine zassert_shape_2(A, shap, routine, matname)
-      !! Checks if given real vector has a given shape; otherwise an error is returned
+      !! Checks if the given array has a given shape; otherwise an error is returned
       !! Only active if compiled in debug mode.
-    complex(dp), intent(in) :: A(:,:)
-    integer, intent(in) :: shap(:)
-    character(len=*) :: routine, matname
+    complex(dp), intent(in) :: A(:,:) !! the array to be checked
+    integer, intent(in) :: shap(:) !! the shape the array should have
+    character(len=*) :: routine, matname !! name of the calling routine and of the array (for the error message)
 
     if(debug_mode) then
        if(any(shape(A) /= shap)) then
@@ -131,11 +131,11 @@ contains
   end subroutine zassert_shape_2
 !--------------------------------------------------------------------------------------
   subroutine dassert_shape_3(A, shap, routine, matname)
-      !! Checks if given real vector has a given shape; otherwise an error is returned
+      !! Checks if the given array has a given shape; otherwise an error is returned
       !! Only active if compiled in debug mode.
-    real(dp), intent(in) :: A(:,:,:)
-    integer, intent(in) :: shap(:)
-    character(len=*) :: routine, matname
+    real(dp), intent(in) :: A(:,:,:) !! the array to be checked
+    integer, intent(in) :: shap(:) !! the shape the array should have
+    character(len=*) :: routine, matname !! name of the calling routine and of the array (for the error message)
 
     if(debug_mode)then
     
@@ -150,11 +150,11 @@ contains
   end subroutine dassert_shape_3
 !--------------------------------------------------------------------------------------
   subroutine zassert_shape_3(A, shap, routine, matname)
-      !! Checks if given real vector has a given shape; otherwise an error is returned
+      !! Checks if the given array has a given shape; otherwise an error is returned
       !! Only active if compiled in debug mode.
-    complex(dp), intent(in) :: A(:,:,:)
-    integer, intent(in) :: shap(:)
-    character(len=*) :: routine, matname
+    complex(dp), intent(in) :: A(:,:,:) !! the array to be checked
+    integer, intent(in) :: shap(:) !! the shape the array should have
+    character(len=*) :: routine, matname !! name of the calling routine and of the array (for the error message)
 
     if(debug_mode) then
        if(any(shape(A) /= shap)) then
@@ -167,11 +167,11 @@ contains
   end subroutine zassert_shape_3
 !--------------------------------------------------------------------------------------
   subroutine dassert_shape_4(A, shap, routine, matname)
-      !! Checks if given real vector has a given shape; otherwise an error is returned
+      !! Checks if the given array has a given shape; otherwise an error is returned
       !! Only active if compiled in debug mode.
-    real(dp), intent(in) :: A(:,:,:,:)
-    integer, intent(in) :: shap(:)
-    character(len=*) :: routine, matname
+    real(dp), intent(in) :: A(:,:,:,:) !! the array to be checked
+    integer, intent(in) :: shap(:) !! the shape the array should have
+    character(len=*) :: routine, matname !! name of the calling routine and of the array (for the error message)
 
     if(debug_mode)then
     
@@ -186,11 +186,11 @@ contains
   end subroutine dassert_shape_4
 !--------------------------------------------------------------------------------------
   subroutine zassert_shape_4(A, shap, routine, matname)
-      !! Checks if given real vector has a given shape; otherwise an error is returned
+      !! Checks if the given array has a given shape; otherwise an error is returned
       !! Only active if compiled in debug mode.
-    complex(dp), intent(in) :: A(:,:,:,:)
-    integer, intent(in) :: shap(:)
-    character(len=*) :: routine, matname
+    complex(dp), intent(in) :: A(:,:,:,:) !! the array to be checked
+    integer, intent(in) :: shap(:) !! the shape the array should have
+    character(len=*) :: routine, matname !! name of the calling routine and of the array (for the error message)
 
     if(debug_mode) then
        if(any(shape(A) /= shap)) then
@@ -203,11 +203,11 @@ contains
   end subroutine zassert_shape_4
 !--------------------------------------------------------------------------------------
   subroutine dassert_shape_5(A, shap, routine, matname)
-      !! Checks if given real vector has a given shape; otherwise an error is returned
+      !! Checks if the given array has a given shape; otherwise an error is returned
       !! Only active if compiled in debug mode.
-    real(dp), intent(in) :: A(:,:,:,:,:)
-    integer, intent(in) :: shap(:)
-    character(len=*) :: routine, matname
+    real(dp), intent(in) :: A(:,:,:,:,:) !! the array to be checked
+    integer, intent(in) :: shap(:) !! the shape the array should have
+    character(len=*) :: routine, matname !! name of the calling routine and of the array (for the error message)
 
     if(debug_mode)then
     
@@ -222,11 +222,11 @@ contains
   end subroutine dassert_shape_5
 !--------------------------------------------------------------------------------------
   subroutine zassert_shape_5(A, shap, routine, matname)
-      !! Checks if given real vector has a given shape; otherwise an error is returned
+      !! Checks if the given array has a given shape; otherwise an error is returned
       !! Only active if compiled in debug mode.
-    complex(dp), intent(in) :: A(:,:,:,:,:)
-    integer, intent(in) :: shap(:)
-    character(len=*) :: routine, matname
+    complex(dp), intent(in) :: A(:,:,:,:,:) !! the array to be checked
+    integer, intent(in) :: shap(:) !! the shape the array should have
+    character(len=*) :: routine, matname !! name of the calling routine and of the array (for the error message)
 
     if(debug_mode) then
        if(any(shape(A) /= shap)) then
@@ -239,11 +239,11 @@ contains
   end subroutine zassert_shape_5
 !--------------------------------------------------------------------------------------
   subroutine dassert_shape_6(A, shap, routine, matname)
-      !! Checks if given real vector has a given shape; otherwise an error is returned
+      !! Checks if the given array has a given shape; otherwise an error is returned
       !! Only active if compiled in debug mode.
-    real(dp), intent(in) :: A(:,:,:,:,:,:)
-    integer, intent(in) :: shap(:)
-    character(len=*) :: routine, matname
+    real(dp), intent(in) :: A(:,:,:,:,:,:) !! the array to be checked
+    integer, intent(in) :: shap(:) !! the shape the array should have
+    character(len=*) :: routine, matname !! name of the calling routine and of the array (for the error message)
 
     if(debug_mode)then
     
@@ -258,11 +258,11 @@ contains
   end subroutine dassert_shape_6
 !--------------------------------------------------------------------------------------
   subroutine zassert_shape_6(A, shap, routine, matname)
-      !! Checks if given real vector has a given shape; otherwise an error is returned
+      !! Checks if the given array has a given shape; otherwise an error is returned
       !! Only active if compiled in debug mode.
-    complex(dp), intent(in) :: A(:,:,:,:,:,:)
-    integer, intent(in) :: shap(:)
-    character(len=*) :: routine, matname
+    complex(dp), intent(in) :: A(:,:,:,:,:,:) !! the array to be checked
+    integer, intent(in) :: shap(:) !! the shape the array should have
+    character(len=*) :: routine, matname !! name of the calling routine and of the array (for the error message)
 
     if(debug_mode) then
        if(any(shape(A) /= shap)) then

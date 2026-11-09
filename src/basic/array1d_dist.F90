@@ -13,9 +13,9 @@ module scitools_array1d_dist
       !! This class stores the distribution scheme
       !! We try to split the array into pieces of equal length if possible;
       !! otherwise, we try to distribute as evenly as possible
-      integer :: ntasks,N
-      integer,dimension(:),allocatable :: N_loc,offset
-      integer,dimension(:,:),allocatable :: I_glob
+      integer :: ntasks,N !! number of MPI ranks, total number of elements
+      integer,dimension(:),allocatable :: N_loc,offset !! number of elements on each rank and their offset in the global array
+      integer,dimension(:,:),allocatable :: I_glob !! global index of each local element per rank
    contains
       procedure,public  :: Init
       procedure,public  :: Clean

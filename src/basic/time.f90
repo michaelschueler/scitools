@@ -4,7 +4,7 @@ module scitools_time
    !! the execution time of parts of a source code.
 
   type Timer_tag_t
-     character(40)::Name
+     character(40)::Name !! name of the timer
   end type Timer_tag_t
   type (Timer_tag_t),private,dimension(100)::Tmnm
   logical,private,dimension(100)::TmSt
@@ -45,8 +45,8 @@ end subroutine Timer_Act
 
 subroutine Timer_Run(N,NV,SNV,RunAll)
 !!  Starts timer N
-logical,intent(in)::RunAll
-integer,intent(in)::N,SNV,NV(:)
+logical,intent(in)::RunAll !! if `.true.`, start all timers
+integer,intent(in)::N,SNV,NV(:) !! timer N to start, or list NV(1:SNV) of timers to start
 optional::N,NV,SNV,RunAll
 integer::CrTm(8)
 call Date_And_Time(Values=CrTm)
@@ -83,7 +83,7 @@ end subroutine Timer_Run
 function Timer_Get(N)
 !! Gives the time measured by timer N.
 integer,dimension(5)::Timer_Get
-integer::N
+integer::N !! timer index (1-100)
   if (TmSt(N)) then
      call Date_And_Time(Values=TmStop(:,N))
      Timer_Get=Diff(TmStart(:,N),TmStop(:,N))
@@ -95,7 +95,7 @@ end function Timer_Get
 function TmsGet(N)
 !!  Gives the time measured by timer N in milliseconds.
 integer::TmsGet
-integer::N
+integer::N !! timer index (1-100)
   if (TmSt(N)) then
      call Date_And_Time(Values=TmStop(:,N))
      TmsGet=Diffms(TmStart(:,N),TmStop(:,N))
@@ -107,7 +107,7 @@ end function TmsGet
 function Diff(T1,T2)
 !! Computes the time difference between two dates.
 integer,dimension(5)::Diff
-integer,dimension(8)::T1,T2
+integer,dimension(8)::T1,T2 !! dates as returned by `date_and_time(values=...)`
 integer::Ndays1,Ndays2
 if (T1(1).ne.T2(1)) then
    print*,'Time interval that covers more than one year not implemented yet'
@@ -132,7 +132,7 @@ end function Diff
 !
 integer function Diffms(T1,T2)
 !! Computes the time difference between two dates in milliseconds.
-integer,dimension(8)::T1,T2
+integer,dimension(8)::T1,T2 !! dates as returned by `date_and_time(values=...)`
 integer,dimension(5)::dT
 dT=Diff(T1,T2)
 jjj=C(8)*(C(7)*(c(6)*(C(5)*dT(1)+dT(2))+dT(3))+dT(4))+dT(5)
@@ -141,16 +141,16 @@ end function Diffms
 
 subroutine Timer_SetName(A,N)
 !! Assigns a name string to timer N.
-character(*)::A
-integer::N
+character(*)::A !! name of the timer
+integer::N !! timer index (1-100)
 Tmnm(N)%Name=A
 end subroutine Timer_SetName
 
 subroutine DTPrint(N,dT,FlUnt)
 !! Printe the full time of timer N.
-integer,intent(in) :: N
-integer,intent(in),optional :: dT(5)
-integer,intent(in),optional :: FlUnt
+integer,intent(in) :: N !! timer index (1-100)
+integer,intent(in),optional :: dT(5) !! time to print (days, hours, minutes, seconds, ms); default: time of timer N
+integer,intent(in),optional :: FlUnt !! output unit (default: standard output)
 integer :: dT_(5)
 character(100)::FM
 character(61)::FM2=',''] = '',I5,'' d; '',I2,'' hr; '',I2,'' mn; '',I2,'' sc; '',I3,'' msc'')'
@@ -171,8 +171,8 @@ end subroutine DtPrint
 
 subroutine DTmsPrint(N,FlUnt)
 !!  Printe the full time of timer N in milliseconds.
-integer::N,dT,LN
-integer,optional::FlUnt
+integer::N,dT,LN !! timer index N (1-100)
+integer,optional::FlUnt !! output unit (default: standard output)
 character(100)::FM
 dT=TmsGet(N)
 LN=Len_Trim(Tmnm(N)%Name)
@@ -197,8 +197,8 @@ end subroutine  Timer_stop
 subroutine DTmsShow(N,FlUnt)
 !!  Prints the time of timer N in milliseconds together with the 
 !!  name assigned by SetName.
-integer::N,dT,LN
-integer,optional::FlUnt
+integer::N,dT,LN !! timer index N (1-100)
+integer,optional::FlUnt !! output unit (default: standard output)
 character(100)::FM
 dT=Diffms(TmStart(:,N),TmStop(:,N))
 LN=Len_Trim(Tmnm(N)%Name)
@@ -213,8 +213,8 @@ end subroutine DTmsShow
 subroutine Timer_DTShow(N,FlUnt)
 !!  Prints the time of timer N in milliseconds/seconds/minutes
 !!  together with the name assigned by SetName.
-integer::N,dT,LN
-integer,optional::FlUnt
+integer::N,dT,LN !! timer index N (1-100)
+integer,optional::FlUnt !! output unit (default: standard output)
 character(100)::FM
 dT=Diffms(TmStart(:,N),TmStop(:,N))
 LN=Len_Trim(Tmnm(N)%Name)
@@ -263,15 +263,15 @@ end function Int2Char
 
 subroutine Timer_tic(A,N)
 !! Assigns the name 'A' to the timer 'N' and starts it
-character(*)::A
-integer::N
+character(*)::A !! name of the timer
+integer::N !! timer index (1-100)
 call Timer_SetName(A,N)
 call Timer_Run(N=N)
 end subroutine Timer_tic
 
 subroutine Timer_toc(N)
 !! Stops timer 'N' and prints the time passed since 'Timer_tic' was called
-integer::N
+integer::N !! timer index (1-100)
 call Timer_stop(N=N)
 call Timer_DTShow(N=N)
 end subroutine Timer_toc

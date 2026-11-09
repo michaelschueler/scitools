@@ -549,7 +549,7 @@ subroutine h_polynomial_coefficients ( n, c )
 
 !*****************************************************************************80
 !
-!! h_polynomial_coefficients(): coefficients of H(i,x).
+!! h_polynomial_coefficients() &mdash; coefficients of H(i,x).
 !
 !  Discussion:
 !
@@ -744,7 +744,7 @@ subroutine h_polynomial_values ( n_data, n, x, fx )
 
 !*****************************************************************************80
 !
-!! h_polynomial_values(): tabulated values of H(i,x).
+!! h_polynomial_values() &mdash; tabulated values of H(i,x).
 !
 !  Discussion:
 !
@@ -902,7 +902,7 @@ subroutine h_polynomial_zeros ( nt, z )
 
 !*****************************************************************************80
 !
-!! h_polynomial_zeros(): zeros of H(i,x).
+!! h_polynomial_zeros() &mdash; zeros of H(i,x).
 !
 !  Discussion:
 !
@@ -955,7 +955,7 @@ subroutine h_quadrature_rule ( nt, t, wts )
 
 !*****************************************************************************80
 !
-!! h_quadrature_rule(): quadrature for H(i,x).
+!! h_quadrature_rule() &mdash; quadrature for H(i,x).
 !
 !  Discussion:
 !
@@ -1011,7 +1011,7 @@ subroutine h_to_monomial_matrix ( n, A )
 
 !*****************************************************************************80
 !
-!! h_to_monomial_matrix(): physicist's Hermite to monomial conversion matrix.
+!! h_to_monomial_matrix() &mdash; physicist's Hermite to monomial conversion matrix.
 !
 !  Discussion:
 !
@@ -1089,7 +1089,7 @@ function he_double_product_integral ( i, j )
 
 !*****************************************************************************80
 !
-!! he_double_product_integral: integral of He(i,x)*He(j,x)*e^(-x^2/2).
+!! he_double_product_integral &mdash; integral of He(i,x)*He(j,x)*e^(-x^2/2).
 !
 !  Discussion:
 !
@@ -1202,7 +1202,7 @@ subroutine he_polynomial_coefficients ( n, c )
 
 !*****************************************************************************80
 !
-!! he_polynomial_coefficients(): coefficients of He(i,x).
+!! he_polynomial_coefficients() &mdash; coefficients of He(i,x).
 !
 !  Discussion:
 !
@@ -1392,7 +1392,7 @@ subroutine he_polynomial_values ( n_data, n, x, fx )
 
 !*****************************************************************************80
 !
-!! HE_POLYNOMIAL_VALUES: tabulated values of He(i,x).
+!! HE_POLYNOMIAL_VALUES &mdash; tabulated values of He(i,x).
 !
 !  Discussion:
 !
@@ -1546,7 +1546,7 @@ subroutine he_polynomial_zeros ( nt, z )
 
 !*****************************************************************************80
 !
-!! HE_POLYNOMIAL_ZEROS: zeros of He(i,x).
+!! HE_POLYNOMIAL_ZEROS &mdash; zeros of He(i,x).
 !
 !  Discussion:
 !
@@ -1601,7 +1601,7 @@ subroutine he_quadrature_rule ( nt, t, wts )
 
 !*****************************************************************************80
 !
-!! HE_QUADRATURE_RULE: quadrature for He(i,x).
+!! HE_QUADRATURE_RULE &mdash; quadrature for He(i,x).
 !
 !  Discussion:
 !
@@ -1658,7 +1658,7 @@ function he_triple_product_integral ( i, j, k )
 
 !*****************************************************************************80
 !
-!! HE_TRIPLE_PRODUCT_INTEGRAL: integral of He(i,x)*He(j,x)*He(k,x)*e^(-x^2/2).
+!! HE_TRIPLE_PRODUCT_INTEGRAL &mdash; integral of He(i,x)*He(j,x)*He(k,x)*e^(-x^2/2).
 !
 !  Discussion:
 !
@@ -1725,7 +1725,7 @@ subroutine hen_exponential_product ( p, b, table )
 
 !*****************************************************************************80
 !
-!! HEN_EXPONENTIAL_PRODUCT: exponential product exp(b*x)*Hen(i,x)*Hen(j,x).
+!! HEN_EXPONENTIAL_PRODUCT &mdash; exponential product exp(b*x)*Hen(i,x)*Hen(j,x).
 !
 !  Discussion:
 !
@@ -1907,7 +1907,7 @@ subroutine hen_power_product ( p, e, table )
 
 !*****************************************************************************80
 !
-!! HEN_POWER_PRODUCT: power products, x^e*Hen(i,x)*Hen(j,x).
+!! HEN_POWER_PRODUCT &mdash; power products, x^e*Hen(i,x)*Hen(j,x).
 !
 !  Discussion:
 !
@@ -2007,7 +2007,7 @@ subroutine hf_exponential_product ( p, b, table )
 
 !*****************************************************************************80
 !
-!! HF_EXPONENTIAL_PRODUCT: exponential products, exp(b*x)*Hf(i,x)*Hf(j,x).
+!! HF_EXPONENTIAL_PRODUCT &mdash; exponential products, exp(b*x)*Hf(i,x)*Hf(j,x).
 !
 !  Discussion:
 !
@@ -2185,7 +2185,7 @@ subroutine hf_function_values ( n_data, n, x, fx )
 
 !*****************************************************************************80
 !
-!! HF_FUNCTION_VALUES: tabulated values of Hf(i,x).
+!! HF_FUNCTION_VALUES &mdash; tabulated values of Hf(i,x).
 !
 !  Discussion:
 !
@@ -2301,7 +2301,7 @@ subroutine hf_power_product ( p, e, table )
 
 !*****************************************************************************80
 !
-!! HF_POWER_PRODUCT: power products x^e*Hf(i,x)*Hf(j,x).
+!! HF_POWER_PRODUCT &mdash; power products x^e*Hf(i,x)*Hf(j,x).
 !
 !  Discussion:
 !
@@ -2399,7 +2399,7 @@ subroutine hf_quadrature_rule ( nt, t, wts )
 
 !*****************************************************************************80
 !
-!! HF_QUADRATURE_RULE: quadrature for Hf(i,x).
+!! HF_QUADRATURE_RULE &mdash; quadrature for Hf(i,x).
 !
 !  Discussion:
 !
@@ -2455,7 +2455,7 @@ subroutine hn_exponential_product ( p, b, table )
 
 !*****************************************************************************80
 !
-!! HN_EXPONENTIAL_PRODUCT: exponential products exp(b*x)*Hn(i,x)*Hn(j,x).
+!! HN_EXPONENTIAL_PRODUCT &mdash; exponential products exp(b*x)*Hn(i,x)*Hn(j,x).
 !
 !  Discussion:
 !
@@ -2641,7 +2641,7 @@ subroutine hn_power_product ( p, e, table )
 
 !*****************************************************************************80
 !
-!! HN_POWER_PRODUCT: power products x^e*Hn(i,x)*Hn(j,x).
+!! HN_POWER_PRODUCT &mdash; power products x^e*Hn(i,x)*Hn(j,x).
 !
 !  Discussion:
 !
@@ -2942,7 +2942,7 @@ subroutine monomial_to_h_matrix ( n, A )
 
 !*****************************************************************************80
 !
-!! monomial_to_h_matrix(): the monomial to Physicist's Hermite conversion matrix.
+!! monomial_to_h_matrix() &mdash; the monomial to Physicist's Hermite conversion matrix.
 !
 !  Example:
 !

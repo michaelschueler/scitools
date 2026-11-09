@@ -26,6 +26,8 @@ module scitools_bsplines
 !!  5. Carl de Boor,
 !!     [Package for calculating with B-splines](http://epubs.siam.org/doi/abs/10.1137/0714026),
 !!     SIAM Journal on Numerical Analysis 14, 3 (June 1977), p. 441-472.
+!!
+!! Based on bspline-fortran by J. Williams (BSD-3-Clause license); see THIRD_PARTY_NOTICES.md.
 
   use,intrinsic::iso_fortran_env,only: error_unit
   use scitools_def,only: dp
@@ -48,8 +50,8 @@ module scitools_bsplines
   public :: spline3d_t
 !-------------------------------------------------------------
   type spline1d_t
-     integer :: nx,kx
-     real(dp),allocatable :: tx(:),Cff(:)
+     integer :: nx,kx !! number of grid points, order of the B-splines
+     real(dp),allocatable :: tx(:),Cff(:) !! knot sequence and B-spline coefficients
    contains
      procedure :: Init => spline1d_init
      procedure :: Clean => spline1d_clean
@@ -57,8 +59,8 @@ module scitools_bsplines
   end type spline1d_t
 !-------------------------------------------------------------
   type spline2d_t
-     integer :: nx,ny,kx,ky
-     real(dp),allocatable :: tx(:),ty(:),Cff(:,:)
+     integer :: nx,ny,kx,ky !! numbers of grid points and orders of the B-splines in x and y
+     real(dp),allocatable :: tx(:),ty(:),Cff(:,:) !! knot sequences and B-spline coefficients
    contains
      procedure :: Init => spline2d_init
      procedure :: Clean => spline2d_clean
@@ -66,8 +68,8 @@ module scitools_bsplines
   end type spline2d_t
 !-------------------------------------------------------------  
   type spline3d_t
-     integer :: nx,ny,nz,kx,ky,kz
-     real(dp),allocatable :: tx(:),ty(:),tz(:),Cff(:,:,:)
+     integer :: nx,ny,nz,kx,ky,kz !! numbers of grid points and orders of the B-splines in x, y, z
+     real(dp),allocatable :: tx(:),ty(:),tz(:),Cff(:,:,:) !! knot sequences and B-spline coefficients
    contains
      procedure :: Init => spline3d_init
      procedure :: Clean => spline3d_clean
@@ -80,10 +82,10 @@ contains
 !-------------------------------------------------------------
   subroutine spline1d_init(spline,x,y,kx,iflag)
     class(spline1d_t) :: spline
-    real(dp),intent(in) :: x(:)
-    real(dp),intent(in) :: y(:)
-    integer,intent(in) :: kx
-    integer,intent(inout) :: iflag
+    real(dp),intent(in) :: x(:) !! grid points (strictly increasing)
+    real(dp),intent(in) :: y(:) !! function values at the grid points
+    integer,intent(in) :: kx !! order of the B-splines (4 = cubic)
+    integer,intent(inout) :: iflag !! status flag; 0 on success (see [[db1ink]])
 
     spline%nx = size(x)
     spline%kx = kx
@@ -105,10 +107,10 @@ contains
 !-------------------------------------------------------------
   real(dp) function spline1d_eval(spline,x,idx,iflag,inbvx)
     class(spline1d_t),intent(in) :: spline
-    real(dp),intent(in) :: x
-    integer,intent(in)  :: idx
-    integer,intent(out) :: iflag
-    integer,intent(inout) :: inbvx
+    real(dp),intent(in) :: x !! evaluation point
+    integer,intent(in)  :: idx !! order of the derivative (0 = function value)
+    integer,intent(out) :: iflag !! status flag; 0 on success
+    integer,intent(inout) :: inbvx !! initialization parameter: set to 1 before the first call, then do not change
     real(dp) :: f
 
     call db1val(x,idx,spline%tx,spline%nx,spline%kx,spline%Cff,f,iflag,inbvx)
@@ -118,10 +120,10 @@ contains
 !-------------------------------------------------------------
   subroutine spline2d_init(spline,x,y,f,kx,ky,iflag)
     class(spline2d_t) :: spline
-    real(dp),intent(in) :: x(:),y(:)
-    real(dp),intent(in) :: f(:,:)
-    integer,intent(in) :: kx,ky
-    integer,intent(inout) :: iflag
+    real(dp),intent(in) :: x(:),y(:) !! grid points in x and y (strictly increasing)
+    real(dp),intent(in) :: f(:,:) !! function values on the grid
+    integer,intent(in) :: kx,ky !! orders of the B-splines in x and y (4 = cubic)
+    integer,intent(inout) :: iflag !! status flag; 0 on success (see [[db2ink]])
 
     spline%nx = size(x)
     spline%ny = size(y)
@@ -148,10 +150,10 @@ contains
 !-------------------------------------------------------------
   real(dp) function spline2d_eval(spline,x,y,idx,idy,iflag,inbvx,inbvy,iloy)
     class(spline2d_t),intent(in) :: spline
-    real(dp),intent(in) :: x,y
-    integer,intent(in)  :: idx,idy
-    integer,intent(out) :: iflag
-    integer,intent(inout) :: inbvx,inbvy,iloy
+    real(dp),intent(in) :: x,y !! evaluation point
+    integer,intent(in)  :: idx,idy !! orders of the derivatives in x and y (0 = function value)
+    integer,intent(out) :: iflag !! status flag; 0 on success
+    integer,intent(inout) :: inbvx,inbvy,iloy !! initialization parameter: set to 1 before the first call, then do not change
     real(dp) :: f
 
     call db2val(x,y,idx,idy,spline%tx,spline%ty,spline%nx,spline%ny,&
@@ -163,10 +165,10 @@ contains
 !-------------------------------------------------------------
   subroutine spline3d_init(spline,x,y,z,f,kx,ky,kz,iflag)
     class(spline3d_t) :: spline
-    real(dp),intent(in) :: x(:),y(:),z(:)
-    real(dp),intent(in) :: f(:,:,:)
-    integer,intent(in) :: kx,ky,kz
-    integer,intent(inout) :: iflag
+    real(dp),intent(in) :: x(:),y(:),z(:) !! grid points in x, y and z (strictly increasing)
+    real(dp),intent(in) :: f(:,:,:) !! function values on the grid
+    integer,intent(in) :: kx,ky,kz !! orders of the B-splines in x, y and z (4 = cubic)
+    integer,intent(inout) :: iflag !! status flag; 0 on success (see [[db3ink]])
 
     spline%nx = size(x)
     spline%ny = size(y)
@@ -198,10 +200,10 @@ contains
 !-------------------------------------------------------------
   real(dp) function spline3d_eval(spline,x,y,z,idx,idy,idz,iflag,inbvx,inbvy,inbvz,iloy,iloz)
     class(spline3d_t),intent(in) :: spline
-    real(dp),intent(in) :: x,y,z
-    integer,intent(in)  :: idx,idy,idz
-    integer,intent(out) :: iflag
-    integer,intent(inout) :: inbvx,inbvy,inbvz,iloy,iloz
+    real(dp),intent(in) :: x,y,z !! evaluation point
+    integer,intent(in)  :: idx,idy,idz !! orders of the derivatives in x, y and z (0 = function value)
+    integer,intent(out) :: iflag !! status flag; 0 on success
+    integer,intent(inout) :: inbvx,inbvy,inbvz,iloy,iloz !! initialization parameter: set to 1 before the first call, then do not change
     real(dp) :: f
 
     call db3val(x,y,z,idx,idy,idz,&
@@ -235,9 +237,9 @@ contains
                                                       !!    If iflag=1 these are specified by the user.
                                                       !!    Must be non-decreasing.
     real(dp),dimension(nx),intent(out)      :: bcoef  !! Array of coefficients of the b-spline interpolant.
-    integer,intent(inout)                   :: iflag  !! **on input:**  0 = knot sequence chosen by [[db1ink]].
+    integer,intent(inout)                   :: iflag  !! status flag. **on input**  0 = knot sequence chosen by [[db1ink]].
                                                       !!                1 = knot sequence chosen by user.
-                                                      !! **on output:** 1 = successful execution.
+                                                      !! **on output** 1 = successful execution.
                                                       !!                2 = iflag out of range.
                                                       !!                3 = nx out of range.
                                                       !!                4 = kx out of range.
@@ -378,9 +380,9 @@ contains
                                                       !!    If iflag=1 these are specified by the user.
                                                       !!    Must be non-decreasing.
     real(dp),dimension(nx,ny),intent(out)   :: bcoef  !! Array of coefficients of the b-spline interpolant.
-    integer,intent(inout)                   :: iflag  !! **on input:**  0 = knot sequence chosen by [[db2ink]].
+    integer,intent(inout)                   :: iflag  !! status flag. **on input**  0 = knot sequence chosen by [[db2ink]].
                                                       !!                1 = knot sequence chosen by user.
-                                                      !! **on output:** 1 = successful execution.
+                                                      !! **on output** 1 = successful execution.
                                                       !!                2 = iflag out of range.
                                                       !!                3 = nx out of range.
                                                       !!                4 = kx out of range.
@@ -589,7 +591,7 @@ contains
                                                       !!    If iflag=1 these are specified by the user.
                                                       !!    Must be non-decreasing.
     real(dp),dimension(nx,ny,nz),intent(out) :: bcoef !! array of coefficients of the b-spline interpolant.
-    integer,intent(inout)                    :: iflag !! **on input**    0 = knot sequence chosen by [[db3ink]].
+    integer,intent(inout)                    :: iflag !! status flag. **on input**    0 = knot sequence chosen by [[db3ink]].
                                                       !!                 1 = knot sequence chosen by user.
                                                       !! **on output**   1 = successful execution.
                                                       !!                 2 = iflag out of range.
@@ -817,7 +819,7 @@ contains
                                                          !!    If iflag=1 these are specified by the user.
                                                          !!    Must be non-decreasing.
     real(dp),dimension(nx,ny,nz,nq),intent(out) :: bcoef !! array of coefficients of the b-spline interpolant.
-    integer,intent(inout)                       :: iflag !! **on input**    0 = knot sequence chosen by [[db4ink]].
+    integer,intent(inout)                       :: iflag !! status flag. **on input**    0 = knot sequence chosen by [[db4ink]].
                                                          !!                 1 = knot sequence chosen by user.
                                                          !! **on output**   1 = successful execution.
                                                          !!                 2 = iflag out of range.
@@ -1071,7 +1073,7 @@ contains
                                                             !!    If iflag=1 these are specified by the user.
                                                             !!    Must be non-decreasing.
     real(dp),dimension(nx,ny,nz,nq,nr),intent(out) :: bcoef !! array of coefficients of the b-spline interpolant.
-    integer,intent(inout)                          :: iflag !! **on input**    0 = knot sequence chosen by [[db5ink]].
+    integer,intent(inout)                          :: iflag !! status flag. **on input**    0 = knot sequence chosen by [[db5ink]].
                                                             !!                 1 = knot sequence chosen by user.
                                                             !! **on output**   1 = successful execution.
                                                             !!                 2 = iflag out of range.
@@ -1367,7 +1369,7 @@ contains
                                                                !!    If iflag=1 these are specified by the user.
                                                                !!    Must be non-decreasing.
     real(dp),dimension(nx,ny,nz,nq,nr,ns),intent(out) :: bcoef !! array of coefficients of the b-spline interpolant.
-    integer,intent(inout)                             :: iflag !! **on input**    0 = knot sequence chosen by [[db6ink]].
+    integer,intent(inout)                             :: iflag !! status flag. **on input**    0 = knot sequence chosen by [[db6ink]].
                                                                !!                 1 = knot sequence chosen by user.
                                                                !! **on output**   1 = successful execution.
                                                                !!                 2 = iflag out of range.
@@ -1891,8 +1893,8 @@ contains
     real(dp)            :: t(*)
     real(dp)            :: bcoef(nf,n)
     real(dp)            :: work(*)
-    integer,intent(out) :: iflag  !!   0: no errors
-                                  !! 301: n should be >0
+    integer,intent(out) :: iflag  !!   0 = no errors
+                                  !! 301 = n should be >0
 
     integer :: i, j, m1, m2, iq, iw
 
@@ -1944,7 +1946,7 @@ contains
 !! dbintk produces the b-spline coefficients, bcoef, of the
 !!  b-spline of order k with knots t(i), i=1,...,n+k, which
 !!  takes on the value y(i) at x(i), i=1,...,n.  the spline or
-!!  any of its derivatives can be evaluated by calls to [[dbvalu]].
+!!  any of its derivatives can be evaluated by calls to `dbvalu`.
 !!
 !!  the i-th equation of the linear system a*bcoef = b for the
 !!  coefficients of the interpolant enforces interpolation at
@@ -1986,13 +1988,13 @@ contains
                                                 !! yy into bcoef and then executing
                                                 !! call dbnslv(q,2k-1,n,k-1,k-1,bcoef)
     real(dp),dimension(*),intent(out) :: work   !! work vector of length 2*k
-    integer,intent(out)               :: iflag  !!   0: no errors.
-                                                !! 100: k does not satisfy k>=1.
-                                                !! 101: n does not satisfy n>=k.
-                                                !! 102: x(i) does not satisfy x(i)<x(i+1) for some i.
-                                                !! 103: some abscissa was not in the support of the.
+    integer,intent(out)               :: iflag  !!   0 = no errors.
+                                                !! 100 = k does not satisfy k>=1.
+                                                !! 101 = n does not satisfy n>=k.
+                                                !! 102 = x(i) does not satisfy x(i)<x(i+1) for some i.
+                                                !! 103 = some abscissa was not in the support of the.
                                                 !! corresponding basis function and the system is singular.
-                                                !! 104: the system of solver detects a singular system.
+                                                !! 104 = the system of solver detects a singular system.
                                                 !! although the theoretical conditions for a solution were satisfied.
 
     integer :: iwork, i, ilp1mx, j, jj, km1, kpkm2, left,lenq, np1
@@ -2245,7 +2247,7 @@ contains
 
 !-------------------------------------------------------------
     subroutine dbnslv(w,nroww,nrow,nbandl,nbandu,b)
-!! Companion routine to [[dbnfac]]. it returns the solution x of the
+!! Companion routine to `dbnfac`. it returns the solution x of the
 !!  linear system a*x = b in place of b, given the lu-factorization
 !!  for a in the work array w from dbnfac.
 !!
@@ -2253,12 +2255,12 @@ contains
 !!  \( l(u*x) = b \) is solved for \( y = u*x \), and y stored in b. then the
 !!  upper triangular system \(u*x = y \) is solved for x. the calculations
 !!  are so arranged that the innermost loops stay within columns.
-    integer,intent(in) :: nroww   !! describes the lu-factorization of a banded matrix a of order nrow as constructed in [[dbnfac]].
-    integer,intent(in) :: nrow    !! describes the lu-factorization of a banded matrix a of order nrow as constructed in [[dbnfac]].
-    integer,intent(in) :: nbandl  !! describes the lu-factorization of a banded matrix a of order nrow as constructed in [[dbnfac]].
-    integer,intent(in) :: nbandu  !! describes the lu-factorization of a banded matrix a of order nrow as constructed in [[dbnfac]].
-    real(dp),dimension(nroww,nrow),intent(in) :: w    !! describes the lu-factorization of a banded matrix a of order nrow as constructed in [[dbnfac]].
-    real(dp),dimension(nrow),intent(inout) :: b  !! **in**: right side of the system to be solved
+    integer,intent(in) :: nroww   !! describes the lu-factorization of a banded matrix a of order nrow as constructed in `dbnfac`.
+    integer,intent(in) :: nrow    !! describes the lu-factorization of a banded matrix a of order nrow as constructed in `dbnfac`.
+    integer,intent(in) :: nbandl  !! describes the lu-factorization of a banded matrix a of order nrow as constructed in `dbnfac`.
+    integer,intent(in) :: nbandu  !! describes the lu-factorization of a banded matrix a of order nrow as constructed in `dbnfac`.
+    real(dp),dimension(nroww,nrow),intent(in) :: w    !! describes the lu-factorization of a banded matrix a of order nrow as constructed in `dbnfac`.
+    real(dp),dimension(nrow),intent(inout) :: b  !! right side of the system to be solved (**in**); of the system to be solved
                                                  !! **out**: the solution x, of order nrow
 
     integer :: i, j, jmax, middle, nrowm1
@@ -2345,11 +2347,11 @@ contains
                                      !! information necessary to continue for index = 2.
                                      !! when index = 1 exclusively, these are scratch
                                      !! variables and can be used for other purposes.
-    integer,intent(out) :: iflag     !!   0: no errors
-                                     !! 201: k does not satisfy k>=1
-                                     !! 202: jhigh does not satisfy 1<=jhigh<=k
-                                     !! 203: index is not 1 or 2
-                                     !! 204: x does not satisfy t(ileft)<=x<=t(ileft+1)
+    integer,intent(out) :: iflag     !!   0 = no errors
+                                     !! 201 = k does not satisfy k>=1
+                                     !! 202 = jhigh does not satisfy 1<=jhigh<=k
+                                     !! 203 = index is not 1 or 2
+                                     !! 204 = x does not satisfy t(ileft)<=x<=t(ileft+1)
 
     integer :: imjp1, ipj, jp1, jp1ml, l
     real(dp) :: vm, vmprev
@@ -2438,13 +2440,13 @@ contains
                                                 !! be changed by the user.  distinct splines require
                                                 !! distinct inbv parameters.
     real(dp),dimension(:)            :: work    !! work vector of length 3*k
-    integer,intent(out)              :: iflag   !!   0: no errors
-                                                !! 401: k does not satisfy k>=1
-                                                !! 402: n does not satisfy n>=k
-                                                !! 403: ideriv does not satisfy 0<=ideriv<k
-                                                !! 404: x is not greater than or equal to t(k)
-                                                !! 405: x is not less than or equal to t(n+1)
-                                                !! 406: a left limiting value cannot be obtained at t(k)
+    integer,intent(out)              :: iflag   !!   0 = no errors
+                                                !! 401 = k does not satisfy k>=1
+                                                !! 402 = n does not satisfy n>=k
+                                                !! 403 = ideriv does not satisfy 0<=ideriv<k
+                                                !! 404 = x is not greater than or equal to t(k)
+                                                !! 405 = x is not less than or equal to t(n+1)
+                                                !! 406 = a left limiting value cannot be obtained at t(k)
 
     integer :: i,iderp1,ihi,ihmkmj,ilo,imk,imkpj,ipj,&
                ip1,ip1mj,j,jj,j1,j2,kmider,kmj,km1,kpk,mflag

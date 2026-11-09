@@ -1,0 +1,17 @@
+Public-domain components
+
+QUADPACK (src/math/quadpack.f90)
+  R. Piessens, E. de Doncker-Kapenger, C. Ueberhuber, D. Kahaner,
+  "QUADPACK: A Subroutine Package for Automatic Integration", Springer (1983).
+  QUADPACK is in the public domain (https://www.netlib.org/quadpack/).
+
+SLATEC (DGAUS8 in src/math/gausslegendre.F90; B-spline routines in src/math/bsplines.f90)
+  SLATEC Common Mathematical Library, a public-domain work of the U.S. government
+  (https://www.netlib.org/slatec/).
+
+NIST CMLIB (DBSPLIN, DTENSBS in src/math/bsplines.f90)
+  Developed by NIST employees; not subject to copyright protection in the
+  United States. The full NIST notice is reproduced in bspline-fortran.txt.
+  The routines have been modified: converted to free-form Fortran and
+  refactored (by J. Williams, bspline-fortran) and integrated into the
+  SciTools module scitools_bsplines.

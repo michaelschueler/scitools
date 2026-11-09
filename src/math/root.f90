@@ -47,7 +47,7 @@ contains
 
   real(dp) function secant(f, a,b,tol, maxiter) result (c)
     !! Solves f(x) = 0 on using the a and b as starting values
-    procedure(func) :: f
+    procedure(func) :: f !! function \(f(x)\)
     real(dp), intent(in) :: a, b !! the lower and upper bounds of the search interval
     real(dp), intent(in) :: tol !! search tolerance
     integer,optional :: maxiter !! maximum number of iterations
@@ -96,7 +96,7 @@ contains
 
   real(dp) function newton(f, df, a,b,tol, maxiter) result (c)
     !! Solves f(x) = 0 on using the a and b as starting values
-    procedure(func) :: f,df
+    procedure(func) :: f,df !! function \(f(x)\) and its derivative \(f'(x)\)
     real(dp), intent(in) :: a, b !! the lower and upper bounds of the search interval
     real(dp), intent(in) :: tol !! search tolerance
     integer,optional :: maxiter !! maximum number of iterations
@@ -149,7 +149,7 @@ contains
    function brent(f,a,b,tol,maxiter) result(xzero)
     !! Solves f(x) = 0 using Brent's method. 
     use iso_fortran_env, only: output_unit
-    procedure(func) :: f
+    procedure(func) :: f !! function \(f(x)\); \(f(a)\) and \(f(b)\) must have opposite signs
     real(dp), intent(in) :: a, b !! the lower and upper bounds of the search interval
     real(dp), intent(in) :: tol !! search tolerance
     integer,optional :: maxiter !! maximum number of iterations

@@ -39,9 +39,9 @@ module scitools_laserpulse
      !..............................................
      logical,private                           :: E_set=.false.,A_set=.false.
      integer,private                           :: Npts
-     real(dp),public                           :: Tmin=0.0_dp
-     real(dp),public                           :: Tmax=-huge(1.0_dp)
-     real(dp),allocatable,dimension(:),public  :: tpts
+     real(dp),public                           :: Tmin=0.0_dp !! start of the time interval
+     real(dp),public                           :: Tmax=-huge(1.0_dp) !! end of the time interval
+     real(dp),allocatable,dimension(:),public  :: tpts !! time samples
      type(spline1d_t),private                  :: Aspl
      type(spline1d_t),private                  :: Espl
      !..............................................
@@ -61,9 +61,9 @@ module scitools_laserpulse
     logical,private                           :: E_set=.false.,A_set=.false.
     integer,private                           :: ncomp=0
     integer,private                           :: Npts
-    real(dp),public                           :: Tmin=0.0_dp
-    real(dp),public                           :: Tmax=-huge(1.0_dp)
-    real(dp),allocatable,dimension(:),public  :: tpts
+    real(dp),public                           :: Tmin=0.0_dp !! start of the time interval
+    real(dp),public                           :: Tmax=-huge(1.0_dp) !! end of the time interval
+    real(dp),allocatable,dimension(:),public  :: tpts !! time samples
     type(spline1d_t),allocatable,private      :: Aspl(:)
     type(spline1d_t),allocatable,private      :: Espl(:)
   contains
@@ -81,8 +81,8 @@ contains
   subroutine scalarfunc_Init(self,Npts,Tmin,Tmax)
   !! Initializes the scalar function
     class(scalarfunc_spline_t),intent(inout)::self
-    integer,intent(in)::Npts
-    real(dp),intent(in)::Tmin,Tmax
+    integer,intent(in)::Npts !! number of time samples
+    real(dp),intent(in)::Tmin,Tmax !! time interval
     integer::it,iflag
 
     self%Npts=Npts
@@ -122,7 +122,7 @@ contains
   !! a constant value corresponding to the left or right boundary, respectively, is returned.
     real(dp),parameter :: eps=1.0e-12_dp
     class(scalarfunc_spline_t),intent(in)::self
-    real(dp),intent(in)::t
+    real(dp),intent(in)::t !! time
     integer::iflag,inbvx
     real(dp)::EF
     
@@ -145,8 +145,8 @@ contains
   subroutine Laserpulse_Init(self,Npts,Tmin,Tmax)
   !! Initializes the laser pulse class and allocates internal storage.
     class(LaserPulse_spline_t),intent(inout)::self
-    integer,intent(in)::Npts
-    real(dp),intent(in)::Tmin,Tmax
+    integer,intent(in)::Npts !! number of time samples
+    real(dp),intent(in)::Tmin,Tmax !! time interval
     integer::it,iflag
 
     self%Npts=Npts
@@ -336,8 +336,8 @@ contains
   subroutine Pulse3D_Init(self,Npts,Tmin,Tmax)
   !! Initializes the laser pulse class and allocates internal storage.
     class(LaserPulse_3D_t) :: self
-    integer,intent(in)::Npts
-    real(dp),intent(in)::Tmin,Tmax
+    integer,intent(in)::Npts !! number of time samples
+    real(dp),intent(in)::Tmin,Tmax !! time interval
     integer::it
 
     self%Npts=Npts
@@ -355,9 +355,9 @@ contains
 !--------------------------------------------------------------------------------------
   subroutine Pulse3D_Load_electricfield(me,fname,usecols,CalcAfield)
     class(LaserPulse_3D_t) :: me
-    character(len=*),intent(in) :: fname
-    integer,intent(in),optional :: usecols(:)
-    logical,intent(in),optional :: CalcAfield
+    character(len=*),intent(in) :: fname !! text file: time in the first column, field components in further columns
+    integer,intent(in),optional :: usecols(:) !! columns holding the field components
+    logical,intent(in),optional :: CalcAfield !! also compute the vector potential (default: `.true.`)
     logical :: calcafield_
     integer,allocatable :: usecols_(:)
     integer :: ncol
@@ -430,9 +430,9 @@ contains
 !--------------------------------------------------------------------------------------
   subroutine Pulse3D_Load_vectorpotential(me,fname,usecols,CalcEfield)
     class(LaserPulse_3D_t) :: me
-    character(len=*),intent(in) :: fname
-    integer,intent(in),optional :: usecols(:)
-    logical,intent(in),optional :: CalcEfield
+    character(len=*),intent(in) :: fname !! text file: time in the first column, vector-potential components in further columns
+    integer,intent(in),optional :: usecols(:) !! columns holding the vector-potential components
+    logical,intent(in),optional :: CalcEfield !! also compute the electric field (default: `.true.`)
     logical :: calcEfield_
     integer,allocatable :: usecols_(:)
     integer :: ncol
@@ -494,7 +494,7 @@ contains
   function Pulse3D_Afield(me,t) result(AF)
     real(dp),parameter :: small=1.0e-12_dp
     class(LaserPulse_3D_t) :: me
-    real(dp),intent(in) :: t
+    real(dp),intent(in) :: t !! time
     real(dp) :: AF(3)
     integer :: i
     integer :: iflag,inbvx
@@ -516,7 +516,7 @@ contains
 !--------------------------------------------------------------------------------------
   function Pulse3D_Efield(me,t) result(EF)
     class(LaserPulse_3D_t) :: me
-    real(dp),intent(in) :: t
+    real(dp),intent(in) :: t !! time
     real(dp) :: EF(3)
     integer :: i
     integer :: iflag,inbvx
@@ -533,9 +533,9 @@ contains
 !--------------------------------------------------------------------------------------
   subroutine Pulse3D_GetField(me,t,AF,EF)
     class(LaserPulse_3D_t) :: me
-    real(dp),intent(in) :: t
-    real(dp),intent(out) :: AF(3)
-    real(dp),intent(out) :: EF(3)
+    real(dp),intent(in) :: t !! time
+    real(dp),intent(out) :: AF(3) !! vector potential \(\mathbf{A}(t)\)
+    real(dp),intent(out) :: EF(3) !! electric field \(\mathbf{E}(t)\)
 
     AF = me%Afield(t)
     EF = me%Efield(t)

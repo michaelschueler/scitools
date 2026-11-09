@@ -41,7 +41,7 @@ contains
       interface 
          function f(theta,phi) result(ftp)
             use scitools_def,only: dp
-            real(dp),intent(in) :: theta,phi
+            real(dp),intent(in) :: theta,phi !! polar and azimuthal angle
             real(dp) :: ftp
          end function f
       end interface
@@ -68,7 +68,7 @@ contains
       interface 
          function f(theta,phi) result(ftp)
             use scitools_def,only: dp
-            real(dp),intent(in) :: theta,phi
+            real(dp),intent(in) :: theta,phi !! polar and azimuthal angle
             complex(dp) :: ftp
          end function f
       end interface
@@ -95,7 +95,7 @@ contains
       interface 
          function f(theta,phi) result(ftp)
             use scitools_def,only: dp
-            real(dp),intent(in) :: theta,phi
+            real(dp),intent(in) :: theta,phi !! polar and azimuthal angle
             real(dp) :: ftp
          end function f
       end interface
@@ -140,7 +140,7 @@ contains
       interface 
          function f(theta,phi) result(ftp)
             use scitools_def,only: dp
-            real(dp),intent(in) :: theta,phi
+            real(dp),intent(in) :: theta,phi !! polar and azimuthal angle
             complex(dp) :: ftp
          end function f
       end interface

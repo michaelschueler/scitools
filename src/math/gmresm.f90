@@ -10,39 +10,45 @@ module scitools_gmresm
    public :: gmresm
 !--------------------------------------------------------------------------------------
    interface gmresm
+      !! Restarted GMRES(m) solver for real or complex linear systems \(A x = b\).
+      !! The real version optionally computes a hookstep (trust-region) solution for Newton-Krylov methods.
       module procedure dgmresm, zgmresm
    end interface gmresm
 !--------------------------------------------------------------------------------------
 contains
 !--------------------------------------------------------------------------------------
    subroutine dgmresm(m,n,x,b,matvec,psolve,dotprd,res,del,its,info)
+      !! GMRES(m) for real systems, with optional hookstep.
       implicit none
-      integer,          intent(in)    :: m
-      integer,          intent(in)    :: n
-      real(dp), intent(inout)         :: x(:)
-      real(dp), intent(in)            :: b(:)
+      integer,          intent(in)    :: m !! dimension of the Krylov subspace (restart length)
+      integer,          intent(in)    :: n !! dimension of the linear system
+      real(dp), intent(inout)         :: x(:) !! on input: initial guess; on output: solution
+      real(dp), intent(in)            :: b(:) !! right-hand side \(b\)
       interface
       subroutine matvec(x,y)
+         !! user-supplied matrix-vector product \(y = A x\)
          import :: dp
-         real(dp),intent(in)    :: x(:)
-         real(dp),intent(inout) :: y(:)
+         real(dp),intent(in)    :: x(:) !! input vector
+         real(dp),intent(inout) :: y(:) !! result \(A x\)
       end subroutine matvec
 
       subroutine psolve(x)
+         !! user-supplied preconditioner, applied in place: \(x \rightarrow M^{-1} x\)
          import :: dp
-         real(dp),intent(inout) :: x(:)
+         real(dp),intent(inout) :: x(:) !! vector to be preconditioned (overwritten)
       end subroutine psolve
 
       function dotprd(x,y) result(d)
+         !! user-supplied inner product \((x|y)\)
          import :: dp
-         real(dp),intent(in)    :: x(:),y(:)
+         real(dp),intent(in)    :: x(:),y(:) !! first and second vector
          real(dp) :: d
       end function dotprd
       end interface 
-      real(dp), intent(inout) :: res
-      real(dp), intent(inout) :: del
-      integer,          intent(inout) :: its
-      integer,          intent(inout) :: info
+      real(dp), intent(inout) :: res !! on input: requested tolerance; on output: achieved residual
+      real(dp), intent(inout) :: del !! trust-region size for the hookstep; no hookstep if `del <= 0`
+      integer,          intent(inout) :: its !! on input: maximum number of iterations; on output: number of iterations performed
+      integer,          intent(inout) :: info !! on input: 1 = print residuals, 2 = only recompute hookstep from the previous call; on output: 0 = converged, 1 = residual stagnated, 2 = maximum number of iterations reached
       real(dp) :: tol,res_,stgn
       real(dp) :: h_(m+1,m), y(m+1), p(m+1), work(4*m+1)
       real(dp),allocatable :: w(:), z(:)
@@ -132,33 +138,37 @@ contains
    end subroutine dgmresm
 !--------------------------------------------------------------------------------------
    subroutine zgmresm(m,n,x,b,matvec,psolve,dotprd,res,its,info)
+      !! GMRES(m) for complex systems.
       implicit none
       complex(dp),parameter :: mone=-one
-      integer,     intent(in)    :: m
-      integer,     intent(in)    :: n
-      complex(dp), intent(inout) :: x(:)
-      complex(dp), intent(in)    :: b(:)
+      integer,     intent(in)    :: m !! dimension of the Krylov subspace (restart length)
+      integer,     intent(in)    :: n !! dimension of the linear system
+      complex(dp), intent(inout) :: x(:) !! on input: initial guess; on output: solution
+      complex(dp), intent(in)    :: b(:) !! right-hand side \(b\)
       interface
       subroutine matvec(x,y)
+         !! user-supplied matrix-vector product \(y = A x\)
          import :: dp
-         complex(dp),intent(in)    :: x(:)
-         complex(dp),intent(inout) :: y(:)
+         complex(dp),intent(in)    :: x(:) !! input vector
+         complex(dp),intent(inout) :: y(:) !! result \(A x\)
       end subroutine matvec
 
       subroutine psolve(x)
+         !! user-supplied preconditioner, applied in place: \(x \rightarrow M^{-1} x\)
          import :: dp
-         complex(dp),intent(inout) :: x(:)
+         complex(dp),intent(inout) :: x(:) !! vector to be preconditioned (overwritten)
       end subroutine psolve
 
       function dotprd(x,y) result(d)
+         !! user-supplied inner product \((x|y)\)
          import :: dp
-         complex(dp),intent(in)    :: x(:),y(:)
+         complex(dp),intent(in)    :: x(:),y(:) !! first and second vector
          complex(dp) :: d
       end function dotprd
       end interface  
-      real(dp),         intent(inout) :: res
-      integer,          intent(inout) :: its
-      integer,          intent(inout) :: info
+      real(dp),         intent(inout) :: res !! on input: requested tolerance; on output: achieved residual
+      integer,          intent(inout) :: its !! on input: maximum number of iterations; on output: number of iterations performed
+      integer,          intent(inout) :: info !! on input: 1 = print residuals; on output: 0 = converged, 1 = residual stagnated, 2 = maximum number of iterations reached
       real(dp) :: tol,res_,stgn
       complex(dp) :: h_(m+1,m), y(m+1), p(m+1)
       real(dp),allocatable :: rwork(:)

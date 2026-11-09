@@ -464,6 +464,7 @@ contains
 
   !
   subroutine hdf_write_vector_to_dataset_double(loc_id, dset_name, offset, vector)
+     !! Writes a real vector into an existing dataset at the given offset.
 
     integer(HID_T), intent(in) :: loc_id        !! local id in file
     character(len=*), intent(in) :: dset_name   !! name of dataset
@@ -534,6 +535,7 @@ contains
 
   !
   subroutine hdf_write_vector_to_dataset_integer(loc_id, dset_name, offset, vector)
+     !! Writes an integer vector into an existing dataset at the given offset.
 
     integer(HID_T), intent(in) :: loc_id        !! local id in file
     character(len=*), intent(in) :: dset_name   !! name of dataset
@@ -604,6 +606,7 @@ contains
 
   !
   subroutine hdf_read_vector_from_dataset_double(loc_id, dset_name, offset, vector)
+     !! Reads a real vector from a dataset at the given offset.
 
     integer(HID_T), intent(in) :: loc_id        !! local id in file
     character(len=*), intent(in) :: dset_name   !! name of dataset
@@ -674,6 +677,7 @@ contains
 
   !
   subroutine hdf_read_vector_from_dataset_integer(loc_id, dset_name, offset, vector)
+     !! Reads an integer vector from a dataset at the given offset.
 
     integer(HID_T), intent(in) :: loc_id        !! local id in file
     character(len=*), intent(in) :: dset_name   !! name of dataset

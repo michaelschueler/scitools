@@ -17,11 +17,11 @@ module scitools_vector_bsplines
 !-------------------------------------------------------------------------------------- 
    type :: real_vector_spline_t
    !! class for real vector-valued splines
-      integer :: kx=4
-      integer :: nc,nx
-      real(dp) :: xlim(2)
-      real(dp),allocatable,dimension(:)   :: tx
-      real(dp),allocatable,dimension(:,:) :: cff
+      integer :: kx=4 !! order of the B-splines (default: 4, cubic)
+      integer :: nc,nx !! number of components, number of grid points
+      real(dp) :: xlim(2) !! interpolation interval \([x_{min}, x_{max}]\)
+      real(dp),allocatable,dimension(:)   :: tx !! knot sequence
+      real(dp),allocatable,dimension(:,:) :: cff !! B-spline coefficients
    contains
       procedure :: Init => real_vector_init
       procedure :: Clean => real_vector_clean
@@ -31,11 +31,11 @@ module scitools_vector_bsplines
 
    type :: real_matrix_spline_t
    !! class for real matrix-valued splines
-      integer :: kx=4
-      integer :: nc,mc,nx
-      real(dp) :: xlim(2)
-      real(dp),allocatable,dimension(:)     :: tx
-      real(dp),allocatable,dimension(:,:,:) :: cff
+      integer :: kx=4 !! order of the B-splines (default: 4, cubic)
+      integer :: nc,mc,nx !! number of rows and columns, number of grid points
+      real(dp) :: xlim(2) !! interpolation interval \([x_{min}, x_{max}]\)
+      real(dp),allocatable,dimension(:)     :: tx !! knot sequence
+      real(dp),allocatable,dimension(:,:,:) :: cff !! B-spline coefficients
    contains
       procedure :: Init => real_matrix_init
       procedure :: Clean => real_matrix_clean
@@ -45,11 +45,11 @@ module scitools_vector_bsplines
 
    type :: cplx_vector_spline_t
    !! class for complex vector-valued splines
-      integer :: kx=4
-      integer :: nc,nx
-      real(dp) :: xlim(2)
-      real(dp),allocatable,dimension(:)   :: tx
-      real(dp),allocatable,dimension(:,:) :: cffr,cffi
+      integer :: kx=4 !! order of the B-splines (default: 4, cubic)
+      integer :: nc,nx !! number of components, number of grid points
+      real(dp) :: xlim(2) !! interpolation interval \([x_{min}, x_{max}]\)
+      real(dp),allocatable,dimension(:)   :: tx !! knot sequence
+      real(dp),allocatable,dimension(:,:) :: cffr,cffi !! B-spline coefficients (real and imaginary parts)
    contains
       procedure :: Init => cplx_vector_init
       procedure :: Clean => cplx_vector_clean
@@ -59,11 +59,11 @@ module scitools_vector_bsplines
 
    type :: cplx_matrix_spline_t
    !! class for complex matrix-valued splines
-      integer :: kx=4
-      integer :: nc,mc,nx
-      real(dp) :: xlim(2)
-      real(dp),allocatable,dimension(:)     :: tx
-      real(dp),allocatable,dimension(:,:,:) :: cffr,cffi
+      integer :: kx=4 !! order of the B-splines (default: 4, cubic)
+      integer :: nc,mc,nx !! number of rows and columns, number of grid points
+      real(dp) :: xlim(2) !! interpolation interval \([x_{min}, x_{max}]\)
+      real(dp),allocatable,dimension(:)     :: tx !! knot sequence
+      real(dp),allocatable,dimension(:,:,:) :: cffr,cffi !! B-spline coefficients (real and imaginary parts)
    contains
       procedure :: Init => cplx_matrix_init
       procedure :: Clean => cplx_matrix_clean

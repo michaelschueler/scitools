@@ -1,0 +1,25 @@
+# Build and install trees
+build/
+build-*/
+install/
+
+# FORD output
+doc/
+
+# Local, machine-specific configure scripts
+configure.sh
+
+# Fortran / compiler artifacts
+*.o
+*.mod
+*.smod
+*.a
+*.so
+*.dylib
+
+# Editors and OS
+.DS_Store
+*.swp
+*~
+.vscode/
+.idea/

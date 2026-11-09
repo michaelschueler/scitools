@@ -1,4 +1,7 @@
 module scitools_lebedev_weights
+   !! Tabulated Lebedev quadrature grids on the unit sphere
+   !! (V. I. Lebedev and D. N. Laikov, Doklady Mathematics 59, 477 (1999)).
+   !! The weights are normalized to 1. Used by [[scitools_lebedev_quad]].
 !======================================================================================
    use,intrinsic::iso_fortran_env,only: output_unit, error_unit
    use scitools_debug
@@ -98,10 +101,11 @@ module scitools_lebedev_weights
 contains
 !--------------------------------------------------------------------------------------
    subroutine GetLebedevQuad(p,np,theta,phi,w,unit_deg)
-      integer,intent(in)  :: p
-      integer,intent(out) :: np
-      real(dp),intent(inout) :: theta(:),phi(:),w(:)
-      logical,intent(in),optional :: unit_deg
+      !! Returns the Lebedev grid of order p: number of points, angles and weights.
+      integer,intent(in)  :: p !! order of the rule: 3, 5, ..., 31, 35, 41, 47, 53, 59 or 65
+      integer,intent(out) :: np !! number of grid points
+      real(dp),intent(inout) :: theta(:),phi(:),w(:) !! polar angles, azimuthal angles and weights (size >= np)
+      logical,intent(in),optional :: unit_deg !! angles in degrees if `.true.` (default), radians otherwise
       logical :: unit_deg_
 
       unit_deg_ = .true.

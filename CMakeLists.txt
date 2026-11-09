@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
-project("SCITOOLS" Fortran)
-enable_language (Fortran)
+project("SCITOOLS" LANGUAGES C Fortran)
+
 
 # make sure that the default is a RELEASE
 if (NOT CMAKE_BUILD_TYPE)

@@ -2,6 +2,8 @@ module scitools_sorting
 
 !! Module for sorting arrays.
 !! Based on code written by John E. Pask, LLNL.
+!!
+!! Based on fortran-utils by O. Čertík (MIT license); see THIRD_PARTY_NOTICES.md.
 
 use scitools_def, only: dp
 use scitools_utils, only: stop_error

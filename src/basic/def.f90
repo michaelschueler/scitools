@@ -24,7 +24,7 @@ contains
 !--------------------------------------------------------------------------------------
    pure elemental real(dp) function save_exp(x)
    !! evaluates exp(x) avoiding overflow or underflow
-      real(dp),intent(in) :: x 
+      real(dp),intent(in) :: x !! argument
 
       if(x > 30.0_dp) then
          save_exp = Huge(1.0_dp)

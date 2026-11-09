@@ -11,9 +11,10 @@ module scitools_legendre
 contains
 !--------------------------------------------------------------------------------------
    elemental real(dp) function legendre(n, x)
+      !! Evaluates the Legendre polynomial \(P_n(x)\) by the three-term recurrence.
       implicit none
-      integer, intent(in) :: n
-      real(dp), intent(in) :: x
+      integer, intent(in) :: n !! degree \(n \ge 0\)
+      real(dp), intent(in) :: x !! argument
       real(dp) :: p0, p1, p2
       integer :: i
 
@@ -35,9 +36,10 @@ contains
    end function legendre
 !--------------------------------------------------------------------------------------
    elemental real(dp) function legendre_inbox(n, x)
+      !! Evaluates \(P_n(x)\) for \(|x| \le 1\) and returns zero outside this interval.
       implicit none
-      integer, intent(in) :: n
-      real(dp), intent(in) :: x
+      integer, intent(in) :: n !! degree \(n \ge 0\)
+      real(dp), intent(in) :: x !! argument
 
       if (abs(x) <= 1.0_dp) then
          legendre_inbox = legendre(n, x)
@@ -48,8 +50,12 @@ contains
    end function legendre_inbox
 !--------------------------------------------------------------------------------------
    function legendre_roots(n) result(roots)
+      !! Roots of \(P_n(x)\).
+      !!
+      !! **Experimental:** this routine has not been validated; use
+      !! [[scitools_gausslegendre]] or [[get_gauss_lobatto]] for quadrature nodes.
       implicit none
-      integer, intent(in) :: n
+      integer, intent(in) :: n !! degree \(n\)
       real(dp), dimension(n) :: roots
       real(dp), dimension(n,n) :: mat, tau
       integer :: lwork, info

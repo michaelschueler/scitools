@@ -16,6 +16,8 @@ module scitools_idrs
    public :: idrs, didrs, zidrs
 !--------------------------------------------------------------------------------------
    interface idrs
+      !! Solves \(A X = B\) (one or several right-hand sides) for real or complex \(A\) with IDR(s).
+      !! The matrix and preconditioner are only accessed through user-supplied functions.
       module procedure didrs, zidrs
    end interface idrs
 !--------------------------------------------------------------------------------------
@@ -27,45 +29,49 @@ function didrs( b, s, &
   tolerance, maximum_iterations, variant, print_eachstep, &
   flag, relres, iterations, &
   x0, U0, omega, resvec, H)
+   !! IDR(s) for real systems; returns the solution \(X\).
 
   implicit none
 
   ! Required input parameters:
-  real(dp), intent(in) :: b(:, :)  ! system rhs
-  integer, intent(in) :: s       ! s parameter
+  real(dp), intent(in) :: b(:, :) !! right-hand side(s) \(B\)
+  integer, intent(in) :: s !! dimension of the shadow space (e.g. 4)
   ! Solution:
   real(dp) :: didrs (size(b,1), size(b,2))
   ! Optional input parameters:
-  real(dp), optional, intent(in) :: tolerance
-  integer, optional, intent(in) :: maximum_iterations
-  character(len=8), optional, intent(in) :: variant
-  logical, optional, intent(in) :: print_eachstep
+  real(dp), optional, intent(in) :: tolerance !! relative residual tolerance (default: 1e-6)
+  integer, optional, intent(in) :: maximum_iterations !! maximum number of iterations (default: min(2n, 1000))
+  character(len=8), optional, intent(in) :: variant !! `'biortho'` (default), `'minsync'` or `'bicgstab'`
+  logical, optional, intent(in) :: print_eachstep !! print the residual in each iteration
   ! Optional output parameters:
-  integer, optional, intent(out) :: flag
-  real(dp), optional, intent(out) :: relres
-  integer, optional, intent(out) :: iterations
+  integer, optional, intent(out) :: flag !! 0 = converged, 1 = maximum iterations reached, 2 = accuracy above tolerance, 3 = breakdown
+  real(dp), optional, intent(out) :: relres !! final relative residual
+  integer, optional, intent(out) :: iterations !! number of iterations performed
   ! Optional input arrays:
-  real(dp), optional, intent(in) :: x0(:, :)
-  real(dp), optional, intent(in) :: U0(:, :, :)
-  real(dp), optional, intent(in) :: omega(:)
+  real(dp), optional, intent(in) :: x0(:, :) !! initial guess
+  real(dp), optional, intent(in) :: U0(:, :, :) !! initial search space
+  real(dp), optional, intent(in) :: omega(:) !! user-defined values for the parameter \(\omega\)
   ! Optional output arrays:
-  real(dp), optional, intent(out) :: resvec(:)
-  real(dp), optional, intent(out) :: H(:, :)
+  real(dp), optional, intent(out) :: resvec(:) !! residual norm in each iteration (size >= maxit+1)
+  real(dp), optional, intent(out) :: H(:, :) !! Hessenberg matrix of iteration parameters (for Ritz values)
 
   interface
     function preconditioner(v)
+       !! user-supplied preconditioner \(M^{-1} V\) applied to a block of vectors
       import :: dp
-      real(dp), dimension(:,:), intent(in)     :: v
+      real(dp), dimension(:,:), intent(in)     :: v !! input vectors (one per column)
       real(dp), dimension(size(v,1),size(v,2)) :: preconditioner
     end function preconditioner
     function matrixvector(v)
+       !! user-supplied matrix-vector product \(A V\) for a block of vectors
       import :: dp
-      real(dp), intent(in)       :: v(:,:)
+      real(dp), intent(in)       :: v(:,:) !! input vectors (one per column)
       real(dp)                   :: matrixvector(size(v,1),size(v,2))
     end function matrixvector
     real(dp) function ddotprod(a, b)
+       !! user-supplied inner product \((a|b)\)
       import :: dp
-      real(dp), intent(in) :: a(:), b(:)
+      real(dp), intent(in) :: a(:), b(:) !! first and second vector
       real(dp), allocatable :: apsi(:, :), bpsi(:, :)
     end function ddotprod
   end interface
@@ -511,50 +517,55 @@ function zidrs( b, s, &
   tolerance, maximum_iterations, variant, print_eachstep, &
   flag, relres, iterations,&
   x0, U0, omega, resvec, H)
+   !! IDR(s) for complex systems; returns the solution \(X\).
 
   implicit none
 
   ! Required input parameters:
-  complex(dp), intent(in) :: b(:, :)  ! system rhs
-  integer, intent(in) :: s       ! s parameter
+  complex(dp), intent(in) :: b(:, :) !! right-hand side(s) \(B\)
+  integer, intent(in) :: s !! dimension of the shadow space (e.g. 4)
   ! Solution:
   complex(dp) :: zidrs (size(b,1), size(b,2))
   ! Optional input parameters:
-  real(dp), optional, intent(in) :: tolerance
-  integer, optional, intent(in) :: maximum_iterations
-  character(len=8), optional, intent(in) :: variant
-  logical, optional, intent(in) :: print_eachstep
+  real(dp), optional, intent(in) :: tolerance !! relative residual tolerance (default: 1e-6)
+  integer, optional, intent(in) :: maximum_iterations !! maximum number of iterations (default: min(2n, 1000))
+  character(len=8), optional, intent(in) :: variant !! `'biortho'` (default), `'minsync'` or `'bicgstab'`
+  logical, optional, intent(in) :: print_eachstep !! print the residual in each iteration
   ! Optional output parameters:
-  integer, optional, intent(out) :: flag
-  real(dp), optional, intent(out) :: relres
-  integer, optional, intent(out) :: iterations
+  integer, optional, intent(out) :: flag !! 0 = converged, 1 = maximum iterations reached, 2 = accuracy above tolerance, 3 = breakdown
+  real(dp), optional, intent(out) :: relres !! final relative residual
+  integer, optional, intent(out) :: iterations !! number of iterations performed
   ! Optional input arrays:
-  complex(dp), optional, intent(in) :: x0(:, :)
-  complex(dp), optional, intent(in) :: U0(:, :, :)
-  complex(dp), optional, intent(in) :: omega(:)
+  complex(dp), optional, intent(in) :: x0(:, :) !! initial guess
+  complex(dp), optional, intent(in) :: U0(:, :, :) !! initial search space
+  complex(dp), optional, intent(in) :: omega(:) !! user-defined values for the parameter \(\omega\)
   ! Optional output arrays:
-  real(dp), optional, intent(inout) :: resvec(:)
-  complex(dp), optional, intent(inout) :: H(:, :)
+  real(dp), optional, intent(inout) :: resvec(:) !! residual norm in each iteration (size >= maxit+1)
+  complex(dp), optional, intent(inout) :: H(:, :) !! Hessenberg matrix of iteration parameters (for Ritz values)
 
   interface
     function preconditioner(v)
+       !! user-supplied preconditioner \(M^{-1} V\) applied to a block of vectors
       import :: dp
-      complex(dp), dimension(:,:), intent(in)     :: v
+      complex(dp), dimension(:,:), intent(in)     :: v !! input vectors (one per column)
       complex(dp), dimension(size(v,1),size(v,2)) :: preconditioner
     end function preconditioner
     function matrixvector(v)
+       !! user-supplied matrix-vector product \(A V\) for a block of vectors
       import :: dp
-      complex(dp), intent(in)       :: v(:,:)
+      complex(dp), intent(in)       :: v(:,:) !! input vectors (one per column)
       complex(dp)                   :: matrixvector(size(v,1),size(v,2))
     end function matrixvector
     real(dp) function ddotprod(a, b)
+       !! user-supplied inner product \((a|b)\)
     import :: dp
-      real(dp), intent(in) :: a(:), b(:)
+      real(dp), intent(in) :: a(:), b(:) !! first and second vector
       !real(dp), allocatable :: apsi(:, :), bpsi(:, :)
     end function ddotprod
     complex(dp) function zdotprod(a, b)
+       !! user-supplied inner product \((a|b)\)
        import :: dp
-      complex(dp), intent(in) :: a(:), b(:)
+      complex(dp), intent(in) :: a(:), b(:) !! first and second vector
       !complex(dp), allocatable :: apsi(:, :), bpsi(:, :)
     end function zdotprod
   end interface

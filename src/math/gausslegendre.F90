@@ -1,5 +1,7 @@
     module scitools_gausslegendre
 !!  Integration of functions using adaptive Guassian quadrature.
+!!
+!! Based on quadrature-fortran by J. Williams (BSD-3-Clause license); see THIRD_PARTY_NOTICES.md.
 !
 !### Author
 !  * Jacob Williams
@@ -20,8 +22,8 @@
 
     type,public :: quadrature_method
         !! quadrature methods
-        integer            :: n_points = 0
-        character(len=100) :: name     = ""
+        integer            :: n_points = 0 !! number of points of the Gauss-Legendre rule
+        character(len=100) :: name     = "" !! name of the method
     end type quadrature_method
 
     type(quadrature_method),parameter :: quad_gauss_6  = quadrature_method(6,  'Adaptive 6-point Legendre-Gauss')
@@ -278,7 +280,7 @@
     integer,intent(in)     :: methodx  !! quadrature method to use for x
     integer,intent(in)     :: methody  !! quadrature method to use for y
 
-    procedure(func_1d),pointer :: dummy => null() !! these will be set in [[integrate_2d]]
+    procedure(func_1d),pointer :: dummy => null() !! these will be set in `integrate_2d`
 
     me%fxy => fxy  !the user-defined f(x,y) function to integrate
 
@@ -313,7 +315,7 @@
     integer,intent(in)     :: methody  !! quadrature method to use for y
     integer,intent(in)     :: methodz  !! quadrature method to use for z
 
-    procedure(func_1d),pointer :: dummy => null() !! these will be set in [[integrate_3d]]
+    procedure(func_1d),pointer :: dummy => null() !! these will be set in `integrate_3d`
 
     me%fxyz => fxyz  !the user-defined f(x,y,z) function to integrate
 
@@ -354,7 +356,7 @@
     integer,intent(in)     :: methodz  !! quadrature method to use for z
     integer,intent(in)     :: methodq  !! quadrature method to use for q
 
-    procedure(func_1d),pointer :: dummy => null() !! these will be set in [[integrate_3d]]
+    procedure(func_1d),pointer :: dummy => null() !! these will be set in `integrate_3d`
 
     me%fxyzq => fxyzq  !the user-defined f(x,y,z,q) function to integrate
 
@@ -400,7 +402,7 @@
     integer,intent(in)     :: methodq  !! quadrature method to use for q
     integer,intent(in)     :: methodr  !! quadrature method to use for r
 
-    procedure(func_1d),pointer :: dummy => null() !! these will be set in [[integrate_3d]]
+    procedure(func_1d),pointer :: dummy => null() !! these will be set in `integrate_3d`
 
     me%fxyzqr => fxyzqr  !the user-defined f(x,y,z,q,r) function to integrate
 
@@ -451,7 +453,7 @@
     integer,intent(in)     :: methodr  !! quadrature method to use for r
     integer,intent(in)     :: methods  !! quadrature method to use for s
 
-    procedure(func_1d),pointer :: dummy => null() !! these will be set in [[integrate_3d]]
+    procedure(func_1d),pointer :: dummy => null() !! these will be set in `integrate_3d`
 
     me%fxyzqrs => fxyzqrs  !the user-defined f(x,y,z,q,r,s) function to integrate
 
@@ -472,9 +474,9 @@
     implicit none
 
     class(integration_class_1d),intent(inout)  :: me
-    real(dp),intent(out)  :: ans
-    integer,intent(out)   :: ierr
-    real(dp),intent(out)  :: err
+    real(dp),intent(out)  :: ans !! value of the integral
+    integer,intent(out)   :: ierr !! status code: 1 = success, 2 = result probably not accurate enough, -1 = integration bounds too close
+    real(dp),intent(out)  :: err !! estimated error
 
     !call the low-level routine:
     call me%dgauss_generic(me%a, me%b, me%tol, ans, ierr, err)
@@ -488,9 +490,9 @@
     implicit none
 
     class(integration_class_2d),intent(inout)  :: me
-    real(dp),intent(out)  :: ans
-    integer,intent(out)   :: ierr
-    real(dp),intent(out)  :: err
+    real(dp),intent(out)  :: ans !! value of the integral
+    integer,intent(out)   :: ierr !! status code: 1 = success, 2 = result probably not accurate enough, -1 = integration bounds too close
+    real(dp),intent(out)  :: err !! estimated error
 
     ! set the two functions to the contained wrappers:
     me%iy%fun => f_of_y
@@ -528,9 +530,9 @@
     implicit none
 
     class(integration_class_3d),intent(inout)  :: me
-    real(dp),intent(out)  :: ans
-    integer,intent(out)   :: ierr
-    real(dp),intent(out)  :: err
+    real(dp),intent(out)  :: ans !! value of the integral
+    integer,intent(out)   :: ierr !! status code: 1 = success, 2 = result probably not accurate enough, -1 = integration bounds too close
+    real(dp),intent(out)  :: err !! estimated error
 
     ! set the functions to the contained wrappers:
     me%iz%fun => f_of_z
@@ -577,9 +579,9 @@
     implicit none
 
     class(integration_class_4d),intent(inout)  :: me
-    real(dp),intent(out)  :: ans
-    integer,intent(out)   :: ierr
-    real(dp),intent(out)  :: err
+    real(dp),intent(out)  :: ans !! value of the integral
+    integer,intent(out)   :: ierr !! status code: 1 = success, 2 = result probably not accurate enough, -1 = integration bounds too close
+    real(dp),intent(out)  :: err !! estimated error
 
     ! set the functions to the contained wrappers:
     me%iq%fun => f_of_q
@@ -635,9 +637,9 @@
     implicit none
 
     class(integration_class_5d),intent(inout)  :: me
-    real(dp),intent(out)  :: ans
-    integer,intent(out)   :: ierr
-    real(dp),intent(out)  :: err
+    real(dp),intent(out)  :: ans !! value of the integral
+    integer,intent(out)   :: ierr !! status code: 1 = success, 2 = result probably not accurate enough, -1 = integration bounds too close
+    real(dp),intent(out)  :: err !! estimated error
 
     ! set the functions to the contained wrappers:
     me%ir%fun => f_of_r
@@ -702,9 +704,9 @@
     implicit none
 
     class(integration_class_6d),intent(inout)  :: me
-    real(dp),intent(out)  :: ans
-    integer,intent(out)   :: ierr
-    real(dp),intent(out)  :: err
+    real(dp),intent(out)  :: ans !! value of the integral
+    integer,intent(out)   :: ierr !! status code: 1 = success, 2 = result probably not accurate enough, -1 = integration bounds too close
+    real(dp),intent(out)  :: err !! estimated error
 
     ! set the functions to the contained wrappers:
     me%is%fun => f_of_s

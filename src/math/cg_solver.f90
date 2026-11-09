@@ -10,36 +10,45 @@ module scitools_cg_solver
    public :: dconjugate_gradients, zconjugate_gradients
 
    interface dconjugate_gradients
+      !! Conjugate-gradient solver for real linear systems \(A x = b\).
+      !! Called with `op` only, \(A\) must be symmetric positive definite (CG); with `op` and its transpose `opt`,
+      !! general matrices are handled by the biconjugate-gradient method.
       module procedure dsym_conjugate_gradients, dbi_conjugate_gradients
    end interface dconjugate_gradients
 
    interface zconjugate_gradients
+      !! Conjugate-gradient solver for complex linear systems \(A x = b\).
+      !! Called with `op` only, \(A\) must be hermitian positive definite (CG); with `op` and its adjoint `opt`,
+      !! general matrices are handled by the biconjugate-gradient method.
       module procedure zsym_conjugate_gradients, zbi_conjugate_gradients
    end interface zconjugate_gradients
 !--------------------------------------------------------------------------------------
 contains
 !--------------------------------------------------------------------------------------
    subroutine dsym_conjugate_gradients(np, x, b, op, dotp, iter, residue, threshold)
-      integer, intent(in)      :: np
-      real(dp),  intent(inout) :: x(:)
-      real(dp),  intent(in)    :: b(:)
+      !! CG solver for real symmetric positive-definite systems.
+      integer, intent(in)      :: np !! dimension of the linear system
+      real(dp),  intent(inout) :: x(:) !! on input: initial guess; on output: solution
+      real(dp),  intent(in)    :: b(:) !! right-hand side \(b\)
       interface
       subroutine op(x, y)
+         !! user-supplied matrix-vector product \(y = A x\)
          use scitools_def,only: dp
          implicit none
-         real(dp), intent(in)    :: x(:)
-         real(dp), intent(inout) :: y(:)
+         real(dp), intent(in)    :: x(:) !! input vector
+         real(dp), intent(inout) :: y(:) !! result \(A x\)
       end subroutine op
       real(dp) function dotp(x, y)
+         !! user-supplied inner product \((x|y)\)
          use scitools_def,only: dp
          implicit none
-         real(dp), intent(in)    :: x(:)
-         real(dp), intent(in)    :: y(:)
+         real(dp), intent(in)    :: x(:) !! first vector
+         real(dp), intent(in)    :: y(:) !! second vector
       end function dotp
       end interface
-      integer,          intent(inout) :: iter
-      real(dp),  optional, intent(in)    :: threshold
-      real(dp), optional, intent(out)   :: residue
+      integer,          intent(inout) :: iter !! on input: maximum number of iterations; on output: number of iterations performed
+      real(dp),  optional, intent(in)    :: threshold !! convergence threshold (default: 1e-6)
+      real(dp), optional, intent(out)   :: residue !! final residual norm
       real(dp), allocatable :: r(:), ax(:), p(:), ap(:)
       real(dp)              :: alpha, beta, gamma
       real(dp)                 :: threshold_
@@ -87,26 +96,29 @@ contains
    end subroutine dsym_conjugate_gradients
 !--------------------------------------------------------------------------------------
    subroutine zsym_conjugate_gradients(np, x, b, op, dotp, iter, residue, threshold)
-      integer, intent(in)      :: np
-      complex(dp),  intent(inout) :: x(:)
-      complex(dp),  intent(in)    :: b(:)
+      !! CG solver for complex hermitian positive-definite systems.
+      integer, intent(in)      :: np !! dimension of the linear system
+      complex(dp),  intent(inout) :: x(:) !! on input: initial guess; on output: solution
+      complex(dp),  intent(in)    :: b(:) !! right-hand side \(b\)
       interface
       subroutine op(x, y)
+         !! user-supplied matrix-vector product \(y = A x\)
          use scitools_def,only: dp
          implicit none
-         complex(dp), intent(in)    :: x(:)
-         complex(dp), intent(inout) :: y(:)
+         complex(dp), intent(in)    :: x(:) !! input vector
+         complex(dp), intent(inout) :: y(:) !! result \(A x\)
       end subroutine op
       complex(dp) function dotp(x, y)
+         !! user-supplied inner product \((x|y)\)
          use scitools_def,only: dp
          implicit none
-         complex(dp), intent(in)    :: x(:)
-         complex(dp), intent(in)    :: y(:)
+         complex(dp), intent(in)    :: x(:) !! first vector
+         complex(dp), intent(in)    :: y(:) !! second vector
       end function dotp
       end interface
-      integer,          intent(inout) :: iter
-      real(dp),  optional, intent(in)    :: threshold
-      real(dp), optional, intent(out)    :: residue
+      integer,          intent(inout) :: iter !! on input: maximum number of iterations; on output: number of iterations performed
+      real(dp),  optional, intent(in)    :: threshold !! convergence threshold (default: 1e-6)
+      real(dp), optional, intent(out)    :: residue !! final residual norm
       complex(dp), allocatable :: r(:), ax(:), p(:), ap(:)
       complex(dp)              :: alpha, beta, gamma
       real(dp)                 :: threshold_
@@ -154,34 +166,38 @@ contains
    end subroutine zsym_conjugate_gradients
 !--------------------------------------------------------------------------------------
    subroutine dbi_conjugate_gradients(np, x, b, op, opt, dotp, iter, residue, threshold)
-      integer, intent(in)    :: np
-      real(dp),  intent(inout) :: x(:)
-      real(dp),  intent(in)    :: b(:)
+      !! Biconjugate-gradient solver for general real systems.
+      integer, intent(in)    :: np !! dimension of the linear system
+      real(dp),  intent(inout) :: x(:) !! on input: initial guess; on output: solution
+      real(dp),  intent(in)    :: b(:) !! right-hand side \(b\)
       interface
          subroutine op(x, y)
+            !! user-supplied matrix-vector product \(y = A x\)
             use scitools_def,only: dp
             implicit none
-            real(dp), intent(in)    :: x(:)
-            real(dp), intent(inout) :: y(:)
+            real(dp), intent(in)    :: x(:) !! input vector
+            real(dp), intent(inout) :: y(:) !! result \(A x\)
          end subroutine op
       end interface
       interface
          subroutine opt(x, y)
+            !! user-supplied product with the transpose (real) or adjoint (complex) matrix, \(y = A^\dagger x\)
             use scitools_def,only: dp
             implicit none
-            real(dp), intent(in)    :: x(:)
-            real(dp), intent(inout) :: y(:)
+            real(dp), intent(in)    :: x(:) !! input vector
+            real(dp), intent(inout) :: y(:) !! result \(A^\dagger x\)
          end subroutine opt
          real(dp) function dotp(x, y)
+            !! user-supplied inner product \((x|y)\)
             use scitools_def,only: dp
             implicit none
-            real(dp), intent(in) :: x(:)
-            real(dp), intent(in) :: y(:)
+            real(dp), intent(in) :: x(:) !! first vector
+            real(dp), intent(in) :: y(:) !! second vector
          end function dotp
       end interface
-      integer,          intent(inout) :: iter
-      real(dp), optional, intent(out)   :: residue
-      real(dp), optional,  intent(in)    :: threshold
+      integer,          intent(inout) :: iter !! on input: maximum number of iterations; on output: number of iterations performed
+      real(dp), optional, intent(out)   :: residue !! final residual norm
+      real(dp), optional,  intent(in)    :: threshold !! convergence threshold (default: 1e-6)
 
       real(dp), allocatable    :: r(:), rr(:), ax(:), p(:), pp(:), ap(:), atp(:)
       real(dp)                 :: alpha, beta, gamma, err, threshold_
@@ -242,34 +258,38 @@ contains
    end subroutine dbi_conjugate_gradients
 !--------------------------------------------------------------------------------------
    subroutine zbi_conjugate_gradients(np, x, b, op, opt, dotp, iter, residue, threshold)
-      integer, intent(in)    :: np
-      complex(dp),  intent(inout) :: x(:)
-      complex(dp),  intent(in)    :: b(:)
+      !! Biconjugate-gradient solver for general complex systems.
+      integer, intent(in)    :: np !! dimension of the linear system
+      complex(dp),  intent(inout) :: x(:) !! on input: initial guess; on output: solution
+      complex(dp),  intent(in)    :: b(:) !! right-hand side \(b\)
       interface
          subroutine op(x, y)
+            !! user-supplied matrix-vector product \(y = A x\)
             use scitools_def,only: dp
             implicit none
-            complex(dp), intent(in)    :: x(:)
-            complex(dp), intent(inout)   :: y(:)
+            complex(dp), intent(in)    :: x(:) !! input vector
+            complex(dp), intent(inout)   :: y(:) !! result \(A x\)
          end subroutine op
       end interface
       interface
          subroutine opt(x, y)
+            !! user-supplied product with the transpose (real) or adjoint (complex) matrix, \(y = A^\dagger x\)
             use scitools_def,only: dp
             implicit none
-            complex(dp), intent(in)    :: x(:)
-            complex(dp), intent(inout)   :: y(:)
+            complex(dp), intent(in)    :: x(:) !! input vector
+            complex(dp), intent(inout)   :: y(:) !! result \(A^\dagger x\)
          end subroutine opt
          complex(dp) function dotp(x, y)
+            !! user-supplied inner product \((x|y)\)
             use scitools_def,only: dp
             implicit none
-            complex(dp), intent(in) :: x(:)
-            complex(dp), intent(in) :: y(:)
+            complex(dp), intent(in) :: x(:) !! first vector
+            complex(dp), intent(in) :: y(:) !! second vector
          end function dotp
       end interface
-      integer,          intent(inout) :: iter
-      real(dp), optional, intent(out)    :: residue
-      real(dp), optional,  intent(in)    :: threshold
+      integer,          intent(inout) :: iter !! on input: maximum number of iterations; on output: number of iterations performed
+      real(dp), optional, intent(out)    :: residue !! final residual norm
+      real(dp), optional,  intent(in)    :: threshold !! convergence threshold (default: 1e-6)
 
       complex(dp), allocatable :: r(:), rr(:), ax(:), p(:), pp(:), ap(:), atp(:)
       real(dp)                 :: alpha, beta, gamma, err, threshold_

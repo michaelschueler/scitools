@@ -9,12 +9,14 @@ module scitools_random
    public :: InitRandom, RandomUnitVector
 !-------------------------------------------------------------------------------------- 
    interface RandomUnitVector
+      !! random real or complex vector of unit norm
       module procedure DRandomUnitVector, ZRandomUnitVector
    end interface RandomUnitVector
 !-------------------------------------------------------------------------------------- 
 contains
 !-------------------------------------------------------------------------------------- 
    subroutine InitRandom()
+      !! Seeds the intrinsic random number generator from the system clock.
       integer, allocatable :: seed(:)
       integer :: nsize,count,i
 
@@ -30,8 +32,9 @@ contains
    end subroutine InitRandom
 !-------------------------------------------------------------------------------------- 
    subroutine DRandomUnitVector(n,v)
-      integer,intent(in) :: n
-      real(dp),allocatable,intent(inout) :: v(:)
+      !! Fills `v(1:n)` with a random real vector of unit Euclidean norm.
+      integer,intent(in) :: n !! vector length
+      real(dp),allocatable,intent(inout) :: v(:) !! output vector; allocated with size n if not yet allocated
       real(dp) :: cn
 
       if(.not.allocated(v)) allocate(v(n))
@@ -47,8 +50,9 @@ contains
    end subroutine DRandomUnitVector
 !-------------------------------------------------------------------------------------- 
    subroutine ZRandomUnitVector(n,v)
-      integer,intent(in) :: n
-      complex(dp),allocatable,intent(inout) :: v(:)
+      !! Fills `v(1:n)` with a random complex vector of unit norm.
+      integer,intent(in) :: n !! vector length
+      complex(dp),allocatable,intent(inout) :: v(:) !! output vector; allocated with size n if not yet allocated
       real(dp) :: cn
       real(dp),allocatable :: x(:),y(:)
 

@@ -2,6 +2,8 @@ module scitools_utils
 !======================================================================================
    !! Various general utilities.
    !! Based on a code by John E. Pask, LLNL.
+   !!
+   !! Based on fortran-utils by O. Čertík (MIT license); see THIRD_PARTY_NOTICES.md.
    use,intrinsic::iso_fortran_env,only: output_unit,error_unit
    use scitools_def, only: dp
    implicit none
@@ -69,8 +71,8 @@ contains
   subroutine print_title(unit,title)
    !! prints the title of the program with date and time
     character(len=*),parameter :: fmt_time='(a,"/",a,"/",a," at ",a,":",a,":",a)'
-    integer,intent(in) :: unit
-    character(len=*),intent(in) :: title
+    integer,intent(in) :: unit !! output unit
+    character(len=*),intent(in) :: title !! title of the program
     character(len=8) :: date
     character(len=10) :: time
     
@@ -87,10 +89,10 @@ contains
 !-------------------------------------------------------------------------------------- 
   subroutine print_tag(unit,tag,width,advance)
    !! prints a header of a section of the program
-    integer,intent(in) :: unit
-    character(len=*),intent(in) :: tag
-    integer,intent(in),optional :: width
-    character(len=*),intent(in),optional :: advance
+    integer,intent(in) :: unit !! output unit
+    character(len=*),intent(in) :: tag !! text to print (centered)
+    integer,intent(in),optional :: width !! line width (default: 70)
+    character(len=*),intent(in),optional :: advance !! `'yes'` (default) or `'no'`
     character(len=3) :: advance_
     integer :: w,l,l2
     character(len=100) :: fmt
@@ -112,10 +114,10 @@ contains
 !-------------------------------------------------------------------------------------- 
   subroutine print_header(unit,tag,symbol,width)
    !! prints a header of a section of the program
-    integer,intent(in) :: unit
-    character(len=*),intent(in) :: tag
-    character(len=1),intent(in) :: symbol
-    integer,intent(in),optional :: width
+    integer,intent(in) :: unit !! output unit
+    character(len=*),intent(in) :: tag !! text of the header (centered)
+    character(len=1),intent(in) :: symbol !! fill character left and right of the text
+    integer,intent(in),optional :: width !! line width (default: 70)
     integer :: w,l,l2
     character(len=100) :: fmt
 
@@ -134,7 +136,7 @@ contains
 !-------------------------------------------------------------------------------------- 
   function upcase(s) result(t)
     !! Returns string `s` in uppercase
-    character(*), intent(in) :: s
+    character(*), intent(in) :: s !! input string
     character(len(s)) :: t
     integer :: i, diff
     t = s; diff = ichar('A')-ichar('a')
@@ -148,7 +150,7 @@ contains
 !-------------------------------------------------------------------------------------- 
   function lowcase(s) result(t)
     !! Returns string `s` in lowercase
-    character(*), intent(in) :: s
+    character(*), intent(in) :: s !! input string
     character(len(s)) :: t
     integer :: i, diff
     t = s; diff = ichar('A')-ichar('a')
@@ -162,7 +164,7 @@ contains
 !-------------------------------------------------------------------------------------- 
   logical function checkoption(s,sopt)
   !! checks if string `s` is equivalent to string 'sopt' after converting to lower case
-    character(*), intent(in) :: s,sopt
+    character(*), intent(in) :: s,sopt !! string to check and option to compare with
 
     checkoption = trim(lowcase(s)) == trim(lowcase(sopt))
     
@@ -170,7 +172,7 @@ contains
 !--------------------------------------------------------------------------------------  
   logical function whitechar(char) 
     !! returns `.true.` if `char` is space (32) or tab (9), `.false.` otherwise
-    character, intent(in) :: char
+    character, intent(in) :: char !! character to check
     if (iachar(char) == 32 .or. iachar(char) == 9) then
        whitechar = .true.
     else
@@ -180,7 +182,7 @@ contains
 !-------------------------------------------------------------------------------------- 
   logical function blank(string)
     !! Returns true if string contains only white characters
-    character(*), intent(in) :: string
+    character(*), intent(in) :: string !! string to check
     integer :: i
     do i = 1, len(string)
        if (.not. whitechar(string(i:i))) exit
@@ -243,7 +245,7 @@ contains
     !! Returns lowest i/o unit number not in use (to be used in older compilers).
     !! Starting at 10 to avoid lower numbers which are sometimes reserved.
     !! Note: largest valid unit number may be system-dependent.
-    integer, intent(out), optional :: unit
+    integer, intent(out), optional :: unit !! if present, also returns the unit number here
 
     logical inuse
     integer, parameter :: nmin=10   ! avoid lower numbers which are sometimes reserved
@@ -393,8 +395,8 @@ contains
   subroutine save_griddata_complex_1d(filename, x, y)
     !! Saves complex grid data x_i, y_i to file
     character(len=*), intent(in) :: filename !! File to save the data to
-    real(dp), intent(in) :: x(:)
-    complex(dp), intent(in) :: y(:)
+    real(dp), intent(in) :: x(:) !! grid points \(x_i\)
+    complex(dp), intent(in) :: y(:) !! complex values \(y_i\)
     integer :: s, i
     
     open(newunit=s, file=filename, status="replace")
@@ -504,9 +506,9 @@ contains
 !-------------------------------------------------------------------------------------- 
   subroutine load_griddata_complex(filename, x, y)
    !! loads complex grid data written by save_griddata_complex_2d
-    character(len=*), intent(in) :: filename
-    real(dp), allocatable, intent(out) :: x(:)
-    complex(dp), allocatable, intent(out) :: y(:,:)
+    character(len=*), intent(in) :: filename !! file to read from
+    real(dp), allocatable, intent(out) :: x(:) !! grid points \(x_i\) (allocated on output)
+    complex(dp), allocatable, intent(out) :: y(:,:) !! complex values; one column per data set (allocated on output)
     
     character :: c
     integer :: s, ncol, nrow, ios, i
@@ -554,7 +556,7 @@ contains
     !! Returns the length of the string representation of 'i'
     !! If 's' is too short (MAX_STR too small), Fortan will abort with:
     !! "Fortran runtime error: End of record"
-    integer, intent(in) :: i
+    integer, intent(in) :: i !! integer to convert
     integer, parameter :: MAX_STR = 100
     character(MAX_STR) :: s
 
@@ -564,7 +566,7 @@ contains
 !-------------------------------------------------------------------------------------- 
   pure function str_int(i) result(s)
     !! Converts integer "i" to string
-    integer, intent(in) :: i
+    integer, intent(in) :: i !! integer to convert
     character(len=str_int_len(i)) :: s
     write(s, '(i0)') i
   end function str_int
@@ -573,8 +575,8 @@ contains
     !! Returns the length of the string representation of 'i'
     !! If 's' is too short (MAX_STR too small), Fortan will abort with:
     !! "Fortran runtime error: End of record"
-    real(dp), intent(in) :: r
-    character(len=*), intent(in) :: fmt
+    real(dp), intent(in) :: r !! real number to convert
+    character(len=*), intent(in) :: fmt !! format string
     integer, parameter :: MAX_STR = 100
     character(MAX_STR) :: s
 
@@ -584,7 +586,7 @@ contains
 !-------------------------------------------------------------------------------------- 
   pure function str_real(r) result(s)
     !! Converts the real number "r" to string with 7 decimal digits.
-    real(dp), intent(in) :: r
+    real(dp), intent(in) :: r !! real number to convert
     character(len=*), parameter :: fmt="(f0.6)"
     character(len=str_real_len(r, fmt)) :: s
     write(s, fmt) r
@@ -592,8 +594,8 @@ contains
 !--------------------------------------------------------------------------------------
   pure function str_real_n(r, n) result(s)
     !! Converts the real number "r" to string with 'n' decimal digits.
-    real(dp), intent(in) :: r
-    integer, intent(in) :: n
+    real(dp), intent(in) :: r !! real number to convert
+    integer, intent(in) :: n !! number of decimal digits
     character(len=str_real_len(r, "(f0." // str_int(n) // ")")) :: s
     write(s, "(f0." // str_int(n) // ")") r
   end function str_real_n

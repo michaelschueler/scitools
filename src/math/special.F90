@@ -1,5 +1,7 @@
 module scitools_special
 !! Contains some special functions.
+!!
+!! Based on fortran-utils by O. Čertík (MIT license) and specfun by S. Zhang and J. Jin; see THIRD_PARTY_NOTICES.md.
 !======================================================================================
     use scitools_debug
     use scitools_def,only: dp,iu
@@ -24,8 +26,8 @@ contains
     function besseljn(order, x) result(res)
         !! convenience function that calls Bessel functions of integer order
         !! (intrinsic to F2008)
-        integer, intent(in) :: order
-        real(dp), intent(in) :: x
+        integer, intent(in) :: order !! integer order \(n\)
+        real(dp), intent(in) :: x !! argument
         real(dp) :: res
 
         if(abs(order) == 0) then
@@ -43,8 +45,8 @@ contains
     function besselyn(order, x) result(res)
         !! convenience function that calls Bessel functions of integer order
         !! (intrinsic to F2008)        
-        integer, intent(in) :: order
-        real(dp), intent(in) :: x
+        integer, intent(in) :: order !! integer order \(n\)
+        real(dp), intent(in) :: x !! argument
         real(dp) :: res
 
 
@@ -61,8 +63,8 @@ contains
 !--------------------------------------------------------------------------------------
     function hankel1n(order, x) result(res)
         !! returns the Hankel function H^+
-        integer, intent(in) :: order
-        real(dp), intent(in) :: x
+        integer, intent(in) :: order !! integer order \(n\)
+        real(dp), intent(in) :: x !! argument
         complex(dp) :: res
 
         ! There are two linearly independent solutions to Bessel's equation.
@@ -82,8 +84,8 @@ contains
 !--------------------------------------------------------------------------------------
     function hankel2n(order, x) result(res)
         !! returns the Hankel function H^-
-        integer, intent(in) :: order
-        real(dp), intent(in) :: x
+        integer, intent(in) :: order !! integer order \(n\)
+        real(dp), intent(in) :: x !! argument
         complex(dp) :: res
 
         ! convenience function that calls Bessel functions of integer order
@@ -102,8 +104,8 @@ contains
         !! Calculates zeros of bessel_j0().
         !! This function is then used in bessel_jn_zeros() to calculate zeros of j_n(x)
         !! for n > 0 by simply using the zeros of j_{n-1}(x), as they must lie between.
-        integer, intent(in) :: nzeros
-        real(dp), intent(in) :: eps
+        integer, intent(in) :: nzeros !! number of zeros
+        real(dp), intent(in) :: eps !! accuracy of the zeros
         ! zeros(i) is the i-th zero of bessel_j0(x)
         real(dp) :: zeros(nzeros)
         real(dp) :: points(0:nzeros)
@@ -136,8 +138,8 @@ contains
         !! Calculates 'nzeros' zeros of bessel_jn() for all n=0, 1, ..., nmax
         !! It uses the fact that zeros of j_{n-1}(x) lie between zeros of j_n(x) and
         !! uses bisection to calculate them.
-        integer, intent(in) :: nmax, nzeros
-        real(dp), intent(in) :: eps
+        integer, intent(in) :: nmax, nzeros !! maximum order \(n_{max}\) and number of zeros per order
+        real(dp), intent(in) :: eps !! accuracy of the zeros
         ! zeros(i, n) is the i-th zero of bessel_jn(n, x)
         real(dp) :: zeros(nzeros, 0:nmax)
         ! points holds all zeros of j_{n-1} needed for j_n
@@ -163,8 +165,8 @@ contains
 !--------------------------------------------------------------------------------------
     real(dp) function spherical_bessel_jn(n, x) result(r)
     !! spherical Bessel function of first kind
-        integer, intent(in) :: n
-        real(dp), intent(in) :: x
+        integer, intent(in) :: n !! order \(n \ge 0\)
+        real(dp), intent(in) :: x !! argument
         integer :: nm
         real(dp) :: sj(0:n), dj(0:n)
         call sphj(n, x, nm, sj, dj)
@@ -174,8 +176,8 @@ contains
 !--------------------------------------------------------------------------------------
     real(dp) function spherical_bessel_yn(n, x) result(r)
     !! spherical Bessel function of second kind
-        integer, intent(in) :: n
-        real(dp), intent(in) :: x
+        integer, intent(in) :: n !! order \(n \ge 0\)
+        real(dp), intent(in) :: x !! argument
         integer :: nm
         real(dp) :: sy(0:n), dy(0:n)
         call sphy(n, x, nm, sy, dy)
@@ -187,8 +189,8 @@ contains
         !! Calculates 'nzeros' zeros of spherical_bessel_jn() for all n=0, 1, ..., nmax
         !! It uses the fact that zeros of j_{n-1}(x) lie between zeros of j_n(x) and
         !! uses bisection to calculate them.
-        integer, intent(in) :: nmax, nzeros
-        real(dp), intent(in) :: eps
+        integer, intent(in) :: nmax, nzeros !! maximum order \(n_{max}\) and number of zeros per order
+        real(dp), intent(in) :: eps !! accuracy of the zeros
         ! zeros(i, n) is the i-th zero of spherical_bessel_jn(n, x)
         real(dp) :: zeros(nzeros, 0:nmax)
         ! points holds all zeros of j_{n-1} needed for j_n
@@ -213,8 +215,9 @@ contains
     end function spherical_bessel_jn_zeros
 !--------------------------------------------------------------------------------------
     pure real(dp) function sinc(x) 
+       !! Returns \(\sin(x)/x\), with the limit 1 at \(x = 0\).
         real(dp),parameter :: small=1.0e-8_dp
-        real(dp),intent(in) :: x
+        real(dp),intent(in) :: x !! argument
 
         if(abs(x) < small) then
             sinc = 1.0_dp - x**2/6.0_dp

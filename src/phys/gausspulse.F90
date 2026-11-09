@@ -8,10 +8,12 @@ module scitools_gausspulse
    public :: GaussPulse_t
 !--------------------------------------------------------------------------------------
    type GaussPulse_t
+      !! Linearly or elliptically polarized laser pulse with Gaussian envelope,
+      !! \( \mathbf{E}(t) \propto E_0\, e^{-(t-t_0)^2/(2 T_{dur}^2)} \mathrm{Re}[\mathbf{p}\, e^{-i(\omega (t-t_0) - \phi)}] \).
       !..............................................
-      real(dp)    :: Tdur,E0,omega,s0,t0,phi
-      real(dp)    :: tmin, tmax
-      complex(dp) :: pol(3)
+      real(dp)    :: Tdur,E0,omega,s0,t0,phi !! duration, amplitude, frequency, center (in units of Tdur), center time, carrier-envelope phase
+      real(dp)    :: tmin, tmax !! time window \(t_0 \pm 8 T_{dur}\)
+      complex(dp) :: pol(3) !! complex polarization vector
       !..............................................
       contains
       !..............................................
@@ -25,13 +27,14 @@ module scitools_gausspulse
 contains
 !--------------------------------------------------------------------------------------
    subroutine Init(me,E0,omega,Tdur,s0,phi,pol)
+      !! Initializes the pulse from its parameters.
       class(GaussPulse_t) :: me
-      real(dp),intent(in) :: E0
-      real(dp),intent(in) :: omega
-      real(dp),intent(in) :: Tdur
-      real(dp),intent(in) :: s0  
-      real(dp),intent(in) :: phi
-      complex(dp),intent(in) :: pol(3) 
+      real(dp),intent(in) :: E0 !! field amplitude \(E_0\)
+      real(dp),intent(in) :: omega !! carrier frequency \(\omega\)
+      real(dp),intent(in) :: Tdur !! pulse duration \(T_{dur}\) (standard deviation of the envelope)
+      real(dp),intent(in) :: s0 !! pulse center in units of Tdur, \(t_0 = s_0 T_{dur}\)
+      real(dp),intent(in) :: phi !! carrier-envelope phase \(\phi\)
+      complex(dp),intent(in) :: pol(3) !! complex polarization vector
 
       me%E0 = E0
       me%omega = omega
@@ -48,8 +51,9 @@ contains
    end subroutine Init
 !--------------------------------------------------------------------------------------
    subroutine ReadFromFile(me,fname)
+      !! Reads the pulse parameters from the namelist `&GAUSSPULSE` (Tdur, E0, omega, s0, phi, pol_re, pol_im).
       class(GaussPulse_t) :: me
-      character(len=*),intent(in) :: fname
+      character(len=*),intent(in) :: fname !! input file
       integer :: unit_inp
       real(dp) :: Tdur,E0,omega,s0,phi
       real(dp) :: pol_re(3),pol_im(3)
@@ -67,8 +71,9 @@ contains
    end subroutine ReadFromFile
 !--------------------------------------------------------------------------------------
    function Afield(me,t) result(Af)
+      !! Vector potential \(\mathbf{A}(t)\).
       class(GaussPulse_t),intent(in) :: me
-      real(dp),intent(in)            :: t
+      real(dp),intent(in)            :: t !! time
       real(dp) :: fenv
       real(dp) :: Af(3)
       complex(dp) :: phase
@@ -81,8 +86,9 @@ contains
    end function Afield
 !--------------------------------------------------------------------------------------
    function Efield(me,t) result(Ef)
+      !! Electric field \(\mathbf{E}(t)\).
       class(GaussPulse_t),intent(in) :: me
-      real(dp),intent(in)            :: t
+      real(dp),intent(in)            :: t !! time
       real(dp) :: fenv
       real(dp) :: Ef(3)
       complex(dp) :: phase

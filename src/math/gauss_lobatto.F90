@@ -63,6 +63,8 @@ module scitools_gauss_lobatto
 contains
 !--------------------------------------------------------------------------------------
    subroutine get_gauss_lobatto(order, x, w, L_in, S_ni)
+      !! Returns the order+1 Gauss-Lobatto nodes and weights on \([-1,1]\) (tabulated for orders 2-48).
+      !! Optionally returns the matrix of Lagrange basis polynomials at the nodes and its inverse.
       integer, intent(in) :: order !! Gauss-Lobatto order -> order + 1 points
       real(dp), allocatable, intent(out) :: x(:) !! The points
       real(dp), allocatable, intent(out) :: w(:) !! The weights

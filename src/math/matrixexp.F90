@@ -1,7 +1,17 @@
 module scitools_MatrixExp
-!! Provides tools to compute the matrix exponential.
+!! Provides tools to compute the matrix exponential \(e^{tH}\) of general
+!! real or complex square matrices.
+!!
+!! The exponential is computed by scaling and squaring combined with diagonal
+!! Padé approximants of degree 3, 5, 7, 9 or 13, chosen from the 1-norm of
+!! \(tH\) such that the result is accurate to double precision:
+!!
+!! N. J. Higham, *The scaling and squaring method for the matrix exponential
+!! revisited*, SIAM J. Matrix Anal. Appl. 26, 1179 (2005).
+!!
+!! All routines are thread safe.
 !----------------------------------------------------------------------|
-  use scitools_def,only: dp,one,zero
+  use scitools_def,only: dp
   implicit none
 !----------------------------------------------------------------------|
   private
@@ -11,9 +21,33 @@ module scitools_MatrixExp
        ExpM,&
        ExpM_ThrSv
 !----------------------------------------------------------------------|
-  integer, parameter :: ideg = 6
-  integer,allocatable :: iwsp(:)
-  complex(dp),allocatable :: wsp1(:)
+  interface ExpM
+     !! Matrix exponential \(e^{tH}\) of a general real or complex matrix \(H\).
+     module procedure zexpm, dexpm
+  end interface ExpM
+
+  interface ExpM_ThrSv
+     !! Matrix exponential \(e^{tH}\); 1x1 and 2x2 complex matrices are treated
+     !! analytically. Kept for compatibility: [[ExpM]] is thread safe as well.
+     module procedure zexpm_thrsv, dexpm
+  end interface ExpM_ThrSv
+!----------------------------------------------------------------------|
+  ! maximal 1-norms for which the Padé approximants of degree 3, 5, 7, 9, 13
+  ! give double-precision accuracy (Higham 2005, Table 2.3)
+  integer,parameter :: pade_deg(5) = [3, 5, 7, 9, 13]
+  real(dp),parameter :: theta(5) = [1.495585217958292e-2_dp, 2.539398330063230e-1_dp, &
+       9.504178996162932e-1_dp, 2.097847961257068e0_dp, 5.371920351148152e0_dp]
+  ! coefficients b_0 ... b_m of the Padé approximants
+  real(dp),parameter :: b3(0:3) = [120.0_dp, 60.0_dp, 12.0_dp, 1.0_dp]
+  real(dp),parameter :: b5(0:5) = [30240.0_dp, 15120.0_dp, 3360.0_dp, 420.0_dp, 30.0_dp, 1.0_dp]
+  real(dp),parameter :: b7(0:7) = [17297280.0_dp, 8648640.0_dp, 1995840.0_dp, 277200.0_dp, &
+       25200.0_dp, 1512.0_dp, 56.0_dp, 1.0_dp]
+  real(dp),parameter :: b9(0:9) = [17643225600.0_dp, 8821612800.0_dp, 2075673600.0_dp, &
+       302702400.0_dp, 30270240.0_dp, 2162160.0_dp, 110880.0_dp, 3960.0_dp, 90.0_dp, 1.0_dp]
+  real(dp),parameter :: b13(0:13) = [64764752532480000.0_dp, 32382376266240000.0_dp, &
+       7771770303897600.0_dp, 1187353796428800.0_dp, 129060195264000.0_dp, &
+       10559470521600.0_dp, 670442572800.0_dp, 33522128640.0_dp, 1323241920.0_dp, &
+       40840800.0_dp, 960960.0_dp, 16380.0_dp, 182.0_dp, 1.0_dp]
 !----------------------------------------------------------------------|
 contains
 !----------------------------------------------------------------------|
@@ -30,7 +64,7 @@ contains
   end function my_cosh
 !----------------------------------------------------------------------|
   pure elemental complex(dp) function my_sinh(z)
-   !! sinh for complex arguments as a workaround for older compilers
+  !! sinh for complex arguments as a workaround for older compilers
     complex(dp),intent(in) :: z
 
 #ifdef COSHFIX
@@ -41,252 +75,213 @@ contains
 
   end function my_sinh
 !----------------------------------------------------------------------|
-!----------------------------------------------------------------------|
   subroutine InitExpM(n)
-    !! initializes work space for the calculation of the matrix exponential
-    !! with [[expm]]
-    integer,intent(in)::n !! matrix dimension
-
-    allocate(iwsp(N),wsp1(4*N**2+ideg+1))
-    
+    !! Does nothing. Kept for backward compatibility: no work space needs to be
+    !! allocated before calling [[ExpM]].
+    integer,intent(in)::n !! matrix dimension (unused)
   end subroutine InitExpM
 !----------------------------------------------------------------------|
   subroutine CleanExpM
-    !! Cleans the work space
-    deallocate(iwsp,wsp1)
+    !! Does nothing. Kept for backward compatibility.
   end subroutine CleanExpM
 !----------------------------------------------------------------------|
-  function expm(t, H) result(expH)
-    !! Computes exp(t * H) for general matrix H using routines from 
-    !! the  [expokit](https://www.maths.uq.edu.au/expokit/) library.
-    real(dp), intent(in) :: t !! time argument
-    complex(dp), dimension(:,:), intent(in) :: H !! matrix H
-    complex(dp), dimension(size(H,1),size(H,2)) :: expH !! result exp(t * H )
+  subroutine choose_degree(nrm, m, s)
+    !! Chooses the Padé degree m and the number of squarings s for a matrix of 1-norm nrm.
+    real(dp),intent(in) :: nrm !! 1-norm of \(tH\)
+    integer,intent(out) :: m !! degree of the Padé approximant
+    integer,intent(out) :: s !! number of squarings
+    integer :: i
 
-    ! Expokit variables
-    ! external :: ZGPADM
-    integer :: iexp, ns, iflag, n
+    s = 0
+    do i = 1, 4
+       if(nrm <= theta(i)) then
+          m = pade_deg(i)
+          return
+       end if
+    end do
+    m = 13
+    if(nrm > theta(5)) s = max(0, ceiling(log(nrm / theta(5)) / log(2.0_dp)))
+
+  end subroutine choose_degree
+!----------------------------------------------------------------------|
+  function zexpm(t, H) result(expH)
+    !! Computes \(e^{tH}\) for a general complex matrix \(H\).
+    real(dp), intent(in) :: t !! time argument
+    complex(dp), dimension(:,:), intent(in) :: H !! square matrix \(H\)
+    complex(dp), dimension(size(H,1),size(H,2)) :: expH !! result \(e^{tH}\)
+    complex(dp), allocatable, dimension(:,:) :: A, A2, A4, A6, U, V, Q
+    integer :: n, m, s, i, info
+    integer :: ipiv(size(H,1))
+    real(dp) :: nrm
 
     n = size(H,1)
-    
-    call ZGPADM(ideg, n, t, H, n, wsp1, size(wsp1,1), iwsp, iexp, ns, iflag)
-    expH = reshape(wsp1(iexp:iexp+n*n-1), shape(expH))
+    A = t * H
+    nrm = maxval(sum(abs(A), dim=1))
+    call choose_degree(nrm, m, s)
+    if(s > 0) A = A / 2.0_dp**s
 
-  end function expm
+    A2 = matmul(A, A)
+    select case(m)
+    case(3)
+       U = b3(3) * A2
+       V = b3(2) * A2
+       call add_identity(U, b3(1)); call add_identity(V, b3(0))
+    case(5)
+       A4 = matmul(A2, A2)
+       U = b5(5) * A4 + b5(3) * A2
+       V = b5(4) * A4 + b5(2) * A2
+       call add_identity(U, b5(1)); call add_identity(V, b5(0))
+    case(7)
+       A4 = matmul(A2, A2)
+       A6 = matmul(A4, A2)
+       U = b7(7) * A6 + b7(5) * A4 + b7(3) * A2
+       V = b7(6) * A6 + b7(4) * A4 + b7(2) * A2
+       call add_identity(U, b7(1)); call add_identity(V, b7(0))
+    case(9)
+       A4 = matmul(A2, A2)
+       A6 = matmul(A4, A2)
+       Q = matmul(A6, A2)  ! A^8
+       U = b9(9) * Q + b9(7) * A6 + b9(5) * A4 + b9(3) * A2
+       V = b9(8) * Q + b9(6) * A6 + b9(4) * A4 + b9(2) * A2
+       call add_identity(U, b9(1)); call add_identity(V, b9(0))
+    case default
+       A4 = matmul(A2, A2)
+       A6 = matmul(A4, A2)
+       U = matmul(A6, b13(13) * A6 + b13(11) * A4 + b13(9) * A2) &
+            + b13(7) * A6 + b13(5) * A4 + b13(3) * A2
+       V = matmul(A6, b13(12) * A6 + b13(10) * A4 + b13(8) * A2) &
+            + b13(6) * A6 + b13(4) * A4 + b13(2) * A2
+       call add_identity(U, b13(1)); call add_identity(V, b13(0))
+    end select
+    U = matmul(A, U)
+
+    ! r_m(A) = (V - U)^{-1} (V + U)
+    Q = V - U
+    expH = V + U
+    call zgesv(n, n, Q, n, ipiv, expH, n, info)
+    if(info /= 0) error stop "ExpM: singular Pade denominator (ZGESV failed)"
+
+    do i = 1, s
+       expH = matmul(expH, expH)
+    end do
+
+  contains
+
+    subroutine add_identity(X, c)
+      complex(dp), intent(inout) :: X(:,:)
+      real(dp), intent(in) :: c
+      integer :: k
+      do k = 1, size(X,1)
+         X(k,k) = X(k,k) + c
+      end do
+    end subroutine add_identity
+
+  end function zexpm
 !----------------------------------------------------------------------|
-  function expm_thrsv(t, H) result(expH)
-    !! Computes exp(t * H) for general matrix H using routines from 
-    !! the  [expokit](https://www.maths.uq.edu.au/expokit/) library.
-    !! This version allocates the work space internally and is thus thread safe.
-    !! For 1x1 and 2x2 matrices the matrix exponential is computed analytically.
+  function dexpm(t, H) result(expH)
+    !! Computes \(e^{tH}\) for a general real matrix \(H\).
+    real(dp), intent(in) :: t !! time argument
+    real(dp), dimension(:,:), intent(in) :: H !! square matrix \(H\)
+    real(dp), dimension(size(H,1),size(H,2)) :: expH !! result \(e^{tH}\)
+    real(dp), allocatable, dimension(:,:) :: A, A2, A4, A6, U, V, Q
+    integer :: n, m, s, i, info
+    integer :: ipiv(size(H,1))
+    real(dp) :: nrm
+
+    n = size(H,1)
+    A = t * H
+    nrm = maxval(sum(abs(A), dim=1))
+    call choose_degree(nrm, m, s)
+    if(s > 0) A = A / 2.0_dp**s
+
+    A2 = matmul(A, A)
+    select case(m)
+    case(3)
+       U = b3(3) * A2
+       V = b3(2) * A2
+       call add_identity(U, b3(1)); call add_identity(V, b3(0))
+    case(5)
+       A4 = matmul(A2, A2)
+       U = b5(5) * A4 + b5(3) * A2
+       V = b5(4) * A4 + b5(2) * A2
+       call add_identity(U, b5(1)); call add_identity(V, b5(0))
+    case(7)
+       A4 = matmul(A2, A2)
+       A6 = matmul(A4, A2)
+       U = b7(7) * A6 + b7(5) * A4 + b7(3) * A2
+       V = b7(6) * A6 + b7(4) * A4 + b7(2) * A2
+       call add_identity(U, b7(1)); call add_identity(V, b7(0))
+    case(9)
+       A4 = matmul(A2, A2)
+       A6 = matmul(A4, A2)
+       Q = matmul(A6, A2)  ! A^8
+       U = b9(9) * Q + b9(7) * A6 + b9(5) * A4 + b9(3) * A2
+       V = b9(8) * Q + b9(6) * A6 + b9(4) * A4 + b9(2) * A2
+       call add_identity(U, b9(1)); call add_identity(V, b9(0))
+    case default
+       A4 = matmul(A2, A2)
+       A6 = matmul(A4, A2)
+       U = matmul(A6, b13(13) * A6 + b13(11) * A4 + b13(9) * A2) &
+            + b13(7) * A6 + b13(5) * A4 + b13(3) * A2
+       V = matmul(A6, b13(12) * A6 + b13(10) * A4 + b13(8) * A2) &
+            + b13(6) * A6 + b13(4) * A4 + b13(2) * A2
+       call add_identity(U, b13(1)); call add_identity(V, b13(0))
+    end select
+    U = matmul(A, U)
+
+    ! r_m(A) = (V - U)^{-1} (V + U)
+    Q = V - U
+    expH = V + U
+    call dgesv(n, n, Q, n, ipiv, expH, n, info)
+    if(info /= 0) error stop "ExpM: singular Pade denominator (DGESV failed)"
+
+    do i = 1, s
+       expH = matmul(expH, expH)
+    end do
+
+  contains
+
+    subroutine add_identity(X, c)
+      real(dp), intent(inout) :: X(:,:)
+      real(dp), intent(in) :: c
+      integer :: k
+      do k = 1, size(X,1)
+         X(k,k) = X(k,k) + c
+      end do
+    end subroutine add_identity
+
+  end function dexpm
+!----------------------------------------------------------------------|
+  function zexpm_thrsv(t, H) result(expH)
+    !! Computes \(e^{tH}\) for a general complex matrix \(H\). For 1x1 and 2x2
+    !! matrices the exponential is computed analytically, otherwise by [[zexpm]].
     real(dp),parameter :: eps=1.0e-6_dp
     real(dp), intent(in) :: t !! time argument
-    complex(dp), dimension(:,:), intent(in) :: H !! matrix H
-    complex(dp), dimension(size(H,1),size(H,2)) :: expH !! result exp(t * H )
-  
-    ! Expokit variables
-    ! external :: ZGPADM
-    integer :: iexp, ns, iflag, n
-    integer, parameter :: ideg = 6
-    integer,allocatable :: iwsp(:)
-    complex(dp),allocatable :: wsp1(:)
+    complex(dp), dimension(:,:), intent(in) :: H !! square matrix \(H\)
+    complex(dp), dimension(size(H,1),size(H,2)) :: expH !! result \(e^{tH}\)
     complex(dp) :: deth,ct,st,exad
 
-    n = size(H,1)
-
-    if(n==1) then
-       expH=exp(t*h)
-       return
-    end if
-    if(n==2) then
-       deth = t * sqrt((h(1,1)-h(2,2))**2 + 4.0D0 * h(1,2)*h(2,1))
-       exad = exp(t * 0.5D0*(h(1,1)+h(2,2)))
+    select case(size(H,1))
+    case(1)
+       expH = exp(t*H)
+    case(2)
+       deth = t * sqrt((H(1,1)-H(2,2))**2 + 4.0_dp * H(1,2)*H(2,1))
+       exad = exp(t * 0.5_dp*(H(1,1)+H(2,2)))
        if(abs(deth) < eps) then
-          ct = 1D0 + (0.5D0*deth)**2/2D0 + (0.5D0*deth)**4/24D0 
-          st = 0.5D0 + deth**2/48D0 + deth**4/3840D0
+          ct = 1.0_dp + (0.5_dp*deth)**2/2.0_dp + (0.5_dp*deth)**4/24.0_dp
+          st = 0.5_dp + deth**2/48.0_dp + deth**4/3840.0_dp
        else
-          ct = my_cosh(0.5D0*deth) ; st = my_sinh(0.5D0*deth)/deth
+          ct = my_cosh(0.5_dp*deth) ; st = my_sinh(0.5_dp*deth)/deth
        end if
-       expH(1,1) = ct + (h(1,1)-h(2,2))*st*t
-       expH(1,2) = 2D0*h(1,2) * st * t
-       expH(2,1) = 2D0*h(2,1) * st * t
-       expH(2,2) = ct - (h(1,1)-h(2,2))*st * t
+       expH(1,1) = ct + (H(1,1)-H(2,2))*st*t
+       expH(1,2) = 2.0_dp*H(1,2) * st * t
+       expH(2,1) = 2.0_dp*H(2,1) * st * t
+       expH(2,2) = ct - (H(1,1)-H(2,2))*st * t
        expH = exad * expH
-       return
-    end if
-    
-    allocate(iwsp(N),wsp1(4*N**2+ideg+1))
-    
-    call ZGPADM(ideg, n, t, H, n, wsp1, size(wsp1,1), iwsp, iexp, ns, iflag)
-    expH = reshape(wsp1(iexp:iexp+n*n-1), shape(expH))
+    case default
+       expH = zexpm(t, H)
+    end select
 
-    deallocate(iwsp,wsp1)
-    
-  end function expm_thrsv
+  end function zexpm_thrsv
 !----------------------------------------------------------------------|
-  subroutine ZGPADM(ideg,m,t,H,ldh,wsp,lwsp,ipiv,iexph,ns,iflag)
-!!  Computes exp(t*H), the matrix exponential of a general complex 
-!!  matrix in full, using the irreducible rational Pade approximation
-!!  to the exponential exp(z) = r(z) = (+/-)( I + 2*(q(z)/p(z)) ),
-!!  combined with scaling-and-squaring.   
-    real(dp),intent(in) :: t 
-    integer,intent(in) :: ideg, m, ldh, lwsp
-    integer,intent(inout) :: ipiv(m)
-    integer,intent(out) :: iexph,ns,iflag
-    complex(dp),intent(in)::H(:,:)
-    complex(dp),intent(inout)::wsp(:)!
-!-----Arguments--------------------------------------------------------|
-!
-!     ideg      : (input) the degre of the diagonal Pade to be used.
-!                 a value of 6 is generally satisfactory.
-!
-!     m         : (input) order of H.
-!
-!     H(ldh,m)  : (input) argument matrix.
-!
-!     t         : (input) time-scale (can be < 0).
-!                  
-!     wsp(lwsp) : (workspace/output) lwsp .ge. 4*m*m+ideg+1.
-!
-!     ipiv(m)   : (workspace)
-!
-!>>>> iexph     : (output) number such that wsp(iexph) points to exp(tH)
-!                 i.e., exp(tH) is located at wsp(iexph ... iexph+m*m-1)
-!                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-!                 NOTE: if the routine was called with wsp(iptr), 
-!                       then exp(tH) will start at wsp(iptr+iexph-1).
-!
-!     ns        : (output) number of scaling-squaring used.
-!
-!     iflag     : (output) exit flag.
-!                       0 - no problem
-!                      <0 - problem
-!
-!----------------------------------------------------------------------|
-!     Roger B. Sidje (rbs@maths.uq.edu.au)
-!     EXPOKIT: Software Package for Computing Matrix Exponentials.
-!     ACM - Transactions On Mathematical Software, 24(1):130-156, 1998
-!----------------------------------------------------------------------|
-      integer ::i,j,k,icoef,mm,ih2,iodd,iused,ifree,iq,ip,iput,iget
-      real(dp):: hnorm
-      complex(dp):: cp, cq, scale, scale2
-
-
-      intrinsic ABS, CMPLX, DBLE, INT, LOG, MAX
-!---  check restrictions on input parameters ...
-      mm = m*m
-      iflag = 0
-      if ( ldh.lt.m ) iflag = -1
-      if ( lwsp.lt.4*mm+ideg+1 ) iflag = -2
-     
-!
-!---  initialise pointers ...
-!
-      icoef = 1
-      ih2 = icoef + (ideg+1)
-      ip  = ih2 + mm
-      iq  = ip + mm
-      ifree = iq + mm
-!
-!---  scaling: seek ns such that ||t*H/2^ns|| < 1/2; 
-!     and set scale = t/2^ns ...
-!
-      do i = 1,m
-         wsp(i) = ZERO
-      enddo
-      do j = 1,m
-         do i = 1,m
-            wsp(i) = wsp(i) + ABS( H(i,j) )
-         enddo
-      enddo
-      hnorm = 0.0d0
-      do i = 1,m
-         hnorm = MAX( hnorm,DBLE(wsp(i)) )
-      enddo
-      hnorm = ABS( t*hnorm )
-      ns = MAX( 0,INT(LOG(hnorm)/LOG(2.0d0))+2 )
-      scale =  CMPLX( t/DBLE(2**ns),0.0d0 )
-      scale2 = scale*scale
-!
-!---  compute Pade coefficients ...
-!
-      i = ideg+1
-      j = 2*ideg+1
-      wsp(icoef) = ONE
-      do k = 1,ideg
-         wsp(icoef+k) = (wsp(icoef+k-1)*DBLE( i-k ))/DBLE( k*(j-k) )
-      enddo
-!
-!---  H2 = scale2*H*H ...
-!
-      call ZGEMM( 'n','n',m,m,m,scale2,H(1,1),ldh,H(1,1),ldh,ZERO,wsp(ih2),m )
-!
-!---  initialise p (numerator) and q (denominator) ...
-!
-      cp = wsp(icoef+ideg-1)
-      cq = wsp(icoef+ideg)
-      do j = 1,m
-         do i = 1,m
-            wsp(ip + (j-1)*m + i-1) = ZERO
-            wsp(iq + (j-1)*m + i-1) = ZERO
-         enddo
-         wsp(ip + (j-1)*(m+1)) = cp
-         wsp(iq + (j-1)*(m+1)) = cq
-      enddo
-!
-!---  Apply Horner rule ...
-!
-      iodd = 1
-      k = ideg - 1
- 100  continue
-      iused = iodd*iq + (1-iodd)*ip
-      call ZGEMM( 'n','n',m,m,m, ONE,wsp(iused),m,wsp(ih2),m, ZERO,wsp(ifree),m )
-      do j = 1,m
-         wsp(ifree+(j-1)*(m+1)) = wsp(ifree+(j-1)*(m+1))+wsp(icoef+k-1)
-      enddo
-      ip = (1-iodd)*ifree + iodd*ip
-      iq = iodd*ifree + (1-iodd)*iq
-      ifree = iused
-      iodd = 1-iodd
-      k = k-1
-      if ( k.gt.0 )  goto 100
-!
-!---  Obtain (+/-)(I + 2*(p\q)) ...
-!
-      if ( iodd.ne.0 ) then
-         call ZGEMM( 'n','n',m,m,m, scale,wsp(iq),m,H(1,1),ldh, ZERO,wsp(ifree),m )
-         iq = ifree
-      else
-         call ZGEMM( 'n','n',m,m,m, scale,wsp(ip),m,H(1,1),ldh, ZERO,wsp(ifree),m )
-         ip = ifree
-      endif
-      call ZAXPY( mm, -ONE,wsp(ip),1, wsp(iq),1 )
-      call ZGESV( m,m, wsp(iq),m, ipiv, wsp(ip),m, iflag )
-      call ZDSCAL( mm, 2.0d0, wsp(ip), 1 )
-      do j = 1,m
-         wsp(ip+(j-1)*(m+1)) = wsp(ip+(j-1)*(m+1)) + ONE
-      enddo
-      iput = ip
-      if ( ns.eq.0 .and. iodd.ne.0 ) then
-         call ZDSCAL( mm, -1.0d0, wsp(ip), 1 )
-         goto 200
-      endif
-!
-!--   squaring : exp(t*H) = (exp(t*H))^(2^ns) ...
-!
-      iodd = 1
-      do k = 1,ns
-         iget = iodd*ip + (1-iodd)*iq
-         iput = (1-iodd)*ip + iodd*iq
-         call ZGEMM( 'n','n',m,m,m, ONE,wsp(iget),m, wsp(iget),m,ZERO,wsp(iput),m )
-         iodd = 1-iodd
-      enddo
- 200  continue
-      iexph = iput
-      END SUBROUTINE ZGPADM
-!----------------------------------------------------------------------|
-
-
-
-      
 end module scitools_MatrixExp

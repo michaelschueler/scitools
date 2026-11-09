@@ -1,0 +1,9 @@
+SPHJ, SPHY, MSTA1, MSTA2 (used in src/math/special.F90)
+
+These routines are taken from specfun.f as distributed with SciPy, via
+fortran-utils (see fortran-utils.txt). Original authors and notice:
+
+  Shanjie Zhang and Jianming Jin,
+  "Computation of Special Functions", John Wiley & Sons, New York (1996).
+
+  "Copyrighted but permission granted to use code in programs."

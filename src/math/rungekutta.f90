@@ -156,11 +156,11 @@ contains
   function ODE_step_RK5_dvector(size,n,dt,deriv_func,xn) result(xn1)
     !! Runge-Kutta step \( x(n \Delta t) \rightarrow x((n+1)\Delta t)\) for a real vector-valued 
     !! function and right-hand side \( \dot{x}(t) = f(t, x(t)) \).
-    integer,intent(in)            :: size
-    integer,intent(in)            :: n
-    real(dp),intent(in)           :: dt
-    procedure(deriv_func_dvector) :: deriv_func
-    real(dp),intent(in)           :: xn(:)
+    integer,intent(in)            :: size !! dimension of \(x\)
+    integer,intent(in)            :: n !! index of the current time step
+    real(dp),intent(in)           :: dt !! time step size \(\Delta t\)
+    procedure(deriv_func_dvector) :: deriv_func !! right-hand side \(f(t,x)\)
+    real(dp),intent(in)           :: xn(:) !! current value \(x(n \Delta t)\)
     real(dp)                      :: xn1(size)
     integer  :: k,j
     real(dp) :: dxk(size,6),xk(size)
@@ -184,11 +184,11 @@ contains
   function ODE_step_RK5_zvector(size,n,dt,deriv_func,xn) result(xn1)
     !! Runge-Kutta step \( x(n \Delta t) \rightarrow x((n+1)\Delta t)\) for a complex vector-valued 
     !! function and right-hand side \( \dot{x}(t) = f(t, x(t)) \).
-    integer,intent(in)            :: size
-    integer,intent(in)            :: n
-    real(dp),intent(in)           :: dt
-    procedure(deriv_func_zvector) :: deriv_func
-    complex(dp),intent(in)        :: xn(:)
+    integer,intent(in)            :: size !! dimension of \(x\)
+    integer,intent(in)            :: n !! index of the current time step
+    real(dp),intent(in)           :: dt !! time step size \(\Delta t\)
+    procedure(deriv_func_zvector) :: deriv_func !! right-hand side \(f(t,x)\)
+    complex(dp),intent(in)        :: xn(:) !! current value \(x(n \Delta t)\)
     complex(dp)                   :: xn1(size)
     integer     :: k,j
     complex(dp) :: dxk(size,6),xk(size)
@@ -212,11 +212,11 @@ contains
   function ODE_step_RK5_dmatrix(size,n,dt,deriv_func,xn) result(xn1)
     !! Runge-Kutta step \( x(n \Delta t) \rightarrow x((n+1)\Delta t)\) for a real matrix-valued 
     !! function and right-hand side \( \dot{x}(t) = f(t, x(t)) \).
-    integer,intent(in)            :: size
-    integer,intent(in)            :: n
-    real(dp),intent(in)           :: dt
-    procedure(deriv_func_dmatrix) :: deriv_func
-    real(dp),intent(in)           :: xn(:,:)
+    integer,intent(in)            :: size !! dimension of \(x\)
+    integer,intent(in)            :: n !! index of the current time step
+    real(dp),intent(in)           :: dt !! time step size \(\Delta t\)
+    procedure(deriv_func_dmatrix) :: deriv_func !! right-hand side \(f(t,x)\)
+    real(dp),intent(in)           :: xn(:,:) !! current value \(x(n \Delta t)\)
     real(dp)                      :: xn1(size,size)
     integer  :: k,j
     real(dp) :: dxk(size,size,6),xk(size,size)
@@ -240,11 +240,11 @@ contains
    function ODE_step_RK5_zmatrix(size,n,dt,deriv_func,xn) result(xn1)
     !! Runge-Kutta step \( x(n \Delta t) \rightarrow x((n+1)\Delta t)\) for a complex matrix-valued 
     !! function and right-hand side \( \dot{x}(t) = f(t, x(t)) \).
-    integer,intent(in)            :: size
-    integer,intent(in)            :: n
-    real(dp),intent(in)           :: dt
-    procedure(deriv_func_zmatrix) :: deriv_func
-    complex(dp),intent(in)        :: xn(:,:)
+    integer,intent(in)            :: size !! dimension of \(x\)
+    integer,intent(in)            :: n !! index of the current time step
+    real(dp),intent(in)           :: dt !! time step size \(\Delta t\)
+    procedure(deriv_func_zmatrix) :: deriv_func !! right-hand side \(f(t,x)\)
+    complex(dp),intent(in)        :: xn(:,:) !! current value \(x(n \Delta t)\)
     complex(dp)                   :: xn1(size,size)
     integer     :: k,j
     complex(dp) :: dxk(size,size,6),xk(size,size)

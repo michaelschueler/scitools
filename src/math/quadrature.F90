@@ -35,7 +35,7 @@ contains
           real(dp) function f(x)
           use scitools_def, only: dp
           implicit none
-          real(dp), intent(in) :: x
+          real(dp), intent(in) :: x !! integration variable
           end function
       end interface
 
@@ -71,12 +71,12 @@ contains
 !--------------------------------------------------------------------------------------
    subroutine integral_inf_1d(f,bound,inf,tol,res,neval,abserr)
    !! Simple interface to QUADPACK [[dqagi]] function with some error checks
-      real(dp),intent(in)           :: bound
-      integer,intent(in)            :: inf
-      real(dp),intent(in)           :: tol
-      real(dp),intent(out)          :: res
-      integer,intent(out),optional  :: neval
-      real(dp),intent(out),optional :: abserr
+      real(dp),intent(in)           :: bound !! finite bound of the integration range
+      integer,intent(in)            :: inf !! 1: \((\mathrm{bound}, \infty)\), -1: \((-\infty, \mathrm{bound})\), 2: \((-\infty, \infty)\)
+      real(dp),intent(in)           :: tol !! absolute and relative error threshold
+      real(dp),intent(out)          :: res !! value of the integral
+      integer,intent(out),optional  :: neval !! number of function evaluations
+      real(dp),intent(out),optional :: abserr !! estimated absolute error
       integer :: meth_
       integer :: ier,neval_
       real(dp) :: abserr_
@@ -84,7 +84,7 @@ contains
           real(dp) function f(x)
           use scitools_def, only: dp
           implicit none
-          real(dp), intent(in) :: x
+          real(dp), intent(in) :: x !! integration variable
           end function
       end interface
 
